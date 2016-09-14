@@ -1,0 +1,17 @@
+language: c
+os:
+  - linux
+  - osx
+sudo: required
+dist: trusty
+install:
+  - echo $TRAVIS_OS_NAME
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update -q; sudo apt-get install -y cmake libjson-c-dev libssl-dev; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then pushd /tmp; curl -sLo- https://github.com/warmcat/libwebsockets/archive/v2.0.2.tar.gz | tar xz; cd libwebsockets-2.0.2; cmake .; make && sudo make install; popd; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; brew unlink cmake json-c; brew install cmake openssl json-c libwebsockets; fi
+script:
+  - echo $TRAVIS_OS_NAME
+  - cmake --version
+  - mkdir build && cd build
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake .. && make; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl .. && make; fi

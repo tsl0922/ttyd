@@ -1,4 +1,4 @@
-# ttyd - terminal emulator for the web
+# ttyd - terminal emulator for the web [![Build Status](https://travis-ci.org/tsl0922/ttyd.svg?branch=master)](https://travis-ci.org/tsl0922/ttyd)
 
 ttyd is a simple command line tool for sharing terminal over the web, inspired by [GoTTY](https://github.com/yudai/gotty).
 

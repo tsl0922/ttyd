@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
+set(CMAKE_C_STANDARD 99)
+
 project(ttyd)
 
 set(SOURCE_FILES server.c http.c protocol.c)
