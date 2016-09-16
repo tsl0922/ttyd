@@ -1,20 +1,23 @@
 #include "lws_config.h"
 
+// warning: implicit declaration of function
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <signal.h>
 #include <string.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <pthread.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include <pthread.h>
-
-#include <libwebsockets.h>
 
 #ifdef __APPLE__
 #include <util.h>
@@ -22,6 +25,7 @@
 #include <pty.h>
 #endif
 
+#include <libwebsockets.h>
 #include <json.h>
 
 extern volatile bool force_exit;
@@ -52,15 +56,22 @@ struct tty_client {
 };
 
 struct tty_server {
-    LIST_HEAD(client, tty_client) clients;
-    int client_count;
-    char *command;  // full command line
-    char **argv;    // command with arguments
+    LIST_HEAD(client, tty_client) clients;    // client list
+    int client_count;                         // client count
+    char *credential;                         // encoded basic auth credential
+    int reconnect;                            // reconnect timeout
+    char *command;                            // full command line
+    char **argv;                              // command with arguments
+    int sig_code;                             // close signal
+    char *sig_name;                           // human readable signal string
     pthread_mutex_t lock;
 };
 
-extern void
-tty_client_destroy(struct tty_client *client);
+extern char *
+base64_encode(const unsigned char *buffer, size_t length);
+
+extern int
+check_auth(struct lws *wsi);
 
 extern int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);

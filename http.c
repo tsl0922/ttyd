@@ -2,10 +2,54 @@
 #include "html.h"
 
 int
+check_auth(struct lws *wsi) {
+    if (server->credential == NULL)
+        return 0;
+
+    int hdr_length = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
+    char buf[hdr_length + 1];
+    int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
+    if (len > 0) {
+        // extract base64 text from authorization header
+        char *ptr = &buf[0];
+        char *token, *b64_text = NULL;
+        int i = 1;
+        while ((token = strsep(&ptr, " ")) != NULL) {
+            if (strlen(token) == 0)
+                continue;
+            if (i++ == 2) {
+                b64_text = strdup(token);
+                break;
+            }
+        }
+        if (b64_text != NULL && strcmp(b64_text, server->credential) == 0)
+            return 0;
+    }
+
+    unsigned char buffer[1024 + LWS_PRE], *p, *end;
+    p = buffer + LWS_PRE;
+    end = p + sizeof(buffer) - LWS_PRE;
+
+    if (lws_add_http_header_status(wsi, HTTP_STATUS_UNAUTHORIZED, &p, end))
+        return 1;
+    if (lws_add_http_header_by_token(wsi,
+                                     WSI_TOKEN_HTTP_WWW_AUTHENTICATE,
+                                     (unsigned char *)"Basic realm=\"ttyd\"",
+                                     18, &p, end))
+        return 1;
+    if (lws_add_http_header_content_length(wsi, 0, &p, end))
+        return 1;
+    if (lws_finalize_http_header(wsi, &p, end))
+        return 1;
+    if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
+        return 1;
+
+    return -1;
+}
+
+int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
-    unsigned char buffer[4096 + LWS_PRE];
-    unsigned char *p;
-    unsigned char *end;
+    unsigned char buffer[4096 + LWS_PRE], *p, *end;
     char buf[256];
     int n;
 
@@ -26,6 +70,18 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 goto try_to_reuse;
             }
 
+            // TODO: this doesn't work for websocket
+            switch (check_auth(wsi)) {
+                case 1:
+                    return 1;
+                case -1:
+                    goto try_to_reuse;
+                case 0:
+                default:
+                    break;
+            }
+
+            // if a legal POST URL, let it continue and accept data
             if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
                 return 0;
 

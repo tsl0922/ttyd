@@ -42,10 +42,27 @@ The `ttyd` executable file will be in the `build` directory.
 # Usage
 
 ```
-Usage: ttyd command [options]
+ttyd is a tool for sharing terminal over the web
+
+USAGE: ttyd [options] <command> [<arguments...>]
+
+OPTIONS:
+    --port, -p              Port to listen (default: 7681)
+    --interface, -i         Network interface to bind
+    --credential, -c        Credential for Basic Authentication (format: username:password)
+    --uid, -u               User id to run with
+    --gid, -g               Group id to run with
+    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)
+    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)
+    --ssl, -S               Enable ssl
+    --ssl-cert, -C          Ssl certificate file path
+    --ssl-key, -K           Ssl key file path
+    --ssl-ca, -A            Ssl ca file path
+    --debug, -d             Set log level (0-9, default: 7)
+    --help, -h              Print this text and exit
 ```
 
-ttyd will start a web server at port `7681`. When you open <http://localhost:7681>, the `command` will be started with `options` as arguments and now you can see the running command on the web! :tada: 
+ttyd starts web server at port `7681` by default. When you open <http://localhost:7681>, the `command` will be started with `options` as arguments and now you can see the running command on the web! :tada: 
 
 # Credits
 

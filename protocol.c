@@ -51,7 +51,7 @@ send_initial_message(struct lws *wsi) {
         return -1;
     }
     // reconnect time
-    n = sprintf((char *) p, "%c%d", SET_RECONNECT, 10);
+    n = sprintf((char *) p, "%c%d", SET_RECONNECT, server->reconnect);
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }
@@ -82,6 +82,32 @@ parse_window_size(const char *json) {
     size->ws_row = (unsigned short) rows;
 
     return size;
+}
+
+void
+tty_client_destroy(struct tty_client *client) {
+    if (client->exit)
+        return;
+
+    // stop event loop
+    client->exit = true;
+
+    // kill process and free resource
+    lwsl_notice("sending %s to process %d\n", server->sig_name, client->pid);
+    if (kill(client->pid, server->sig_code) != 0) {
+        lwsl_err("kill: pid, errno: %d (%s)\n", client->pid, errno, strerror(errno));
+    }
+    int status;
+    while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
+        ;
+    lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
+    close(client->pty);
+
+    // remove from clients list
+    pthread_mutex_lock(&server->lock);
+    LIST_REMOVE(client, list);
+    server->client_count--;
+    pthread_mutex_unlock(&server->lock);
 }
 
 void *
@@ -141,31 +167,6 @@ thread_run_command(void *args) {
     }
 
     return 0;
-}
-
-void
-tty_client_destroy(struct tty_client *client) {
-    if (client->exit)
-        return;
-
-    // stop event loop
-    client->exit = true;
-
-    // kill process and free resource
-    if (kill(client->pid, SIGHUP) != 0) {
-        lwsl_err("kill: pid, errno: %d (%s)\n", client->pid, errno, strerror(errno));
-    }
-    int status;
-    while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
-        ;
-    lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
-    close(client->pty);
-
-    // remove from clients list
-    pthread_mutex_lock(&server->lock);
-    LIST_REMOVE(client, list);
-    server->client_count--;
-    pthread_mutex_unlock(&server->lock);
 }
 
 int
