@@ -17,12 +17,11 @@ ttyd is a simple command line tool for sharing terminal over the web, inspired b
 
 ### For Mac OS X users
 
+Install with [homebrew](http://brew.sh):
+
 ```bash
-brew install cmake openssl json-c libwebsockets
-git clone https://github.com/tsl0922/ttyd.git
-cd ttyd && mkdir build && cd build
-cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
-make
+brew tap tsl0922/ttyd
+brew install ttyd --HEAD
 ```
 
 ### For Linux users
@@ -34,10 +33,8 @@ sudo apt-get install cmake libwebsockets-dev libjson-c-dev libssl-dev
 git clone https://github.com/tsl0922/ttyd.git
 cd ttyd && mkdir build && cd build
 cmake ..
-make
+make && make install
 ```
-
-The `ttyd` executable file will be in the `build` directory.
 
 # Usage
 
@@ -62,7 +59,14 @@ OPTIONS:
     --help, -h              Print this text and exit
 ```
 
-ttyd starts web server at port `7681` by default. When you open <http://localhost:7681>, the `command` will be started with `options` as arguments and now you can see the running command on the web! :tada: 
+ttyd starts web server at port `7681` by default, the `command` will be started with `arguments` as options. For example, run:
+
+```bash
+ttyd bash
+```
+Then open <http://localhost:7681>, now you can see and control the `bash` console on your web broswer! :tada: 
+
+> **TIP:** You may replace `bash` with `login` to get a login prompt first.
 
 # Credits
 
