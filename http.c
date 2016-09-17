@@ -34,7 +34,7 @@ check_auth(struct lws *wsi) {
         return 1;
     if (lws_add_http_header_by_token(wsi,
                                      WSI_TOKEN_HTTP_WWW_AUTHENTICATE,
-                                     (unsigned char *)"Basic realm=\"ttyd\"",
+                                     (unsigned char *) "Basic realm=\"ttyd\"",
                                      18, &p, end))
         return 1;
     if (lws_add_http_header_content_length(wsi, 0, &p, end))

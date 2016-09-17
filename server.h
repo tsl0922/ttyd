@@ -1,12 +1,8 @@
 #include "lws_config.h"
 
-// warning: implicit declaration of function
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <ctype.h>
 #include <signal.h>
 #include <string.h>
 #include <fcntl.h>
@@ -18,15 +14,20 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <assert.h>
 
 #ifdef __APPLE__
+
 #include <util.h>
+
 #else
 #include <pty.h>
 #endif
 
 #include <libwebsockets.h>
 #include <json.h>
+
+#include "utils.h"
 
 extern volatile bool force_exit;
 extern struct lws_context *context;

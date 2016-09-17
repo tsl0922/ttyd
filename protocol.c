@@ -14,28 +14,6 @@
 
 #define BUF_SIZE 1024
 
-char *
-base64_encode(const unsigned char *buffer, size_t length) {
-    BIO *bio, *b64;
-    BUF_MEM *bptr;
-
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new(BIO_s_mem());
-    b64 = BIO_push(b64, bio);
-
-    BIO_write(b64, buffer, (int) length);
-    BIO_flush(b64);
-    BIO_get_mem_ptr(b64, &bptr);
-
-    char *data = (char *)malloc(bptr->length);
-    memcpy(data, bptr->data, bptr->length-1);
-    data[bptr->length-1] = 0;
-
-    BIO_free_all(b64);
-
-    return data;
-}
-
 int
 send_initial_message(struct lws *wsi) {
     unsigned char message[LWS_PRE + 256];
@@ -76,7 +54,7 @@ parse_window_size(const char *json) {
     }
     rows = json_object_get_int(o);
 
-    struct winsize *size = malloc(sizeof(struct winsize));
+    struct winsize *size = t_malloc(sizeof(struct winsize));
     memset(size, 0, sizeof(struct winsize));
     size->ws_col = (unsigned short) columns;
     size->ws_row = (unsigned short) rows;
@@ -151,10 +129,10 @@ thread_run_command(void *args) {
                 if (FD_ISSET (pty, &des_set)) {
                     memset(buf, 0, BUF_SIZE);
                     bytes = (int) read(pty, buf, BUF_SIZE);
-                    struct pty_data *frame = (struct pty_data *) malloc(sizeof(struct pty_data));
+                    struct pty_data *frame = (struct pty_data *) t_malloc(sizeof(struct pty_data));
                     frame->len = bytes;
                     if (bytes > 0) {
-                        frame->data = malloc((size_t) bytes);
+                        frame->data = t_malloc((size_t) bytes);
                         memcpy(frame->data, buf, bytes);
                     }
                     pthread_mutex_lock(&client->lock);
@@ -212,7 +190,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 // read error or client exited, close connection
                 if (frame->len <= 0) {
                     STAILQ_REMOVE_HEAD(&client->queue, list);
-                    free(frame);
+                    t_free(frame);
                     return -1;
                 }
 
@@ -222,7 +200,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 unsigned char *p = &message[LWS_PRE];
                 size_t n = sprintf((char *) p, "%c%s", OUTPUT, b64_text);
 
-                free(b64_text);
+                t_free(b64_text);
 
                 if (lws_write(wsi, p, n, LWS_WRITE_TEXT) < n) {
                     lwsl_err("lws_write\n");
@@ -230,8 +208,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 }
 
                 STAILQ_REMOVE_HEAD(&client->queue, list);
-                free(frame->data);
-                free(frame);
+                t_free(frame->data);
+                t_free(frame);
 
                 if(lws_partial_buffered(wsi)){
                     lws_callback_on_writable(wsi);
@@ -266,7 +244,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         if (ioctl(client->pty, TIOCSWINSZ, size) == -1) {
                             lwsl_err("ioctl TIOCSWINSZ: %d (%s)\n", errno, strerror(errno));
                         }
-                        free(size);
+                        t_free(size);
                     }
                     break;
                 default:

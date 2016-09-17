@@ -29,7 +29,7 @@ brew install ttyd --HEAD
 Ubuntu as example:
 
 ```bash
-sudo apt-get install cmake libwebsockets-dev libjson-c-dev libssl-dev
+sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
 git clone https://github.com/tsl0922/ttyd.git
 cd ttyd && mkdir build && cd build
 cmake ..

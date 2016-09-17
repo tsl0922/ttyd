@@ -3,7 +3,7 @@ set(CMAKE_C_STANDARD 99)
 
 project(ttyd)
 
-set(SOURCE_FILES server.c http.c protocol.c)
+set(SOURCE_FILES server.c http.c protocol.c utils.c)
 
 find_package(OpenSSL REQUIRED)
 find_package(Libwebsockets QUIET)
