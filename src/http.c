@@ -72,13 +72,13 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
 
             // TODO: this doesn't work for websocket
             switch (check_auth(wsi)) {
-                case 1:
-                    return 1;
+                case 0:
+                    break;
                 case -1:
                     goto try_to_reuse;
-                case 0:
+                case 1:
                 default:
-                    break;
+                    return 1;
             }
 
             // if a legal POST URL, let it continue and accept data

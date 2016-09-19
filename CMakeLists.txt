@@ -3,7 +3,7 @@ set(CMAKE_C_STANDARD 99)
 
 project(ttyd)
 
-set(SOURCE_FILES server.c http.c protocol.c utils.c)
+set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
 
 find_package(OpenSSL REQUIRED)
 find_package(Libwebsockets QUIET)
@@ -33,7 +33,7 @@ mark_as_advanced(JSON-C_INCLUDE_DIR JSON-C_LIBRARY)
 find_program(CMAKE_XXD NAMES xxd)
 add_custom_command(OUTPUT html.h
         COMMAND ${CMAKE_XXD} -i index.html html.h
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
         COMMENT "Generating html.h from index.html")
 list(APPEND SOURCE_FILES html.h)
 

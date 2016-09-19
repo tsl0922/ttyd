@@ -111,7 +111,8 @@ calc_command_start(int argc, char **argv) {
 
     // do not print error message for invalid option
     opterr = 0;
-    while (getopt_long(argc_copy, argv_copy, opt_string, options, NULL) != -1);
+    while (getopt_long(argc_copy, argv_copy, opt_string, options, NULL) != -1)
+        ;
 
     int start = -1;
     if (optind < argc) {
