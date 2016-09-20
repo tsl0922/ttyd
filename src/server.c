@@ -93,11 +93,15 @@ tty_server_new(int argc, char **argv) {
 
 void
 sig_handler(int sig) {
+    if (force_exit)
+        exit(EXIT_FAILURE);
+
     char sig_name[20];
     get_sig_name(sig, sig_name);
-    lwsl_notice("received signal: %s (%d)\n", sig_name, sig);
+    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
     force_exit = true;
     lws_cancel_service(context);
+    lwsl_notice("send ^C to force exit.\n");
 }
 
 int
@@ -266,7 +270,8 @@ main(int argc, char **argv) {
 #endif
     }
 
-    signal(SIGINT, sig_handler);
+    signal(SIGINT, sig_handler);  // ^C
+    signal(SIGTERM, sig_handler); // kill
 
     context = lws_create_context(&info);
     if (context == NULL) {
