@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <errno.h>
 #include <string.h>
 #include <fcntl.h>
 #include <getopt.h>
