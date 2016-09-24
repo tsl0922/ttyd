@@ -4,6 +4,7 @@
 #define INPUT '0'
 #define PING '1'
 #define RESIZE_TERMINAL '2'
+#define JSON_DATA '{'
 
 // server message
 #define OUTPUT '0'
@@ -158,6 +159,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_ESTABLISHED:
             client->exit = false;
             client->initialized = false;
+            client->authenticated = false;
             client->wsi = wsi;
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
                                    client->hostname, sizeof(client->hostname),
@@ -165,7 +167,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             STAILQ_INIT(&client->queue);
             if (pthread_create(&client->thread, NULL, thread_run_command, client) != 0) {
                 lwsl_err("pthread_create\n");
-                return 1;
+                return -1;
             }
 
             pthread_mutex_lock(&server->lock);
@@ -222,6 +224,13 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_RECEIVE:
             data = (char *) in;
             char command = data[0];
+
+            // check auth
+            if (server->credential != NULL && !client->authenticated && command != JSON_DATA) {
+                lwsl_notice("websocket authentication failed\n");
+                return -1;
+            }
+
             switch (command) {
                 case INPUT:
                     if (write(client->pty, data + 1, len - 1) < len - 1) {
@@ -245,6 +254,22 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                             lwsl_err("ioctl TIOCSWINSZ: %d (%s)\n", errno, strerror(errno));
                         }
                         t_free(size);
+                    }
+                    break;
+                case JSON_DATA:
+                    if (server->credential == NULL)
+                        break;
+                    {
+                        json_object *obj = json_tokener_parse(data);
+                        struct json_object *o = NULL;
+                        if (json_object_object_get_ex(obj, "AuthToken", &o)) {
+                            const char *token = json_object_get_string(o);
+                            if (strcmp(token, server->credential)) {
+                                lwsl_notice("websocket authentication failed with token: %s\n", token);
+                                return -1;
+                            }
+                        }
+                        client->authenticated = true;
                     }
                     break;
                 default:

@@ -36,8 +36,7 @@ t_malloc(size_t size) {
 }
 
 void t_free(void *p) {
-    if (p)
-        free(p);
+    free(p);
 }
 
 void *

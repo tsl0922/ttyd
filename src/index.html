@@ -571,6 +571,7 @@
             "Ch6PdwAAAGyWjFW4yScjaWa2mGcofHxWxewKALglWBpLUvwwk+UOh5eNGyUOs1/EF+pZr+ud5Ozo"+"GwYdAABg2p52LiSgAY/ZVlOmilEgHn6G3OcwYjzI7vOj1t6xsx4S3lBY96EUQBF6AIBAmPYH4PoG"+"YCoJAADWe+OZJZi7/x76/yH7Lzf9M5XzRKnFPmveMsilQHwVAAAAAKB3LQD8PCIAAADga0QujBLy"+"wzeJ4a6Z/ERVBAUlAEDqvoM7BQBAuAguzFqILtmjH3Kd4wfKobnOhA3z85qWoRPm9hwoOHoDAAlC"+"bwDAA56FHAuXflHo3fe2ttG9XUDeA9YmYCBQ0oPr/1QC8IvuCwAAApbUAQCK22MmE3O78VAbHQT9"+"PIPNoT9zNc3l2Oe7TAVLANBufT8MAQAAAGzT4PS8AQAAoELGHb2uaCwwEv1EWhFriUkbAaAZ27/f"+"VZnTZXbWz3BwWpjUaMZKRj7dZ0J//gUeTdpVEwAAZOFsNxKAjQSgA+ABPoY8Jj5y2wje81jsXc/1"+
             "TOQWTDYZBmAkNDiqVwuA2NJ9AQAAEBKAt9Vrsfs/2N19MO91S9rd8EHTZHnzC5MYmfQEACy/FBcA"+"AADA5c4gi4z8RANs/m6FNXVo9DV46JG1BBDukqlw/Va5G7QbuGVSI+2aZaoLXJrdVj2zlC9Z5QEA"+"EFz/5QzgVZwAAAAA/oXcxyC6WfTu+09Ve/c766J4VTAGUFmA51+VANKi/QPoPwYgYAkA715OH4S0"+"s5KDHvj99MMq8TPFc3roKZnGOoT1bmIhVgc7XAMBAAAAAMAW1VbQw3gapzOpJd+Kd2fc4iSO62fJ"+"v9+movui1wUNPAj059N3OVxzk4gV73PmE8FIA2F5mRq37Evc76vLXfF4rD5UJJAw46hW6LZCb5sN"+"Ldx+kzMCAAB+hfy95+965ZCLP7B3/VlTHCvDEKtQhTm4KiCgAEAbrfbWTPssAAAAXpee1tVrozYY"+"n41wD1aeYtkKfswN5/SXPO0JDnhO/4laUortv/s412fybe/nONdncoCHnBVliu0CQGBWlPY/5Kwo"+
             "m2L/kruPM6Q7oz4tvDQy+bZ3HzOi+gNHA4DZEgA="+"");lib.resource.add("hterm/concat/date","text/plain","Sat, 10 Sep 2016 08:51:57 +0000"+"");lib.resource.add("hterm/changelog/version","text/plain","1.58"+"");lib.resource.add("hterm/changelog/date","text/plain","2016-07-12"+"");lib.resource.add("hterm/git/HEAD","text/plain","49f8641dd055afaad9eadcd8553804eff0dd2637"+"");</script>
+    <script src="auth_token.js"></script>
     <script type="text/javascript">
         (function() {
             var httpsEnabled = window.location.protocol == "https:";
@@ -580,12 +581,12 @@
 
             var openWs = function() {
                 var ws = new WebSocket(url, protocols);
-
-                var term;
-
-                var pingTimer;
+                var term, pingTimer;
 
                 ws.onopen = function(event) {
+                    if (typeof tty_auth_token !== 'undefined') {
+                        ws.send(JSON.stringify({AuthToken: tty_auth_token}));
+                    }
                     pingTimer = setInterval(sendPing, 30 * 1000, ws);
 
                     hterm.defaultStorage = new lib.Storage.Local();

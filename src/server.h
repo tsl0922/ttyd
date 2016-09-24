@@ -18,9 +18,7 @@
 #include <assert.h>
 
 #ifdef __APPLE__
-
 #include <util.h>
-
 #else
 #include <pty.h>
 #endif
@@ -43,6 +41,7 @@ struct pty_data {
 struct tty_client {
     bool exit;
     bool initialized;
+    bool authenticated;
     char hostname[100];
     char address[50];
 
