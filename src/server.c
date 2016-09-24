@@ -1,5 +1,7 @@
 #include "server.h"
 
+#define TTYD_VERSION "1.0.0"
+
 volatile bool force_exit = false;
 struct lws_context *context;
 struct tty_server *server;
@@ -32,6 +34,7 @@ static const struct option options[] = {
         {"ssl-key", required_argument, NULL, 'K'},
         {"ssl-ca", required_argument, NULL, 'A'},
         {"debug", required_argument, NULL, 'd'},
+        {"version", no_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, 0, 0}
 };
@@ -39,51 +42,62 @@ static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:d:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-            "USAGE: ttyd [options] <command> [<arguments...>]\n\n"
-            "OPTIONS:\n"
-            "\t--port, -p              Port to listen (default: 7681)\n"
-            "\t--interface, -i         Network interface to bind\n"
-            "\t--credential, -c        Credential for Basic Authentication (format: username:password)\n"
-            "\t--uid, -u               User id to run with\n"
-            "\t--gid, -g               Group id to run with\n"
-            "\t--signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
-            "\t--reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
-            "\t--ssl, -S               Enable ssl\n"
-            "\t--ssl-cert, -C          Ssl certificate file path\n"
-            "\t--ssl-key, -K           Ssl key file path\n"
-            "\t--ssl-ca, -A            Ssl ca file path\n"
-            "\t--debug, -d             Set log level (0-9, default: 7)\n"
-            "\t--help, -h              Print this text and exit\n"
+                    "USAGE:\n"
+                    "    ttyd [options] <command> [<arguments...>]\n\n"
+                    "VERSION:\n"
+                    "    %s\n\n"
+                    "OPTIONS:\n"
+                    "    --port, -p              Port to listen (default: 7681)\n"
+                    "    --interface, -i         Network interface to bind\n"
+                    "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
+                    "    --uid, -u               User id to run with\n"
+                    "    --gid, -g               Group id to run with\n"
+                    "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
+                    "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
+                    "    --ssl, -S               Enable ssl\n"
+                    "    --ssl-cert, -C          Ssl certificate file path\n"
+                    "    --ssl-key, -K           Ssl key file path\n"
+                    "    --ssl-ca, -A            Ssl ca file path\n"
+                    "    --debug, -d             Set log level (0-9, default: 7)\n"
+                    "    --version, -v           Print the version and exit\n"
+                    "    --help, -h              Print this text and exit\n",
+            TTYD_VERSION
     );
 }
 
 struct tty_server *
-tty_server_new(int argc, char **argv) {
+tty_server_new(int argc, char **argv, int start) {
     struct tty_server *ts;
     size_t cmd_len = 0;
 
     ts = t_malloc(sizeof(struct tty_server));
+
+    memset(ts, 0, sizeof(struct tty_server));
     LIST_INIT(&ts->clients);
     ts->client_count = 0;
-    ts->credential = NULL;
     ts->reconnect = 10;
     ts->sig_code = SIGHUP;
     ts->sig_name = strdup("SIGHUP");
-    ts->argv = t_malloc(sizeof(char *) * (argc + 1));
-    for (int i = 0; i < argc; i++) {
-        ts->argv[i] = strdup(argv[i]);
+    if (start == argc)
+        return ts;
+
+    int cmd_argc = argc - start;
+    char **cmd_argv = &argv[start];
+    ts->argv = t_malloc(sizeof(char *) * (cmd_argc + 1));
+    for (int i = 0; i < cmd_argc; i++) {
+        ts->argv[i] = strdup(cmd_argv[i]);
         cmd_len += strlen(ts->argv[i]);
-        if (i != argc - 1) {
+        if (i != cmd_argc - 1) {
             cmd_len++; // for space
         }
     }
-    ts->argv[argc] = NULL;
+    ts->argv[cmd_argc] = NULL;
 
     ts->command = t_malloc(cmd_len);
     char *ptr = ts->command;
-    for (int i = 0; i < argc; i++) {
+    for (int i = 0; i < cmd_argc; i++) {
         ptr = stpcpy(ptr, ts->argv[i]);
-        if (i != argc - 1) {
+        if (i != cmd_argc - 1) {
             sprintf(ptr++, "%c", ' ');
         }
     }
@@ -118,7 +132,7 @@ calc_command_start(int argc, char **argv) {
     while (getopt_long(argc_copy, argv_copy, opt_string, options, NULL) != -1)
         ;
 
-    int start = -1;
+    int start = argc;
     if (optind < argc) {
         char *command = argv_copy[optind];
         for (int i = 0; i < argc; i++) {
@@ -144,17 +158,13 @@ calc_command_start(int argc, char **argv) {
 
 int
 main(int argc, char **argv) {
-    if (argc == 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+    if (argc == 1) {
         print_help();
-        exit(0);
+        return 0;
     }
-    // parse command line
+
     int start = calc_command_start(argc, argv);
-    if (start < 0) {
-        fprintf(stderr, "ttyd: missing start command\n");
-        exit(1);
-    }
-    server = tty_server_new(argc - start, &argv[start]);
+    server = tty_server_new(argc, argv, start);
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -184,11 +194,18 @@ main(int argc, char **argv) {
             case 'h':
                 print_help();
                 return 0;
+            case 'v':
+                printf("ttyd version %s\n", TTYD_VERSION);
+                return 0;
             case 'd':
                 debug_level = atoi(optarg);
                 break;
             case 'p':
                 info.port = atoi(optarg);
+                if (info.port < 0) {
+                    fprintf(stderr, "ttyd: invalid port: %s\n", optarg);
+                    return -1;
+                }
                 break;
             case 'i':
                 strncpy(iface, optarg, sizeof(iface));
@@ -220,6 +237,10 @@ main(int argc, char **argv) {
                 break;
             case 'r':
                 server->reconnect = atoi(optarg);
+                if (server->reconnect <= 0) {
+                    fprintf(stderr, "ttyd: invalid reconnect: %s\n", optarg);
+                    return -1;
+                }
                 break;
             case 'S':
                 ssl = true;
@@ -240,8 +261,13 @@ main(int argc, char **argv) {
                 break;
             default:
                 print_help();
-                exit(1);
+                return -1;
         }
+    }
+
+    if (server->command == NULL || strlen(server->command) == 0) {
+        fprintf(stderr, "ttyd: missing start command\n");
+        return -1;
     }
 
     lws_set_log_level(debug_level, NULL);
@@ -276,7 +302,7 @@ main(int argc, char **argv) {
     context = lws_create_context(&info);
     if (context == NULL) {
         lwsl_err("libwebsockets init failed\n");
-        return -1;
+        return 1;
     }
 
     lwsl_notice("TTY configuration:\n");
