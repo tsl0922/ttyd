@@ -1,17 +1,17 @@
-# ttyd - terminal emulator for the web [![Build Status](https://travis-ci.org/tsl0922/ttyd.svg?branch=master)](https://travis-ci.org/tsl0922/ttyd)
+# ttyd - Share your terminal over the web [![Build Status](https://travis-ci.org/tsl0922/ttyd.svg?branch=master)](https://travis-ci.org/tsl0922/ttyd)
 
-ttyd is a simple command line tool for sharing terminal over the web, inspired by [GoTTY](https://github.com/yudai/gotty).
+ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY](https://github.com/yudai/gotty).
 
 ![screenshot](screenshot.gif)
 
-> **WARNING:** ttyd is still under heavily development, so features may be incomplete or expected to have bugs.
+# Features
 
-# Requirements
-
-- [CMake](https://cmake.org)
-- [OpenSSL](https://www.openssl.org)
-- [JSON-C](https://github.com/json-c/json-c)
-- [Libwebsockets](https://libwebsockets.org)
+- Build on [libwebsockets](https://libwebsockets.org) with C for speed
+- Full terminal emulation based on [hterm](https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm)
+- SSL support based on [OpenSSL](https://www.openssl.org)
+- Run any custom command with options
+- Basic authentication support
+- Cross platform: macOS, Linux, OpenWrt
 
 # Installation
 
@@ -21,7 +21,7 @@ Install with [homebrew](http://brew.sh):
 
 ```bash
 brew tap tsl0922/ttyd
-brew install ttyd --HEAD
+brew install ttyd
 ```
 
 ### For Linux users
@@ -41,7 +41,11 @@ make && make install
 ```
 ttyd is a tool for sharing terminal over the web
 
-USAGE: ttyd [options] <command> [<arguments...>]
+USAGE:
+    ttyd [options] <command> [<arguments...>]
+
+VERSION:
+    1.0.0
 
 OPTIONS:
     --port, -p              Port to listen (default: 7681)
@@ -56,6 +60,7 @@ OPTIONS:
     --ssl-key, -K           Ssl key file path
     --ssl-ca, -A            Ssl ca file path
     --debug, -d             Set log level (0-9, default: 7)
+    --version, -v           Print the version and exit
     --help, -h              Print this text and exit
 ```
 
