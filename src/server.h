@@ -1,4 +1,8 @@
+#ifdef HAVE_LWS_CONFIG_H
 #include "lws_config.h"
+#endif
+
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,12 +71,6 @@ struct tty_server {
     char *sig_name;                           // human readable signal string
     pthread_mutex_t lock;
 };
-
-extern char *
-base64_encode(const unsigned char *buffer, size_t length);
-
-extern int
-check_auth(struct lws *wsi);
 
 extern int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);

@@ -1,16 +1,25 @@
-cmake_minimum_required(VERSION 3.2)
-set(CMAKE_C_STANDARD 99)
+cmake_minimum_required(VERSION 2.8)
+
+# enable C99 mode
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+else ()
+    set (CMAKE_C_STANDARD 99)
+endif()
 
 project(ttyd)
 
+set(LIBWEBSOCKETS_MIN_VERSION 1.6)
 set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
 
 find_package(OpenSSL REQUIRED)
-find_package(Libwebsockets QUIET)
+find_package(Libwebsockets ${LIBWEBSOCKETS_MIN_VERSION} QUIET)
 
-# libwebsockets 1.x doesn't support cmake
+find_package(PkgConfig)
+
+# try to find libwebsockets with pkg-config
 if (NOT Libwebsockets_DIR)
-    pkg_check_modules(Libwebsockets REQUIRED libwebsockets)
+    pkg_check_modules(Libwebsockets REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
     find_path(LIBWEBSOCKETS_INCLUDE_DIR libwebsockets.h
             HINTS ${LIBWEBSOCKETS_INCLUDEDIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
     find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets libwebsockets
@@ -20,7 +29,9 @@ if (NOT Libwebsockets_DIR)
     mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIR LIBWEBSOCKETS_LIBRARIES)
 endif()
 
-find_package(PkgConfig)
+include(CheckIncludeFile)
+check_include_file(lws_config.h HAVE_LWS_CONFIG_H)
+
 pkg_check_modules(PC_JSON-C REQUIRED json-c)
 find_path(JSON-C_INCLUDE_DIR json.h
         HINTS ${PC_JSON-C_INCLUDEDIR} ${PC_JSON-C_INCLUDE_DIRS} PATH_SUFFIXES json-c json)

@@ -26,7 +26,7 @@ brew install ttyd
 
 ### For Linux users
 
-Ubuntu as example:
+Ubuntu 16.04 as example:
 
 ```bash
 sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
@@ -35,6 +35,9 @@ cd ttyd && mkdir build && cd build
 cmake ..
 make && make install
 ```
+
+> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04,
+> since they have outdated `libwebsockets-dev` package ([Issue #6](https://github.com/tsl0922/ttyd/issues/6)).
 
 # Usage
 
