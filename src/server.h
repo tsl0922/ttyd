@@ -50,6 +50,8 @@ struct tty_client {
     char address[50];
 
     struct lws *wsi;
+    char *buffer;
+    size_t len;
     int pid;
     int pty;
     pthread_t thread;

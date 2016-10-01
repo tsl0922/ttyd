@@ -82,6 +82,10 @@ tty_client_destroy(struct tty_client *client) {
     lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
     close(client->pty);
 
+    // free the buffer
+    if (client->buffer != NULL)
+        t_free(client->buffer);
+
     // remove from clients list
     pthread_mutex_lock(&server->lock);
     LIST_REMOVE(client, list);
@@ -152,7 +156,6 @@ int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
              void *user, void *in, size_t len) {
     struct tty_client *client = (struct tty_client *) user;
-    char *data;
     struct winsize *size;
 
     switch (reason) {
@@ -161,6 +164,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->initialized = false;
             client->authenticated = false;
             client->wsi = wsi;
+            client->buffer = NULL;
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
                                    client->hostname, sizeof(client->hostname),
                                    client->address, sizeof(client->address));
@@ -222,8 +226,18 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_RECEIVE:
-            data = (char *) in;
-            char command = data[0];
+            if (client->buffer == NULL) {
+                client->buffer = t_malloc(len + 1);
+                client->len = len;
+                memcpy(client->buffer, in, len);
+            } else {
+                client->buffer = t_realloc(client->buffer, client->len + len + 1);
+                memcpy(client->buffer + client->len, in, len);
+                client->len += len;
+            }
+            client->buffer[client->len] = '\0';
+
+            const char command = client->buffer[0];
 
             // check auth
             if (server->credential != NULL && !client->authenticated && command != JSON_DATA) {
@@ -231,9 +245,14 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 return -1;
             }
 
+            // check if there are more fragmented messages
+            if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
+                return 0;
+            }
+
             switch (command) {
                 case INPUT:
-                    if (write(client->pty, data + 1, len - 1) < len - 1) {
+                    if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
                         lwsl_err("write INPUT to pty\n");
                         return -1;
                     }
@@ -248,7 +267,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     }
                     break;
                 case RESIZE_TERMINAL:
-                    size = parse_window_size(data + 1);
+                    size = parse_window_size(client->buffer + 1);
                     if (size != NULL) {
                         if (ioctl(client->pty, TIOCSWINSZ, size) == -1) {
                             lwsl_err("ioctl TIOCSWINSZ: %d (%s)\n", errno, strerror(errno));
@@ -260,7 +279,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     if (server->credential == NULL)
                         break;
                     {
-                        json_object *obj = json_tokener_parse(data);
+                        json_object *obj = json_tokener_parse(client->buffer);
                         struct json_object *o = NULL;
                         if (json_object_object_get_ex(obj, "AuthToken", &o)) {
                             const char *token = json_object_get_string(o);
@@ -275,6 +294,11 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 default:
                     lwsl_notice("unknown message type: %c\n", command);
                     break;
+            }
+
+            if (client->buffer != NULL) {
+                t_free(client->buffer);
+                client->buffer = NULL;
             }
             break;
 
