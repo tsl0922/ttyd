@@ -11,11 +11,11 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 - SSL support based on [OpenSSL](https://www.openssl.org)
 - Run any custom command with options
 - Basic authentication support
-- Cross platform: macOS, Linux, OpenWrt
+- Cross platform: macOS, Linux, [OpenWrt](https://openwrt.org)/[LEDE](https://www.lede-project.org)
 
 # Installation
 
-### For Mac OS X users
+## Install on macOS
 
 Install with [homebrew](http://brew.sh):
 
@@ -24,7 +24,7 @@ brew tap tsl0922/ttyd
 brew install ttyd
 ```
 
-### For Linux users
+## Install on Linux
 
 Ubuntu 16.04 as example:
 
@@ -36,8 +36,15 @@ cmake ..
 make && make install
 ```
 
-> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04,
-> since they have outdated `libwebsockets-dev` package ([Issue #6](https://github.com/tsl0922/ttyd/issues/6)).
+> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated `libwebsockets-dev` package ([Issue #6](https://github.com/tsl0922/ttyd/issues/6)).
+
+## Install on OpenWrt/LEDE
+
+```bash
+opkg install ttyd
+```
+
+> **NOTE:** This may only works for [LEDE](https://www.lede-project.org) snapshots currently, if the install command fails, compile it yourself.
 
 # Usage
 
