@@ -18,11 +18,11 @@ addons:
       - libssl-dev
 install:
   - echo $TRAVIS_OS_NAME
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; brew unlink cmake json-c; brew install cmake openssl json-c; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install cmake openssl json-c; export CMAKE_OPTIONS="-DOPENSSL_ROOT_DIR=/usr/local/opt/openssl"; fi
   - echo "Compiling libwebsockets-$LIBWEBSOCKETS_VERSION from source..."
-  - pushd /tmp; curl -sLo- https://github.com/warmcat/libwebsockets/archive/$LIBWEBSOCKETS_VERSION.tar.gz | tar xz; cd libwebsockets-*; cmake .; make && sudo make install; popd
+  - pushd /tmp; curl -sLo- https://github.com/warmcat/libwebsockets/archive/$LIBWEBSOCKETS_VERSION.tar.gz | tar xz; cd libwebsockets-*; cmake $CMAKE_OPTIONS .; make && sudo make install; popd
 script:
   - echo $TRAVIS_OS_NAME
   - cmake --version
   - mkdir build && cd build
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl .. && make; else cmake .. && make; fi
+  - cmake $CMAKE_OPTIONS .. && make

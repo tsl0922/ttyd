@@ -272,6 +272,12 @@ main(int argc, char **argv) {
 
     lws_set_log_level(debug_level, NULL);
 
+#if LWS_LIBRARY_VERSION_MAJOR == 2
+    char server_hdr[128] = "";
+    sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
+    info.server_string = server_hdr;
+#endif
+
     if (strlen(iface) > 0)
         info.iface = iface;
     if (ssl) {
