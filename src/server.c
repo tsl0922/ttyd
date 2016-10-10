@@ -33,13 +33,14 @@ static const struct option options[] = {
         {"ssl-cert", required_argument, NULL, 'C'},
         {"ssl-key", required_argument, NULL, 'K'},
         {"ssl-ca", required_argument, NULL, 'A'},
+        {"readonly", no_argument, NULL, 'R'},
         {"once", no_argument, NULL, 'o'},
         {"debug", required_argument, NULL, 'd'},
         {"version", no_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, 0, 0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:od:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rod:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -55,6 +56,7 @@ void print_help() {
                     "    --gid, -g               Group id to run with\n"
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
+                    "    --readonly, -R          Do not allow clients to write to the TTY\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
                     "    --ssl, -S               Enable ssl\n"
                     "    --ssl-cert, -C          Ssl certificate file path\n"
@@ -202,6 +204,9 @@ main(int argc, char **argv) {
             case 'd':
                 debug_level = atoi(optarg);
                 break;
+            case 'R':
+                server->readonly = true;
+                break;
             case 'o':
                 server->once = true;
                 break;
@@ -322,6 +327,8 @@ main(int argc, char **argv) {
     lwsl_notice("  start command: %s\n", server->command);
     lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+    if (server->readonly)
+        lwsl_notice("  readonly: true\n");
     if (server->once)
         lwsl_notice("  once: true\n");
 

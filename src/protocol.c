@@ -258,6 +258,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             switch (command) {
                 case INPUT:
+                    if (server->readonly)
+                        return 0;
                     if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
                         lwsl_err("write INPUT to pty\n");
                         return -1;
