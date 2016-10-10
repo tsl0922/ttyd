@@ -34,13 +34,14 @@ static const struct option options[] = {
         {"ssl-key", required_argument, NULL, 'K'},
         {"ssl-ca", required_argument, NULL, 'A'},
         {"readonly", no_argument, NULL, 'R'},
+        {"check-origin", no_argument, NULL, 'O'},
         {"once", no_argument, NULL, 'o'},
         {"debug", required_argument, NULL, 'd'},
         {"version", no_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, 0, 0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rod:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:ROod:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -57,6 +58,7 @@ void print_help() {
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
+                    "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
                     "    --ssl, -S               Enable ssl\n"
                     "    --ssl-cert, -C          Ssl certificate file path\n"
@@ -207,6 +209,9 @@ main(int argc, char **argv) {
             case 'R':
                 server->readonly = true;
                 break;
+            case 'O':
+                server->check_origin = true;
+                break;
             case 'o':
                 server->once = true;
                 break;
@@ -327,6 +332,8 @@ main(int argc, char **argv) {
     lwsl_notice("  start command: %s\n", server->command);
     lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+    if (server->check_origin)
+        lwsl_notice("  check origin: true\n");
     if (server->readonly)
         lwsl_notice("  readonly: true\n");
     if (server->once)

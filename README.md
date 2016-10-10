@@ -66,6 +66,7 @@ OPTIONS:
     --signal, -s            Signal to send to the command when exit it (default: SIGHUP)
     --reconnect, -r         Time to reconnect for the client in seconds (default: 10)
     --readonly, -R          Do not allow clients to write to the TTY
+    --check-origin, -O      Do not allow websocket connection from different origin
     --once, -o              Accept only one client and exit on disconnection
     --ssl, -S               Enable ssl
     --ssl-cert, -C          Ssl certificate file path

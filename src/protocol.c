@@ -63,6 +63,29 @@ parse_window_size(const char *json) {
     return size;
 }
 
+bool
+check_host_origin(struct lws *wsi) {
+    int origin_length = lws_hdr_total_length(wsi, WSI_TOKEN_ORIGIN);
+    char buf[origin_length + 1];
+    memset(buf, 0, sizeof(buf));
+    int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_ORIGIN);
+    if (len > 0) {
+        const char *prot, *address, *path;
+        int port;
+        if (lws_parse_uri(buf, &prot, &address, &port, &path))
+            return false;
+        sprintf(buf, "%s:%d", address, port);
+        int host_length = lws_hdr_total_length(wsi, WSI_TOKEN_HOST);
+        if (host_length != strlen(buf))
+            return false;
+        char host_buf[host_length + 1];
+        memset(host_buf, 0, sizeof(host_buf));
+        len = lws_hdr_copy(wsi, host_buf, sizeof(host_buf), WSI_TOKEN_HOST);
+        return len > 0 && strcasecmp(buf, host_buf) == 0;
+    }
+    return false;
+}
+
 void
 tty_client_destroy(struct tty_client *client) {
     if (client->exit || client->pid <= 0)
@@ -162,6 +185,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
             if (server->once && server->client_count > 0) {
                 lwsl_notice("refuse to serve new client due to the --once option.\n");
+                return -1;
+            }
+            if (server->check_origin && !check_host_origin(wsi)) {
+                lwsl_notice("refuse to serve new client from different origin due to the --check-origin option.\n");
                 return -1;
             }
             break;

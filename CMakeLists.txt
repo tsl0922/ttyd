@@ -9,7 +9,7 @@ endif()
 
 project(ttyd)
 
-set(LIBWEBSOCKETS_MIN_VERSION 1.6)
+set(LIBWEBSOCKETS_MIN_VERSION 1.7.0)
 set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
 
 find_package(OpenSSL REQUIRED)
