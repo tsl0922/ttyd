@@ -65,6 +65,7 @@ OPTIONS:
     --gid, -g               Group id to run with
     --signal, -s            Signal to send to the command when exit it (default: SIGHUP)
     --reconnect, -r         Time to reconnect for the client in seconds (default: 10)
+    --once, -o              Accept only one client and exit on disconnection
     --ssl, -S               Enable ssl
     --ssl-cert, -C          Ssl certificate file path
     --ssl-key, -K           Ssl key file path

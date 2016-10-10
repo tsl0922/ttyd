@@ -600,20 +600,17 @@
                         var io = term.io.push();
 
                         io.onVTKeystroke = function(str) {
-                            ws.send("0" + str);
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send("0" + str);
+                            }
                         };
 
                         io.sendString = io.onVTKeystroke;
 
                         io.onTerminalResize = function(columns, rows) {
-                            ws.send(
-                                    "2" + JSON.stringify(
-                                            {
-                                                columns: columns,
-                                                rows: rows,
-                                            }
-                                    )
-                            )
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send("2" + JSON.stringify({columns: columns, rows: rows}));
+                            }
                         };
 
                         term.installKeyboard();
@@ -635,7 +632,7 @@
                             term.setWindowTitle(data);
                             break;
                         case '3':
-                            preferences = JSON.parse(data);
+                            var preferences = JSON.parse(data);
                             Object.keys(preferences).forEach(function(key) {
                                 console.log("Setting " + key + ": " +  preferences[key]);
                                 term.getPrefs().set(key, preferences[key]);
@@ -651,12 +648,29 @@
                 ws.onclose = function(event) {
                     if (term) {
                         term.uninstallKeyboard();
-                        term.io.showOverlay("Connection Closed", null);
+                        setTimeout(function(){
+                            term.io.showOverlay("Connection Closed", null);
+                        }, 300);
                     }
                     clearInterval(pingTimer);
                     if (autoReconnect > 0) {
                         setTimeout(openWs, autoReconnect * 1000);
                     }
+                };
+
+                ws.onerror = function(event) {
+                    var errorNode = document.createElement('div');
+                    errorNode.style.cssText = [
+                            "color: red",
+                            "font-size: x-large",
+                            "opacity: 0.75",
+                            "text-align: center",
+                            "margin: 1em",
+                            "padding: 0.2em",
+                            "border: 0.1em dotted #ccc"
+                    ].join(";");
+                    errorNode.textContent = "Websocket handshake failed!";
+                    document.getElementById("terminal").appendChild(errorNode);
                 };
             };
 

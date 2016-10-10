@@ -65,7 +65,7 @@ parse_window_size(const char *json) {
 
 void
 tty_client_destroy(struct tty_client *client) {
-    if (client->exit)
+    if (client->exit || client->pid <= 0)
         return;
 
     // stop event loop
@@ -159,6 +159,12 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
     struct winsize *size;
 
     switch (reason) {
+        case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
+            if (server->once && server->client_count > 0) {
+                lwsl_notice("refuse to serve new client due to the --once option.\n");
+                return -1;
+            }
+            break;
         case LWS_CALLBACK_ESTABLISHED:
             client->exit = false;
             client->initialized = false;
@@ -305,6 +311,12 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_CLOSED:
             tty_client_destroy(client);
             lwsl_notice("client disconnected from %s (%s), total: %d\n", client->hostname, client->address, server->client_count);
+            if (server->once && server->client_count == 0) {
+                lwsl_notice("exiting due to the --once option.\n");
+                force_exit = true;
+                lws_cancel_service(context);
+                exit(0);
+            }
             break;
 
         default:

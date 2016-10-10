@@ -71,6 +71,7 @@ struct tty_server {
     char **argv;                              // command with arguments
     int sig_code;                             // close signal
     char *sig_name;                           // human readable signal string
+    bool once;                                // whether accept only one client and exit on disconnection
     pthread_mutex_t lock;
 };
 
