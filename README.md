@@ -55,7 +55,7 @@ USAGE:
     ttyd [options] <command> [<arguments...>]
 
 VERSION:
-    1.0.0
+    1.1.0
 
 OPTIONS:
     --port, -p              Port to listen (default: 7681)
