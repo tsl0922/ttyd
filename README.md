@@ -20,7 +20,6 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 Install with [homebrew](http://brew.sh):
 
 ```bash
-brew tap tsl0922/ttyd
 brew install ttyd
 ```
 
