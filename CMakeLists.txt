@@ -13,21 +13,18 @@ set(LIBWEBSOCKETS_MIN_VERSION 1.7.0)
 set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
 
 find_package(OpenSSL REQUIRED)
-find_package(Libwebsockets ${LIBWEBSOCKETS_MIN_VERSION} QUIET)
 
 find_package(PkgConfig)
 
 # try to find libwebsockets with pkg-config
-if (NOT Libwebsockets_DIR OR ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD") # pkg-config is needed on FreeBSD
-    pkg_check_modules(Libwebsockets REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
-    find_path(LIBWEBSOCKETS_INCLUDE_DIR libwebsockets.h
-            HINTS ${LIBWEBSOCKETS_INCLUDEDIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
-    find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets libwebsockets
-            HINTS ${LIBWEBSOCKETS_LIBDIR} ${LIBWEBSOCKETS_LIBRARY_DIRS})
-    include(FindPackageHandleStandardArgs)
-    find_package_handle_standard_args(LIBWEBSOCKETS DEFAULT_MSG LIBWEBSOCKETS_LIBRARIES LIBWEBSOCKETS_INCLUDE_DIR)
-    mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIR LIBWEBSOCKETS_LIBRARIES)
-endif()
+pkg_check_modules(Libwebsockets REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
+find_path(LIBWEBSOCKETS_INCLUDE_DIR libwebsockets.h
+        HINTS ${LIBWEBSOCKETS_INCLUDEDIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
+find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets libwebsockets
+        HINTS ${LIBWEBSOCKETS_LIBDIR} ${LIBWEBSOCKETS_LIBRARY_DIRS})
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(LIBWEBSOCKETS DEFAULT_MSG LIBWEBSOCKETS_LIBRARIES LIBWEBSOCKETS_INCLUDE_DIR)
+mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIR LIBWEBSOCKETS_LIBRARIES)
 
 include(CheckIncludeFile)
 check_include_file(lws_config.h HAVE_LWS_CONFIG_H)
