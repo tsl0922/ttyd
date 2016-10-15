@@ -5,6 +5,7 @@ os:
 env:
   - LIBWEBSOCKETS_VERSION=v1.7.9
   - LIBWEBSOCKETS_VERSION=v2.0.3
+  - LIBWEBSOCKETS_VERSION=v2.1.0
 sudo: required
 dist: trusty
 branches:
