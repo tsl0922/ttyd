@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 # enable C99 mode
-if (CMAKE_VERSION VERSION_LESS "3.1")
+if(CMAKE_VERSION VERSION_LESS "3.1")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-else ()
+else()
     set (CMAKE_C_STANDARD 99)
 endif()
 
@@ -17,8 +17,9 @@ find_package(Libwebsockets ${LIBWEBSOCKETS_MIN_VERSION} QUIET)
 
 find_package(PkgConfig)
 
-# try to find libwebsockets with pkg-config
-if (NOT Libwebsockets_DIR)
+if(Libwebsockets_FOUND)
+    set(LIBWEBSOCKETS_INCLUDE_DIR ${LIBWEBSOCKETS_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
+else() # try to find libwebsockets with pkg-config
     pkg_check_modules(Libwebsockets REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
     find_path(LIBWEBSOCKETS_INCLUDE_DIR libwebsockets.h
             HINTS ${LIBWEBSOCKETS_INCLUDEDIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
