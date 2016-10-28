@@ -1,13 +1,10 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
-
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/buffer.h>
 
 // http://web.mit.edu/~svalente/src/kill/kill.c
 #ifdef __linux__
@@ -78,24 +75,29 @@ get_sig(const char *sig_name) {
     return -1;
 }
 
+// https://github.com/darkk/redsocks/blob/master/base64.c
 char *
 base64_encode(const unsigned char *buffer, size_t length) {
-    BIO *bio, *b64;
-    BUF_MEM *bptr;
+    static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    char *ret, *dst;
+    unsigned i_bits = 0;
+    int i_shift = 0;
+    int bytes_remaining = (int) length;
 
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new(BIO_s_mem());
-    b64 = BIO_push(b64, bio);
+    ret = dst = t_malloc((size_t) (((length + 2) / 3 * 4) + 1));
+    while (bytes_remaining) {
+        i_bits = (i_bits << 8) + *buffer++;
+        bytes_remaining--;
+        i_shift += 8;
 
-    BIO_write(b64, buffer, (int) length);
-    BIO_flush(b64);
-    BIO_get_mem_ptr(b64, &bptr);
+        do {
+            *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
+            i_shift -= 6;
+        } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
+    }
+    while ((dst - ret) & 3)
+        *dst++ = '=';
+    *dst = '\0';
 
-    char *data = (char *) t_malloc(bptr->length);
-    memcpy(data, bptr->data, bptr->length - 1);
-    data[bptr->length - 1] = 0;
-
-    BIO_free_all(b64);
-
-    return data;
+    return ret;
 }
