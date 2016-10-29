@@ -34,7 +34,11 @@ send_initial_message(struct lws *wsi) {
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }
-
+    // client preferences
+    n = sprintf((char *) p, "%c%s", SET_PREFERENCES, server->prefs_json);
+    if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
+        return -1;
+    }
     return 0;
 }
 
@@ -54,6 +58,7 @@ parse_window_size(const char *json) {
         return NULL;
     }
     rows = json_object_get_int(o);
+    json_object_put(obj);
 
     struct winsize *size = t_malloc(sizeof(struct winsize));
     memset(size, 0, sizeof(struct winsize));

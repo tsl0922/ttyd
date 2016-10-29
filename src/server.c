@@ -41,7 +41,7 @@ static const struct option options[] = {
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, 0, 0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:ROod:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rt:Ood:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -58,6 +58,7 @@ void print_help() {
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
+                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
                     "    --ssl, -S               Enable ssl\n"
@@ -193,6 +194,8 @@ main(int argc, char **argv) {
     char key_path[1024] = "";
     char ca_path[1024] = "";
 
+    struct json_object *client_prefs = json_object_new_object();
+
     // parse command line options
     int c;
     while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
@@ -274,11 +277,28 @@ main(int argc, char **argv) {
                 break;
             case '?':
                 break;
+            case 't':
+                optind--;
+                for(;optind < start && *argv[optind] != '-'; optind++){
+                    char *option =strdup(optarg);
+                    char *key = strsep(&option, "=");
+                    if (key == NULL) {
+                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
+                        return -1;
+                    }
+                    char *value = strsep(&option, "=");
+                    t_free(option);
+                    struct json_object *obj = json_tokener_parse(value);
+                    json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
+                }
+                break;
             default:
                 print_help();
                 return -1;
         }
     }
+    server->prefs_json = strdup(json_object_to_json_string(client_prefs));
+    json_object_put(client_prefs);
 
     if (server->command == NULL || strlen(server->command) == 0) {
         fprintf(stderr, "ttyd: missing start command\n");
@@ -360,6 +380,7 @@ main(int argc, char **argv) {
     if (server->credential != NULL)
         t_free(server->credential);
     t_free(server->command);
+    t_free(server->prefs_json);
     int i = 0;
     do {
         t_free(server->argv[i++]);
