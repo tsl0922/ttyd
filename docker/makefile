@@ -12,7 +12,7 @@ recommend: update
 		;
 
 .PHONY: software-properties
-oftware-properties: apt-update
+software-properties: apt-update
 	apt-get install -y software-properties-common python-software-properties
 	make apt-update
 
@@ -23,5 +23,5 @@ golang: software-properties
 
 .PHONY: httpserver
 httpserver: software-properties
-	$(eval addr ?= "0:8080")
-	python -m SimpleHTTPServer "$addr"
+	$(eval addr ?= 8080)
+	python -m SimpleHTTPServer "${addr}"

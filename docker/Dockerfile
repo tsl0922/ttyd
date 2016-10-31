@@ -14,6 +14,7 @@ RUN apt-get update && \
     cmake .. && make && make install && \
     rm -rf /tmp/ttyd && \
     mkdir /root/init/ && \
+    apt-get install -y wget curl && \
     cp /Makefile /root/init/
 
 ENV USER admin
@@ -30,3 +31,5 @@ EXPOSE 8084
 EXPOSE 8085
 
 ENTRYPOINT ["/entry.sh"]
+
+CMD ["bash"]
