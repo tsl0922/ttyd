@@ -6,4 +6,4 @@ if [ "${INITSH}" != "" ]; then
     /root/init/init.sh
 fi
 
-ttyd --credential "${USER}":"${PASSWORD}"
+ttyd --credential "${USER}":"${PASSWORD}" bash
