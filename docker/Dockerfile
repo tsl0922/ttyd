@@ -8,7 +8,6 @@ WORKDIR /root/
 
 RUN apt-get update && \
     apt-get install -y cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev && \
-    rm -rf /var/lib/apt/lists/* && \
     git clone --depth=1 https://github.com/MrLYC/ttyd.git /tmp/ttyd && \
     cd /tmp/ttyd && mkdir build && cd build && \
     cmake .. && make && make install && \
