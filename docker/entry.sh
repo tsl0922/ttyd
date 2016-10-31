@@ -1,10 +1,20 @@
 #!/bin/bash
 
-if [ "${INITSH}" != "" ]; then
-    wget "${INITSH}" -O /root/init/init.sh
-    chmod +x /root/init/init.sh
-    cd /root/init && /root/init/init.sh
-fi
+init_env() {
+    if [ "${INITSH}" != "" ]; then
+        cd /root/init
+        wget "${INITSH}" -O init.sh
+        chmod +x init.sh
+        ./init.sh
+    fi
+}
 
-cd /root/
-ttyd --port "${PORT}" --credential "${USER}":"${PASSWORD}" $@
+
+init_env >/tmp/init_env.log 2>&1 &
+
+ttyd \
+    --reconnect "${RECONNECT}" \
+    --port "${PORT}" \
+    --credential "${USER}":"${PASSWORD}" \
+    ${TTYDOP} \
+    $@
