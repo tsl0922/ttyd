@@ -6,4 +6,5 @@ if [ "${INITSH}" != "" ]; then
     cd /root/init && /root/init/init.sh
 fi
 
+cd /root/
 ttyd --credential "${USER}":"${PASSWORD}" $@
