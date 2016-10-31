@@ -1,10 +1,10 @@
 FROM ubuntu:16.04
 MAINTAINER lyc <imyikong@gmail.com>
 
-WORKDIR /root/
-
 ADD entry.sh /entry.sh
 ADD Makefile /Makefile
+
+WORKDIR /root/
 
 RUN apt-get update && \
     apt-get install -y cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev && \
@@ -15,7 +15,6 @@ RUN apt-get update && \
     rm -rf /tmp/ttyd && \
     mkdir /root/init/ && \
     cp /Makefile /root/init/
-
 
 ENV USER admin
 ENV PASSWORD admin
