@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 MAINTAINER lyc <imyikong@gmail.com>
 
 ADD entry.sh /entry.sh
-ADD Makefile /Makefile
+ADD makefile /Makefile
 
 WORKDIR /root/
 
