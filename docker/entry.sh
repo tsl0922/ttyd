@@ -7,4 +7,4 @@ if [ "${INITSH}" != "" ]; then
 fi
 
 cd /root/
-ttyd --credential "${USER}":"${PASSWORD}" $@
+ttyd --port "${PORT}" --credential "${USER}":"${PASSWORD}" $@
