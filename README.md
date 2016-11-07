@@ -1,23 +1,23 @@
 # ttyd - Share your terminal over the web [![Build Status](https://travis-ci.org/tsl0922/ttyd.svg?branch=master)](https://travis-ci.org/tsl0922/ttyd)
 
-ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY](https://github.com/yudai/gotty).
+ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY][1].
 
 ![screenshot](screenshot.gif)
 
 # Features
 
-- Build on [libwebsockets](https://libwebsockets.org) with C for speed
-- Full terminal emulation based on [hterm](https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm)
-- SSL support based on [OpenSSL](https://www.openssl.org)
+- Built on top of [Libwebsockets][2] with C for speed
+- Full terminal emulation based on [Xterm.js][3] with CJK and IME support
+- SSL support based on [OpenSSL][4]
 - Run any custom command with options
-- Basic authentication support
-- Cross platform: macOS, Linux, [OpenWrt](https://openwrt.org)/[LEDE](https://www.lede-project.org)
+- Basic authentication support and many other custom options
+- Cross platform: macOS, Linux, [OpenWrt][5]/[LEDE][6]
 
 # Installation
 
 ## Install on macOS
 
-Install with [homebrew](http://brew.sh):
+Install with [homebrew][7]:
 
 ```bash
 brew install ttyd
@@ -35,7 +35,7 @@ cmake ..
 make && make install
 ```
 
-> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated `libwebsockets-dev` package ([Issue #6](https://github.com/tsl0922/ttyd/issues/6)).
+> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated `libwebsockets-dev` package ([Issue #6][9]).
 
 ## Install on OpenWrt/LEDE
 
@@ -43,7 +43,7 @@ make && make install
 opkg install ttyd
 ```
 
-> **NOTE:** This may only works for [LEDE](https://www.lede-project.org) snapshots currently, if the install command fails, compile it yourself.
+> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, compile it yourself.
 
 # Usage
 
@@ -57,7 +57,7 @@ VERSION:
     1.1.0
 
 OPTIONS:
-    --port, -p              Port to listen (default: 7681)
+    --port, -p              Port to listen (default: 7681, use `0` for random port)
     --interface, -i         Network interface to bind
     --credential, -c        Credential for Basic Authentication (format: username:password)
     --uid, -u               User id to run with
@@ -88,5 +88,16 @@ Then open <http://localhost:7681>, now you can see and control the `bash` consol
 
 # Credits
 
-- [GoTTY](https://github.com/yudai/gotty): ttyd is a port of GoTTY to `C` language.
-- [hterm](https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm): ttyd uses hterm to run a terminal emulator on the web.
+- [GoTTY][1]: ttyd is a port of GoTTY to `C` language.
+- [Libwebsockets][2]: used to build the websocket server.
+- [Xterm.js][3]: used to run the terminal emulator on the web, former: [hterm][8].
+
+  [1]: https://github.com/yudai/gotty
+  [2]: https://libwebsockets.org
+  [3]: https://github.com/sourcelair/xterm.js
+  [4]: https://www.openssl.org
+  [5]: https://openwrt.org
+  [6]: https://www.lede-project.org
+  [7]: http://brew.sh
+  [8]: https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm
+  [9]: https://github.com/tsl0922/ttyd/issues/6

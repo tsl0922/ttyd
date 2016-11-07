@@ -1,0 +1,20 @@
+{
+  "name": "ttyd",
+  "version": "1.1.0",
+  "description": "Share your terminal over the web",
+  "main": "js/app.js",
+  "repository": {
+    "url": "git@github.com:tsl0922/ttyd.git",
+    "type": "git"
+  },
+  "author": "Shuanglei Tao <tsl0922@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "gulp"
+  },
+  "dependencies": {
+    "gulp": "^3.9.1",
+    "gulp-inline-source": "^3.0.0",
+    "xterm": "^2.1.0"
+  }
+}
