@@ -1,0 +1,45 @@
+body, #terminal-container {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	margin: 0px;
+	font-size:15px;
+	font-variant-ligatures: none;
+	-webkit-font-smoothing: antialiased;
+	background-color: #101010;
+}
+
+.terminal {
+    background-color: #101010;
+    color: #f0f0f0;
+    font-family: "DejaVu Sans Mono","Everson Mono",FreeMono,Menlo,Terminal,monospace;
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.terminal .xterm-viewport {
+    background-color: #101010;
+    overflow-x: hidden;
+}
+
+.terminal .terminal-cursor {
+    background-color: #f0f0f0;
+    color: #101010;
+    opacity: .7;
+}
+
+.terminal:not(.focus) .terminal-cursor {
+    outline: 1px solid #f0f0f0;
+}
+
+@keyframes blink-cursor {
+    0% {
+        background-color: #f0f0f0;
+        color: #101010;
+    }
+    50% {
+        background-color: transparent;
+        color: #f0f0f0;
+    }
+}

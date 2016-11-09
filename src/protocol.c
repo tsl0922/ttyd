@@ -49,12 +49,12 @@ parse_window_size(const char *json) {
     struct json_object *o = NULL;
 
     if (!json_object_object_get_ex(obj, "columns", &o)) {
-        lwsl_err("columns field not exists!");
+        lwsl_err("columns field not exists!\n");
         return NULL;
     }
     columns = json_object_get_int(o);
     if (!json_object_object_get_ex(obj, "rows", &o)) {
-        lwsl_err("rows field not exists!");
+        lwsl_err("rows field not exists!\n");
         return NULL;
     }
     rows = json_object_get_int(o);
