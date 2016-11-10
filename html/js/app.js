@@ -4,12 +4,13 @@
         url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname + 'ws',
         protocols = ["tty"],
         autoReconnect = -1,
-        term, pingTimer;
+        term, pingTimer, wsError;
 
     var openWs = function() {
         var ws = new WebSocket(url, protocols);
 
         ws.onopen = function(event) {
+            wsError = false;
             if (typeof tty_auth_token !== 'undefined') {
                 ws.send(JSON.stringify({AuthToken: tty_auth_token}));
             }
@@ -76,7 +77,9 @@
             if (term) {
                 term.off('data');
                 term.off('resize');
-                term.showOverlay("Connection Closed", null);
+                if (!wsError) {
+                    term.showOverlay("Connection Closed", null);
+                }
             }
             clearInterval(pingTimer);
             if (autoReconnect > 0) {
@@ -85,19 +88,8 @@
         };
 
         ws.onerror = function(event) {
-            var errorNode = document.createElement('div');
-            errorNode.style.cssText = [
-                "color: red",
-                "background-color: white",
-                "font-size: x-large",
-                "opacity: 0.75",
-                "text-align: center",
-                "margin: 1em",
-                "padding: 0.2em",
-                "border: 0.1em dotted #ccc"
-            ].join(";");
-            errorNode.textContent = "Websocket handshake failed!";
-            terminalContainer.insertBefore(errorNode, terminalContainer.firstChild);
+            wsError = true;
+            term.showOverlay("Websocket handshake failed", null);
         };
     };
 
@@ -106,4 +98,4 @@
     };
 
     openWs();
-})()
+})();

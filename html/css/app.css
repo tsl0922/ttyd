@@ -1,21 +1,26 @@
 body, #terminal-container {
-	position: absolute;
-	height: 100%;
-	width: 100%;
-	margin: 0px;
-	font-size:15px;
-	font-variant-ligatures: none;
-	-webkit-font-smoothing: antialiased;
-	background-color: #101010;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size:15px;
+    font-variant-ligatures: none;
+    -webkit-font-smoothing: antialiased;
+    background-color: #101010;
 }
 
 .terminal {
     background-color: #101010;
     color: #f0f0f0;
     font-family: "DejaVu Sans Mono","Everson Mono",FreeMono,Menlo,Terminal,monospace;
-    border: 0;
-    height: 100%;
-    width: 100%;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: auto;
 }
 
 .terminal .xterm-viewport {
