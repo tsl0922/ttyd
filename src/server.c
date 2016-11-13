@@ -1,6 +1,6 @@
 #include "server.h"
 
-#define TTYD_VERSION "1.1.0"
+#define TTYD_VERSION "1.2.0"
 
 volatile bool force_exit = false;
 struct lws_context *context;
@@ -50,7 +50,7 @@ void print_help() {
                     "VERSION:\n"
                     "    %s\n\n"
                     "OPTIONS:\n"
-                    "    --port, -p              Port to listen (default: 7681)\n"
+                    "    --port, -p              Port to listen (default: 7681, use `0` for random port)\n"
                     "    --interface, -i         Network interface to bind\n"
                     "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
                     "    --uid, -u               User id to run with\n"
