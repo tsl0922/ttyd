@@ -7,11 +7,11 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 # Features
 
 - Built on top of [Libwebsockets][2] with C for speed
-- Full terminal emulation based on [Xterm.js][3] with CJK and IME support
+- Fully-featured terminal based on [Xterm.js][3] with CJK (*Chinese, Japanese, Korean*) and IME support
 - SSL support based on [OpenSSL][4]
 - Run any custom command with options
 - Basic authentication support and many other custom options
-- Cross platform: macOS, Linux, [OpenWrt][5]/[LEDE][6]
+- Cross platform: macOS, Linux, FreeBSD, [OpenWrt][5]/[LEDE][6]
 
 # Installation
 
@@ -47,6 +47,8 @@ opkg install ttyd
 
 # Usage
 
+## Command-line Options
+
 ```
 ttyd is a tool for sharing terminal over the web
 
@@ -77,20 +79,33 @@ OPTIONS:
     --help, -h              Print this text and exit
 ```
 
-ttyd starts web server at port `7681` by default, the `command` will be started with `arguments` as options. For example, run:
+## Example Usage
+
+ttyd starts web server at port `7681` by default, you can use the `-p` option to change it, the `command` will be started with `arguments` as options. For example, run:
 
 ```bash
-ttyd bash
+ttyd -p 8080 bash -x
 ```
-Then open <http://localhost:7681>, now you can see and control the `bash` console on your web broswer! :tada: 
+Then open <http://localhost:8080> with a broswer, you will get a bash shell with debug mode enabled.
 
-> **TIP:** You may replace `bash` with `login` to get a login prompt first.
+**More Examples:**
+
+- If you want to login with your system accounts on the web broswer, run `ttyd login`.
+- You can even run a none shell command like vim, try: `ttyd vim`, the web broswer will show you a vim editor.
+- Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
+
+## Docker and ttyd
+
+Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
+
+- Sharing single docker container with multiple clients: `docker run -it --rm -p 7681:7681 tsl0922/ttyd`.
+- Creating new docker container for each client: `ttyd docker run -it --rm ubuntu`.
 
 # Credits
 
-- [GoTTY][1]: ttyd is a port of GoTTY to `C` language.
-- [Libwebsockets][2]: used to build the websocket server.
-- [Xterm.js][3]: used to run the terminal emulator on the web, former: [hterm][8].
+- [GoTTY][1]: ttyd is a port of GoTTY to `C` language with many improvements.
+- [Libwebsockets][2]: is used to build the websocket server.
+- [Xterm.js][3]: is used to run the terminal emulator on the web, [hterm][8] is used previously.
 
   [1]: https://github.com/yudai/gotty
   [2]: https://libwebsockets.org
