@@ -43,7 +43,7 @@ make && make install
 opkg install ttyd
 ```
 
-> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, compile it yourself.
+> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, [compile it yourself](openwrt).
 
 # Usage
 
