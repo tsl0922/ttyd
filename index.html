@@ -12,52 +12,49 @@
   <body class="hack dark">
     <a href="https://github.com/tsl0922/ttyd" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#fff; color:#151513; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
     <div class="main container">
-      <h1>ttyd - Share your terminal over the web</h1> 
-      <p>ttyd is a simple command-line tool for sharing terminal over the web, inspired by <a href="https://github.com/yudai/gotty">GoTTY</a>.</p> 
-      <p><img src="./screenshot.gif" alt="screenshot" style="max-width:100%;" /></p> 
+      <h1>ttyd - Share your terminal over the web</h1>
+      <p>ttyd is a simple command-line tool for sharing terminal over the web, inspired by <a href="https://github.com/yudai/gotty">GoTTY</a>.</p>
+      <p><img src="./screenshot.gif" alt="screenshot" style="max-width:100%;" /></p>
       <h1>Features</h1>
-      <ul> 
-        <li>Build on <a href="https://libwebsockets.org">libwebsockets</a> with C for speed</li> 
-        <li>Full terminal emulation based on <a href="https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm">hterm</a></li> 
-        <li>SSL support based on <a href="https://www.openssl.org">OpenSSL</a></li> 
-        <li>Run any custom command with options</li> 
-        <li>Basic authentication support</li> 
-        <li>Cross platform: macOS, Linux, <a href="https://openwrt.org">OpenWrt</a>/<a href="https://www.lede-project.org">LEDE</a></li> 
-      </ul> 
-      <h1>Installation</h1> 
-      <h2>Install on macOS</h2> 
-      <p>Install with <a href="http://brew.sh">homebrew</a>:</p> 
-      <div class="highlight highlight-source-shell">
-        <pre><code class="language-bash">brew install ttyd</code></pre>
-      </div> 
-      <h2>Install on Linux</h2> 
-      <p>Ubuntu 16.04 as example:</p> 
+      <ul>
+        <li>Built on top of <a href="https://libwebsockets.org">Libwebsockets</a> with C for speed</li>
+        <li>Fully-featured terminal based on <a href="https://github.com/sourcelair/xterm.js">Xterm.js</a> with CJK (<em>Chinese, Japanese, Korean</em>) and IME support</li>
+        <li>SSL support based on <a href="https://www.openssl.org">OpenSSL</a></li>
+        <li>Run any custom command with options</li>
+        <li>Basic authentication support and many other custom options</li>
+        <li>Cross platform: macOS, Linux, FreeBSD, <a href="https://openwrt.org">OpenWrt</a>/<a href="https://www.lede-project.org">LEDE</a></li>
+      </ul>
+      <h1>Installation</h1>
+      <h2>Install on macOS</h2>
+      <p>Install with <a href="http://brew.sh">homebrew</a>:</p>
+      <pre><code class="language-bash">brew install ttyd</code></pre>
+      <h2>Install on Linux</h2>
+      <p>Ubuntu 16.04 as example:</p>
       <pre><code class="language-bash">sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
 git clone https://github.com/tsl0922/ttyd.git
 cd ttyd && mkdir build && cd build
 cmake ..
 make && make install</code></pre>
-      <blockquote> 
+      <blockquote>
         <strong>NOTE:</strong> You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated <code>libwebsockets-dev</code> package (<a href="https://github.com/tsl0922/ttyd/issues/6">Issue #6</a>).
-      </blockquote> 
-      <h2>Install on OpenWrt/LEDE</h2> 
-      <div class="highlight highlight-source-shell">
-        <pre><code class="language-bash">opkg install ttyd</code></pre>
-      </div> 
-      <blockquote> 
-        <strong>NOTE:</strong> This may only works for <a href="https://www.lede-project.org">LEDE</a> snapshots currently, if the install command fails, compile it yourself.
-      </blockquote> 
-      <h1>Usage</h1> 
+      </blockquote>
+      <h2>Install on OpenWrt/LEDE</h2>
+      <pre><code class="language-bash">opkg install ttyd</code></pre>
+      <blockquote>
+        <strong>NOTE:</strong> This may only works for <a href="https://www.lede-project.org">LEDE</a> snapshots currently, if the install command fails, <a href="https://github.com/tsl0922/ttyd/tree/master/openwrt">compile it yourself</a>.
+      </blockquote>
+      <h1>Usage</h1>
+      <h2>Command-line Options</h2>
       <pre><code>ttyd is a tool for sharing terminal over the web
 
 USAGE:
-    ttyd [options] <command> [<arguments...>]
+    ttyd [options] &lt;command&gt; [&lt;arguments...&gt;]
 
 VERSION:
-    1.1.0
+    1.2.0
 
 OPTIONS:
-    --port, -p              Port to listen (default: 7681)
+    --port, -p              Port to listen (default: 7681, use `0` for random port)
     --interface, -i         Network interface to bind
     --credential, -c        Credential for Basic Authentication (format: username:password)
     --uid, -u               User id to run with
@@ -74,19 +71,31 @@ OPTIONS:
     --ssl-ca, -A            Ssl ca file path
     --debug, -d             Set log level (0-9, default: 7)
     --version, -v           Print the version and exit
-    --help, -h              Print this text and exit</code></pre> 
-      <p>ttyd starts web server at port <code>7681</code> by default, the <code>command</code> will be started with <code>arguments</code> as options. For example, run:</p> 
-      <pre><code class="language-bash">ttyd bash</code></pre>
-      <p>Then open <a href="http://localhost:7681">http://localhost:7681</a>, now you can see and control the <code>bash</code> console on your web broswer!</p> 
-      <blockquote> 
-        <strong>TIP:</strong> You may replace <code>bash</code> with <code>login</code> to get a login prompt first.
-      </blockquote> 
-      <h1>Credits</h1> 
-      <ul> 
-        <li><a href="https://github.com/yudai/gotty">GoTTY</a>: ttyd is a port of GoTTY to <code>C</code> language.</li> 
-        <li><a href="https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm">hterm</a>: ttyd uses hterm to run a terminal emulator on the web.</li> 
-      </ul> 
-      </div>
-      <script src="./prism.js" async></script>
+    --help, -h              Print this text and exit
+      </code></pre>
+      <h2>Example Usage</h2>
+      <p>ttyd starts web server at port <code>7681</code> by default, you can use the <code>-p</code> option to change it, the <code>command</code> will be started with <code>arguments</code> as options. For example, run:</p>
+      <pre><code class="language-bash">ttyd -p 8080 bash -x</code></pre>
+      <p>Then open <a href="http://localhost:8080">http://localhost:8080</a> with a broswer, you will get a bash shell with debug mode enabled.</p>
+      <p><strong>More Examples:</strong></p>
+      <ul>
+        <li>If you want to login with your system accounts on the web broswer, run <code>ttyd login</code>.</li>
+        <li>You can even run a none shell command like vim, try: <code>ttyd vim</code>, the web broswer will show you a vim editor.</li>
+        <li>Sharing single process with multiple clients: <code>ttyd tmux new -A -s ttyd vim</code>, run <code>tmux new -A -s ttyd</code> to connect to the tmux session from terminal.</li>
+      </ul>
+      <h2>Docker and ttyd</h2>
+      <p>Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:</p>
+      <ul>
+        <li>Sharing single docker container with multiple clients: <code>docker run -it --rm -p 7681:7681 tsl0922/ttyd</code>.</li>
+        <li>Creating new docker container for each client: <code>ttyd docker run -it --rm ubuntu</code>.</li>
+      </ul>
+      <h1>Credits</h1>
+      <ul>
+        <li><a href="https://github.com/yudai/gotty">GoTTY</a>: ttyd is a port of GoTTY to <code>C</code> language with many improvements.</li>
+        <li><a href="https://libwebsockets.org">Libwebsockets</a>: is used to build the websocket server.</li>
+        <li><a href="https://github.com/sourcelair/xterm.js">Xterm.js</a>: is used to run the terminal emulator on the web, <a href="https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm">hterm</a> is used previously.</li>
+      </ul>
+    </div>
+    <script src="./prism.js" async></script>
   </body>
 </html>
