@@ -1,5 +1,7 @@
 # ttyd - Share your terminal over the web [![Build Status](https://travis-ci.org/tsl0922/ttyd.svg?branch=master)](https://travis-ci.org/tsl0922/ttyd)
 
+[![Join the chat at https://gitter.im/ttyd/Lobby](https://badges.gitter.im/ttyd/Lobby.svg)](https://gitter.im/ttyd/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY][1].
 
 ![screenshot](screenshot.gif)
