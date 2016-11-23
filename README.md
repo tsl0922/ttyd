@@ -70,10 +70,10 @@ OPTIONS:
     --client-option, -t     Send option to client (format: key=value), repeat to add more options
     --check-origin, -O      Do not allow websocket connection from different origin
     --once, -o              Accept only one client and exit on disconnection
-    --ssl, -S               Enable ssl
-    --ssl-cert, -C          Ssl certificate file path
-    --ssl-key, -K           Ssl key file path
-    --ssl-ca, -A            Ssl ca file path
+    --ssl, -S               Enable SSL
+    --ssl-cert, -C          SSL certificate file path
+    --ssl-key, -K           SSL key file path
+    --ssl-ca, -A            SSL CA file path for client certificate verification
     --debug, -d             Set log level (0-9, default: 7)
     --version, -v           Print the version and exit
     --help, -h              Print this text and exit
@@ -93,6 +93,32 @@ Then open <http://localhost:8080> with a broswer, you will get a bash shell with
 - If you want to login with your system accounts on the web broswer, run `ttyd login`.
 - You can even run a none shell command like vim, try: `ttyd vim`, the web broswer will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
+
+## SSL how-to
+
+Generate SSL CA and self signed server/client certificates:
+
+```bash
+# CA
+openssl genrsa -out ca.key 4096
+openssl req -new -x509 -days 365 -key ca.key -out ca.crt
+# server certificate
+openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr
+openssl x509 -req -days 365 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
+# client certificate (the p12/pem format may be useful for some clients)
+openssl req -newkey rsa:2048 -nodes -keyout client.key -out client.csr
+openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt
+openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
+openssl pkcs12 -in client.p12 -out client.pem -clcerts
+```
+
+Then start ttyd:
+
+```bash
+ttyd --ssl --ssl-cert ca.crt --ssl-key ca.key --ssl-ca ca.crt bash
+```
+
+If you don't want to enable client certificate verification, remove the `--ssl-ca` option.
 
 ## Docker and ttyd
 

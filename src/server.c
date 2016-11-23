@@ -61,10 +61,10 @@ void print_help() {
                     "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
-                    "    --ssl, -S               Enable ssl\n"
-                    "    --ssl-cert, -C          Ssl certificate file path\n"
-                    "    --ssl-key, -K           Ssl key file path\n"
-                    "    --ssl-ca, -A            Ssl ca file path\n"
+                    "    --ssl, -S               Enable SSL\n"
+                    "    --ssl-cert, -C          SSL certificate file path\n"
+                    "    --ssl-key, -K           SSL key file path\n"
+                    "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
                     "    --debug, -d             Set log level (0-9, default: 7)\n"
                     "    --version, -v           Print the version and exit\n"
                     "    --help, -h              Print this text and exit\n",
@@ -332,6 +332,8 @@ main(int argc, char **argv) {
                 "!DHE-RSA-AES256-SHA256:"
                 "!AES256-GCM-SHA384:"
                 "!AES256-SHA256";
+        if (strlen(info.ssl_ca_filepath) > 0)
+            info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
 #if LWS_LIBRARY_VERSION_MAJOR == 2
         info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
 #endif

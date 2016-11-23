@@ -133,7 +133,7 @@ thread_run_command(void *args) {
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
 
     switch (pid) {
-        case -1: /* */
+        case -1: /* error */
             lwsl_err("forkpty\n");
             break;
         case 0: /* child */

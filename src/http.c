@@ -127,6 +127,15 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             if (lws_write_http(wsi, index_html, index_html_len) < 0)
                 return 1;
             goto try_to_reuse;
+        case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
+            if (!len || (SSL_get_verify_result((SSL*)in) != X509_V_OK)) {
+                int err = X509_STORE_CTX_get_error((X509_STORE_CTX*)user);
+                int depth = X509_STORE_CTX_get_error_depth((X509_STORE_CTX*)user);
+                const char* msg = X509_verify_cert_error_string(err);
+                lwsl_err("client certificate verification error: %s (%d), depth: %d\n", msg, err, depth);
+                return 1;
+            }
+            break;
         default:
             break;
     }
