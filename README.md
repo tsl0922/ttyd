@@ -99,7 +99,7 @@ Then open <http://localhost:8080> with a broswer, you will get a bash shell with
 Generate SSL CA and self signed server/client certificates:
 
 ```bash
-# CA
+# CA certificate (FQDN must be different from server/client)
 openssl genrsa -out ca.key 4096
 openssl req -new -x509 -days 365 -key ca.key -out ca.crt
 # server certificate
@@ -115,7 +115,12 @@ openssl pkcs12 -in client.p12 -out client.pem -clcerts
 Then start ttyd:
 
 ```bash
-ttyd --ssl --ssl-cert ca.crt --ssl-key ca.key --ssl-ca ca.crt bash
+ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
+```
+You may want to test the client certificate verification with `curl`:
+
+```bash
+curl --insecure --cert client.p12[:password] -v https://localhost:7681
 ```
 
 If you don't want to enable client certificate verification, remove the `--ssl-ca` option.
