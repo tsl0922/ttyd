@@ -22,6 +22,12 @@ const char *sys_signame[NSIG] = {
 };
 #endif
 
+#ifdef __CYGWIN__
+#define SIG_NAME(x) strsignal(x)
+#else
+#define SIG_NAME(x) sys_signame[x]
+#endif
+
 void *
 t_malloc(size_t size) {
     if (size == 0)
@@ -57,7 +63,7 @@ uppercase(char *str) {
 
 int
 get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
+    int n = sprintf(buf, "SIG%s", sig < NSIG ? SIG_NAME(sig) : "unknown");
     uppercase(buf);
     return n;
 }
@@ -68,7 +74,7 @@ get_sig(const char *sig_name) {
         return -1;
     }
     for (int sig = 1; sig < NSIG; sig++) {
-        const char *name = sys_signame[sig];
+        const char *name = SIG_NAME(sig);
         if (strcasecmp(name, sig_name + 3) == 0)
             return sig;
     }
