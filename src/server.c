@@ -22,24 +22,24 @@ static const struct lws_extension extensions[] = {
 
 // command line options
 static const struct option options[] = {
-        {"port", required_argument, NULL, 'p'},
-        {"interface", required_argument, NULL, 'i'},
-        {"credential", required_argument, NULL, 'c'},
-        {"uid", required_argument, NULL, 'u'},
-        {"gid", required_argument, NULL, 'g'},
-        {"signal", required_argument, NULL, 's'},
-        {"reconnect", required_argument, NULL, 'r'},
-        {"ssl", no_argument, NULL, 'S'},
-        {"ssl-cert", required_argument, NULL, 'C'},
-        {"ssl-key", required_argument, NULL, 'K'},
-        {"ssl-ca", required_argument, NULL, 'A'},
-        {"readonly", no_argument, NULL, 'R'},
-        {"check-origin", no_argument, NULL, 'O'},
-        {"once", no_argument, NULL, 'o'},
-        {"debug", required_argument, NULL, 'd'},
-        {"version", no_argument, NULL, 'v'},
-        {"help", no_argument, NULL, 'h'},
-        {NULL, 0, 0, 0}
+        {"port",         required_argument, NULL, 'p'},
+        {"interface",    required_argument, NULL, 'i'},
+        {"credential",   required_argument, NULL, 'c'},
+        {"uid",          required_argument, NULL, 'u'},
+        {"gid",          required_argument, NULL, 'g'},
+        {"signal",       required_argument, NULL, 's'},
+        {"reconnect",    required_argument, NULL, 'r'},
+        {"ssl",          no_argument,       NULL, 'S'},
+        {"ssl-cert",     required_argument, NULL, 'C'},
+        {"ssl-key",      required_argument, NULL, 'K'},
+        {"ssl-ca",       required_argument, NULL, 'A'},
+        {"readonly",     no_argument,       NULL, 'R'},
+        {"check-origin", no_argument,       NULL, 'O'},
+        {"once",         no_argument,       NULL, 'o'},
+        {"debug",        required_argument, NULL, 'd'},
+        {"version",      no_argument,       NULL, 'v'},
+        {"help",         no_argument,       NULL, 'h'},
+        {NULL, 0, 0,                              0}
 };
 static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rt:Ood:vh";
 
@@ -279,8 +279,8 @@ main(int argc, char **argv) {
                 break;
             case 't':
                 optind--;
-                for(;optind < start && *argv[optind] != '-'; optind++){
-                    char *option =strdup(optarg);
+                for (; optind < start && *argv[optind] != '-'; optind++) {
+                    char *option = strdup(optarg);
                     char *key = strsep(&option, "=");
                     if (key == NULL) {
                         fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);

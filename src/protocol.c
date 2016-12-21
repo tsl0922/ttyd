@@ -255,7 +255,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 t_free(frame->data);
                 t_free(frame);
 
-                if(lws_partial_buffered(wsi)){
+                if (lws_partial_buffered(wsi)) {
                     lws_callback_on_writable(wsi);
                     break;
                 }
