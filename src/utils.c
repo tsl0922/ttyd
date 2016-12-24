@@ -6,30 +6,8 @@
 #include <string.h>
 #include <signal.h>
 
-// http://web.mit.edu/~svalente/src/kill/kill.c
-#ifdef __linux__
-/*
- *  sys_signame -- an ordered list of signals.
- *  lifted from /usr/include/linux/signal.h
- *  this particular order is only correct for linux.
- *  this is _not_ portable.
- */
-const char *sys_signame[NSIG] = {
-    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "IOT",  "UNUSED",
-    "FPE",   "KILL", "USR1",  "SEGV", "USR2",  "PIPE", "ALRM", "TERM",
-    "STKFLT","CHLD", "CONT",  "STOP", "TSTP",  "TTIN", "TTOU", "IO",
-    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", NULL
-};
-#endif
-
-#ifdef __CYGWIN__
-#define SIG_NAME(x) strsignal(x)
-#else
-#define SIG_NAME(x) sys_signame[x]
-#endif
-
 void *
-t_malloc(size_t size) {
+xmalloc(size_t size) {
     if (size == 0)
         return NULL;
     void *p = malloc(size);
@@ -38,12 +16,8 @@ t_malloc(size_t size) {
     return p;
 }
 
-void t_free(void *p) {
-    free(p);
-}
-
 void *
-t_realloc(void *p, size_t size) {
+xrealloc(void *p, size_t size) {
     if ((size == 0) && (p == NULL))
         return NULL;
     p = realloc(p, size);
@@ -63,7 +37,7 @@ uppercase(char *str) {
 
 int
 get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? SIG_NAME(sig) : "unknown");
+    int n = sprintf(buf, "SIG%s", sig < NSIG ? strsignal(sig) : "unknown");
     uppercase(buf);
     return n;
 }
@@ -74,7 +48,7 @@ get_sig(const char *sig_name) {
         return -1;
     }
     for (int sig = 1; sig < NSIG; sig++) {
-        const char *name = SIG_NAME(sig);
+        const char *name = strsignal(sig);
         if (strcasecmp(name, sig_name + 3) == 0)
             return sig;
     }
@@ -90,7 +64,7 @@ base64_encode(const unsigned char *buffer, size_t length) {
     int i_shift = 0;
     int bytes_remaining = (int) length;
 
-    ret = dst = t_malloc((size_t) (((length + 2) / 3 * 4) + 1));
+    ret = dst = xmalloc((size_t) (((length + 2) / 3 * 4) + 1));
     while (bytes_remaining) {
         i_bits = (i_bits << 8) + *buffer++;
         bytes_remaining--;

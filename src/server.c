@@ -77,7 +77,7 @@ tty_server_new(int argc, char **argv, int start) {
     struct tty_server *ts;
     size_t cmd_len = 0;
 
-    ts = t_malloc(sizeof(struct tty_server));
+    ts = xmalloc(sizeof(struct tty_server));
 
     memset(ts, 0, sizeof(struct tty_server));
     LIST_INIT(&ts->clients);
@@ -90,7 +90,7 @@ tty_server_new(int argc, char **argv, int start) {
 
     int cmd_argc = argc - start;
     char **cmd_argv = &argv[start];
-    ts->argv = t_malloc(sizeof(char *) * (cmd_argc + 1));
+    ts->argv = xmalloc(sizeof(char *) * (cmd_argc + 1));
     for (int i = 0; i < cmd_argc; i++) {
         ts->argv[i] = strdup(cmd_argv[i]);
         cmd_len += strlen(ts->argv[i]);
@@ -100,7 +100,7 @@ tty_server_new(int argc, char **argv, int start) {
     }
     ts->argv[cmd_argc] = NULL;
 
-    ts->command = t_malloc(cmd_len);
+    ts->command = xmalloc(cmd_len);
     char *ptr = ts->command;
     for (int i = 0; i < cmd_argc; i++) {
         ptr = stpcpy(ptr, ts->argv[i]);
@@ -129,7 +129,7 @@ int
 calc_command_start(int argc, char **argv) {
     // make a copy of argc and argv
     int argc_copy = argc;
-    char **argv_copy = t_malloc(sizeof(char *) * argc);
+    char **argv_copy = xmalloc(sizeof(char *) * argc);
     for (int i = 0; i < argc; i++) {
         argv_copy[i] = strdup(argv[i]);
     }
@@ -152,9 +152,9 @@ calc_command_start(int argc, char **argv) {
 
     // free argv copy
     for (int i = 0; i < argc; i++) {
-        t_free(argv_copy[i]);
+        free(argv_copy[i]);
     }
-    t_free(argv_copy);
+    free(argv_copy);
 
     // reset for next use
     opterr = 1;
@@ -287,7 +287,7 @@ main(int argc, char **argv) {
                         return -1;
                     }
                     char *value = strsep(&option, "=");
-                    t_free(option);
+                    free(option);
                     struct json_object *obj = json_tokener_parse(value);
                     json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
                 }
@@ -380,16 +380,16 @@ main(int argc, char **argv) {
 
     // cleanup
     if (server->credential != NULL)
-        t_free(server->credential);
-    t_free(server->command);
-    t_free(server->prefs_json);
+        free(server->credential);
+    free(server->command);
+    free(server->prefs_json);
     int i = 0;
     do {
-        t_free(server->argv[i++]);
+        free(server->argv[i++]);
     } while (server->argv[i] != NULL);
-    t_free(server->argv);
-    t_free(server->sig_name);
-    t_free(server);
+    free(server->argv);
+    free(server->sig_name);
+    free(server);
 
     return 0;
 }

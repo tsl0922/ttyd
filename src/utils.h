@@ -3,15 +3,11 @@
 
 // malloc with NULL check
 void *
-t_malloc(size_t size);
-
-// free with NULL check
-void
-t_free(void *p);
+xmalloc(size_t size);
 
 // realloc with NULL check
 void *
-t_realloc(void *p, size_t size);
+xrealloc(void *p, size_t size);
 
 // Convert a string to upper case
 char *
