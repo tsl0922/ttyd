@@ -37,6 +37,13 @@ make && make install
 
 > **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated `libwebsockets-dev` package ([Issue #6][9]).
 
+## Install on Windows
+
+ttyd can be built with [MSYS2][10] on windows, [follow the instructions here](msys2).
+
+> **NOTE:** Native windows console programs may not work correctly due to [pty incompatibility issues][11].
+ As a workaround, you can use [winpty][12] as a wrapper to invoke the windows program, eg: `ttyd winpty cmd`.
+
 ## Install on OpenWrt/LEDE
 
 ```bash
@@ -147,3 +154,6 @@ Docker containers are jailed environments which are more secure, this is useful 
   [7]: http://brew.sh
   [8]: https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm
   [9]: https://github.com/tsl0922/ttyd/issues/6
+  [10]: http://msys2.github.io
+  [11]: https://github.com/mintty/mintty/blob/master/wiki/Tips.md#inputoutput-interaction-with-alien-programs
+  [12]: https://github.com/rprichard/winpty
