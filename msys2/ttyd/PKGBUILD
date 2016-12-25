@@ -4,10 +4,10 @@ pkgname="ttyd"
 pkgver=1.2.2
 pkgrel=1
 pkgdesc="A command-line tool for sharing terminal over the web"
-arch=('any')
+arch=('i686' 'x86_64')
 url="https://github.com/tsl0922/ttyd"
 license=('MIT')
-makedepends=('gcc' 'cmake' 'json-c' 'libwebsockets')
+makedepends=('gcc' 'cmake' 'json-c' 'libwebsockets' 'vim')
 source=(${pkgname}-${pkgver}.tar.gz::"https://github.com/tsl0922/${pkgname}/archive/${pkgver}.tar.gz")
 sha256sums=('6e85335c11df68e6401178269920a586bce7e66045bd0b225f6d2bc58356d105')
 

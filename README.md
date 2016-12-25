@@ -39,7 +39,7 @@ make && make install
 
 ## Install on Windows
 
-ttyd can be built with [MSYS2][10] on windows, [follow the instructions here](msys2).
+ttyd can be built with [MSYS2][10] on windows, The build instructions is [here][13].
 
 > **NOTE:** Native windows console programs may not work correctly due to [pty incompatibility issues][11].
  As a workaround, you can use [winpty][12] as a wrapper to invoke the windows program, eg: `ttyd winpty cmd`.
@@ -50,7 +50,7 @@ ttyd can be built with [MSYS2][10] on windows, [follow the instructions here](ms
 opkg install ttyd
 ```
 
-> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, [compile it yourself](openwrt).
+> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, [compile it yourself][14].
 
 # Usage
 
@@ -157,3 +157,5 @@ Docker containers are jailed environments which are more secure, this is useful 
   [10]: http://msys2.github.io
   [11]: https://github.com/mintty/mintty/blob/master/wiki/Tips.md#inputoutput-interaction-with-alien-programs
   [12]: https://github.com/rprichard/winpty
+  [13]: https://github.com/tsl0922/ttyd/tree/master/msys2
+  [14]: https://github.com/tsl0922/ttyd/tree/master/openwrt
