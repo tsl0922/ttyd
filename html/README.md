@@ -1,4 +1,4 @@
-### Build the inlined html
+# Building the inlined html
 
 install [Yarn](https://yarnpkg.com), then run the following commands:
 
