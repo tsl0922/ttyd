@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
 
-# enable C99 mode
-if(CMAKE_VERSION VERSION_LESS "3.1")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-else()
-    set (CMAKE_C_STANDARD 99)
-endif()
-
 project(ttyd)
+
+if(CMAKE_VERSION VERSION_LESS "3.1")
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    endif()
+else()
+    set(CMAKE_C_STANDARD 99)
+endif()
 
 set(LIBWEBSOCKETS_MIN_VERSION 1.7.0)
 set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
