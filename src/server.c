@@ -29,6 +29,7 @@ static const struct option options[] = {
         {"gid",          required_argument, NULL, 'g'},
         {"signal",       required_argument, NULL, 's'},
         {"reconnect",    required_argument, NULL, 'r'},
+        {"index",        required_argument, NULL, 'I'},
         {"ssl",          no_argument,       NULL, 'S'},
         {"ssl-cert",     required_argument, NULL, 'C'},
         {"ssl-key",      required_argument, NULL, 'K'},
@@ -41,7 +42,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL, 0, 0,                              0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rt:Ood:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Ood:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -61,6 +62,7 @@ void print_help() {
                     "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
+                    "    --index, -I             Custom index.html path\n"
                     "    --ssl, -S               Enable SSL\n"
                     "    --ssl-cert, -C          SSL certificate file path\n"
                     "    --ssl-key, -K           SSL key file path\n"
@@ -110,6 +112,25 @@ tty_server_new(int argc, char **argv, int start) {
     }
 
     return ts;
+}
+
+void
+tty_server_free(struct tty_server *ts) {
+    if (ts == NULL)
+        return;
+    if (ts->credential != NULL)
+        free(ts->credential);
+    if (ts->index != NULL)
+        free(ts->index);
+    free(ts->command);
+    free(ts->prefs_json);
+    int i = 0;
+    do {
+        free(ts->argv[i++]);
+    } while (ts->argv[i] != NULL);
+    free(ts->argv);
+    free(ts->sig_name);
+    free(ts);
 }
 
 void
@@ -260,6 +281,24 @@ main(int argc, char **argv) {
                     return -1;
                 }
                 break;
+            case 'I':
+                if (!strncmp(optarg, "~/", 2)) {
+                    const char* home = getenv("HOME");
+                    server->index = malloc(strlen(home) + strlen(optarg) - 1);
+                    sprintf(server->index, "%s%s", home, optarg + 1);
+                } else {
+                    server->index = strdup(optarg);
+                }
+                struct stat st;
+                if (stat(server->index, &st) == -1) {
+                    fprintf(stderr, "Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
+                    return -1;
+                }
+                if (S_ISDIR(st.st_mode)) {
+                    fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
+                    return -1;
+                }
+                break;
             case 'S':
                 ssl = true;
                 break;
@@ -360,6 +399,9 @@ main(int argc, char **argv) {
         lwsl_notice("  readonly: true\n");
     if (server->once)
         lwsl_notice("  once: true\n");
+    if (server->index != NULL) {
+        lwsl_notice("  custom index.html: %s\n", server->index);
+    }
 
     // libwebsockets main loop
     while (!force_exit) {
@@ -379,17 +421,7 @@ main(int argc, char **argv) {
     lws_context_destroy(context);
 
     // cleanup
-    if (server->credential != NULL)
-        free(server->credential);
-    free(server->command);
-    free(server->prefs_json);
-    int i = 0;
-    do {
-        free(server->argv[i++]);
-    } while (server->argv[i] != NULL);
-    free(server->argv);
-    free(server->sig_name);
-    free(server);
+    tty_server_free(server);
 
     return 0;
 }

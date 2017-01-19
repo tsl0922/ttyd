@@ -70,6 +70,7 @@ struct tty_server {
     char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential
     int reconnect;                            // reconnect timeout
+    char *index;                              // custom index.html
     char *command;                            // full command line
     char **argv;                              // command with arguments
     int sig_code;                             // close signal

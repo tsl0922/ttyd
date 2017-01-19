@@ -77,6 +77,7 @@ OPTIONS:
     --client-option, -t     Send option to client (format: key=value), repeat to add more options
     --check-origin, -O      Do not allow websocket connection from different origin
     --once, -o              Accept only one client and exit on disconnection
+    --index, -I             Custom index.html path
     --ssl, -S               Enable SSL
     --ssl-cert, -C          SSL certificate file path
     --ssl-key, -K           SSL key file path

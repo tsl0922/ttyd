@@ -197,6 +197,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 return -1;
             }
             break;
+
         case LWS_CALLBACK_ESTABLISHED:
             client->exit = false;
             client->initialized = false;

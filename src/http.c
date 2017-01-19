@@ -109,24 +109,28 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 goto try_to_reuse;
             }
 
-            if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
-                return 1;
-            if (lws_add_http_header_by_token(wsi,
-                                             WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                             (unsigned char *) "text/html",
-                                             9, &p, end))
-                return 1;
-            if (lws_add_http_header_content_length(wsi, (unsigned long) index_html_len, &p, end))
-                return 1;
-            if (lws_finalize_http_header(wsi, &p, end))
-                return 1;
-            if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0) {
-                return 1;
-            }
+            const char* content_type = "text/html";
+            if (server->index != NULL) {
+                int n = lws_serve_http_file(wsi, server->index, content_type, NULL, 0);
+                if (n < 0 || (n > 0 && lws_http_transaction_completed(wsi)))
+                    return 1;
+            } else {
+                if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
+                    return 1;
+                if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, (const unsigned char *) content_type, 9, &p, end))
+                    return 1;
+                if (lws_add_http_header_content_length(wsi, (unsigned long) index_html_len, &p, end))
+                    return 1;
+                if (lws_finalize_http_header(wsi, &p, end))
+                    return 1;
+                if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
+                    return 1;
 
-            if (lws_write_http(wsi, index_html, index_html_len) < 0)
-                return 1;
+                if (lws_write_http(wsi, index_html, index_html_len) < 0)
+                    return 1;
+            }
             goto try_to_reuse;
+
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
                 int err = X509_STORE_CTX_get_error((X509_STORE_CTX *) user);
@@ -136,6 +140,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 return 1;
             }
             break;
+
         default:
             break;
     }
