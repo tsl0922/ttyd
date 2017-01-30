@@ -67,7 +67,7 @@ VERSION:
 
 OPTIONS:
     --port, -p              Port to listen (default: 7681, use `0` for random port)
-    --interface, -i         Network interface to bind
+    --interface, -i         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
     --credential, -c        Credential for Basic Authentication (format: username:password)
     --uid, -u               User id to run with
     --gid, -g               Group id to run with

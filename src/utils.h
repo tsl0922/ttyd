@@ -13,6 +13,10 @@ xrealloc(void *p, size_t size);
 char *
 uppercase(char *str);
 
+// Check whether str ends with suffix
+bool
+endswith(const char * str, const char * suffix);
+
 // Get human readable signal string
 int
 get_sig_name(int sig, char *buf);

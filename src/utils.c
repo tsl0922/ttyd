@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
@@ -33,6 +34,13 @@ uppercase(char *str) {
         str[i] = (char) toupper(str[i]);
     } while (str[i++] != '\0');
     return str;
+}
+
+bool
+endswith(const char * str, const char * suffix) {
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+    return str_len > suffix_len && !strcmp(str + (str_len - suffix_len), suffix);
 }
 
 int

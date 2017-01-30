@@ -52,7 +52,7 @@ void print_help() {
                     "    %s\n\n"
                     "OPTIONS:\n"
                     "    --port, -p              Port to listen (default: 7681, use `0` for random port)\n"
-                    "    --interface, -i         Network interface to bind\n"
+                    "    --interface, -i         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
                     "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
                     "    --uid, -u               User id to run with\n"
                     "    --gid, -g               Group id to run with\n"
@@ -130,6 +130,13 @@ tty_server_free(struct tty_server *ts) {
     } while (ts->argv[i] != NULL);
     free(ts->argv);
     free(ts->sig_name);
+    if (ts->socket_path != NULL) {
+        struct stat st;
+        if (!stat(ts->socket_path, &st)) {
+            unlink(ts->socket_path);
+        }
+        free(ts->socket_path);
+    }
     free(ts);
 }
 
@@ -346,14 +353,24 @@ main(int argc, char **argv) {
 
     lws_set_log_level(debug_level, NULL);
 
-#if LWS_LIBRARY_VERSION_MAJOR == 2
+#if LWS_LIBRARY_VERSION_MAJOR >= 2
     char server_hdr[128] = "";
     sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
     info.server_string = server_hdr;
 #endif
 
-    if (strlen(iface) > 0)
+    if (strlen(iface) > 0) {
         info.iface = iface;
+        if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
+#ifdef LWS_USE_UNIX_SOCK
+            info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
+            server->socket_path = strdup(info.iface);
+#else
+            fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
+            return -1;
+#endif
+        }
+    }
     if (ssl) {
         info.ssl_cert_filepath = cert_path;
         info.ssl_private_key_filepath = key_path;
@@ -373,7 +390,7 @@ main(int argc, char **argv) {
                 "!AES256-SHA256";
         if (strlen(info.ssl_ca_filepath) > 0)
             info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
-#if LWS_LIBRARY_VERSION_MAJOR == 2
+#if LWS_LIBRARY_VERSION_MAJOR >= 2
         info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
 #endif
     }
