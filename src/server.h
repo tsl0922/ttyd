@@ -51,6 +51,8 @@ struct tty_client {
     bool authenticated;
     char hostname[100];
     char address[50];
+    int argc;
+    char **argv;
 
     struct lws *wsi;
     char *buffer;
@@ -70,6 +72,8 @@ struct tty_server {
     int client_count;                         // client count
     char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential
+    bool client_command;                      // command will be provided by clients
+    char **permitted_commands;                // list of permitted client commands
     int reconnect;                            // reconnect timeout
     char *index;                              // custom index.html
     char *command;                            // full command line

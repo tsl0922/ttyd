@@ -91,6 +91,76 @@ check_host_origin(struct lws *wsi) {
     return false;
 }
 
+/* Parse the request URI to retrieve client-specified URI parameters.
+The URI should be in the format: /path?command=<command>&arg1=<arg>&argN=<arg>
+*/
+int
+parse_client_command(struct lws *wsi, struct tty_client *client) {
+    char uri_buf[256];
+    const char *uri_ptr = NULL;
+    char *args[16];
+    char args_identifier[sizeof("argXX=")];
+    size_t i;
+
+    // Initialize client argc and argv
+    client->argc = 0;
+    client->argv = NULL;
+
+    // Parse command
+    uri_ptr = lws_get_urlarg_by_name (wsi, "command=", &uri_buf[0], 256);
+    if (uri_ptr == NULL) {
+        lwsl_err("No client command specified\n");
+        return -1;
+    }
+
+    // If a list of permitted commands has been specified, verify command is in it
+    if (server->permitted_commands) {
+        bool valid_command = false;
+        i = 0;
+        while (server->permitted_commands[i] != NULL) {
+            if (strncmp (uri_ptr, server->permitted_commands[i], strlen(server->permitted_commands[i])) == 0) {
+                args[0] = strdup (server->permitted_commands[i]);
+                client->argc++;
+                valid_command = true;
+            }
+            i++;
+        }
+
+        if (!valid_command) {
+            lwsl_err("Specified command not permitted\n");
+            return -1;
+        }
+    } else {
+        args[0] = strdup(uri_ptr);
+        client->argc++;
+    }
+
+    // Parse args
+    i = 1;
+    do {
+        snprintf(&args_identifier[0], sizeof("argXX="), "arg%d=", i);
+        uri_ptr = lws_get_urlarg_by_name (wsi, args_identifier, &uri_buf[0], 256);
+
+        if (uri_ptr != NULL) {
+            args[i] = strdup (uri_ptr);
+            client->argc++;
+        }
+
+        i++;
+    } while (uri_ptr != NULL);
+
+    // Allocate memory for client argv
+    client->argv = (char **)xmalloc (sizeof(char *) * (client->argc + 1)); // +1 for NULL at the end
+
+    // Set argv
+    for (i = 0; i < client->argc; i++) {
+        client->argv[i] = args[i];
+    }
+    client->argv[client->argc] = NULL;
+
+    return 0;
+}
+
 void
 tty_client_destroy(struct tty_client *client) {
     if (client->exit || client->pid <= 0)
@@ -113,6 +183,16 @@ tty_client_destroy(struct tty_client *client) {
     // free the buffer
     if (client->buffer != NULL)
         free(client->buffer);
+
+    // free args
+    if (client->argv != NULL) {
+        int i;
+        for (i = 0; i < client->argc; i++) {
+            free(client->argv[i]);
+        }
+
+        free(client->argv);
+    }
 
     // remove from clients list
     pthread_mutex_lock(&server->lock);
@@ -141,9 +221,16 @@ thread_run_command(void *args) {
                 perror("setenv");
                 exit(1);
             }
-            if (execvp(server->argv[0], server->argv) < 0) {
-                perror("execvp");
-                exit(1);
+            if (server->client_command) {
+                if (execvp(client->argv[0], client->argv) < 0) {
+                    perror("execvp");
+                    exit(1);
+                }
+            } else {
+                if (execvp(server->argv[0], server->argv) < 0) {
+                    perror("execvp");
+                    exit(1);
+                }
             }
             break;
         default: /* parent */
@@ -207,6 +294,13 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
                                    client->hostname, sizeof(client->hostname),
                                    client->address, sizeof(client->address));
+
+            if (server->client_command) {
+                if (parse_client_command(wsi, client) != 0) {
+                    return -1;
+                }
+            }
+
             STAILQ_INIT(&client->queue);
             if (pthread_create(&client->thread, NULL, thread_run_command, client) != 0) {
                 lwsl_err("pthread_create\n");

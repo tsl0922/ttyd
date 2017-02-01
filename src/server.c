@@ -22,27 +22,29 @@ static const struct lws_extension extensions[] = {
 
 // command line options
 static const struct option options[] = {
-        {"port",         required_argument, NULL, 'p'},
-        {"interface",    required_argument, NULL, 'i'},
-        {"credential",   required_argument, NULL, 'c'},
-        {"uid",          required_argument, NULL, 'u'},
-        {"gid",          required_argument, NULL, 'g'},
-        {"signal",       required_argument, NULL, 's'},
-        {"reconnect",    required_argument, NULL, 'r'},
-        {"index",        required_argument, NULL, 'I'},
-        {"ssl",          no_argument,       NULL, 'S'},
-        {"ssl-cert",     required_argument, NULL, 'C'},
-        {"ssl-key",      required_argument, NULL, 'K'},
-        {"ssl-ca",       required_argument, NULL, 'A'},
-        {"readonly",     no_argument,       NULL, 'R'},
-        {"check-origin", no_argument,       NULL, 'O'},
-        {"once",         no_argument,       NULL, 'o'},
-        {"debug",        required_argument, NULL, 'd'},
-        {"version",      no_argument,       NULL, 'v'},
-        {"help",         no_argument,       NULL, 'h'},
+        {"port",                 required_argument, NULL, 'p'},
+        {"interface",            required_argument, NULL, 'i'},
+        {"credential",           required_argument, NULL, 'c'},
+        {"client_command",       no_argument,       NULL, 'l'},
+        {"permitted_commands",   required_argument, NULL, 'P'},
+        {"uid",                  required_argument, NULL, 'u'},
+        {"gid",                  required_argument, NULL, 'g'},
+        {"signal",               required_argument, NULL, 's'},
+        {"reconnect",            required_argument, NULL, 'r'},
+        {"index",                required_argument, NULL, 'I'},
+        {"ssl",                  no_argument,       NULL, 'S'},
+        {"ssl-cert",             required_argument, NULL, 'C'},
+        {"ssl-key",              required_argument, NULL, 'K'},
+        {"ssl-ca",               required_argument, NULL, 'A'},
+        {"readonly",             no_argument,       NULL, 'R'},
+        {"check-origin",         no_argument,       NULL, 'O'},
+        {"once",                 no_argument,       NULL, 'o'},
+        {"debug",                required_argument, NULL, 'd'},
+        {"version",              no_argument,       NULL, 'v'},
+        {"help",                 no_argument,       NULL, 'h'},
         {NULL, 0, 0,                              0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Ood:vh";
+static const char *opt_string = "p:i:lP:c:u:g:s:r:I:aSC:K:A:Rt:Ood:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -51,25 +53,27 @@ void print_help() {
                     "VERSION:\n"
                     "    %s\n\n"
                     "OPTIONS:\n"
-                    "    --port, -p              Port to listen (default: 7681, use `0` for random port)\n"
-                    "    --interface, -i         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
-                    "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
-                    "    --uid, -u               User id to run with\n"
-                    "    --gid, -g               Group id to run with\n"
-                    "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
-                    "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
-                    "    --readonly, -R          Do not allow clients to write to the TTY\n"
-                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
-                    "    --check-origin, -O      Do not allow websocket connection from different origin\n"
-                    "    --once, -o              Accept only one client and exit on disconnection\n"
-                    "    --index, -I             Custom index.html path\n"
-                    "    --ssl, -S               Enable SSL\n"
-                    "    --ssl-cert, -C          SSL certificate file path\n"
-                    "    --ssl-key, -K           SSL key file path\n"
-                    "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
-                    "    --debug, -d             Set log level (0-9, default: 7)\n"
-                    "    --version, -v           Print the version and exit\n"
-                    "    --help, -h              Print this text and exit\n",
+                    "    --port, -p                  Port to listen (default: 7681, use `0` for random port)\n"
+                    "    --interface, -i             Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
+                    "    --credential, -c            Credential for Basic Authentication (format: username:password)\n"
+                    "    --client-command, -l        Clients will provide command\n"
+                    "    --permitted-commands, -P    Path to file containing list of permitted commands (in client-command mode)\n"
+                    "    --uid, -u                   User id to run with\n"
+                    "    --gid, -g                   Group id to run with\n"
+                    "    --signal, -s                Signal to send to the command when exit it (default: SIGHUP)\n"
+                    "    --reconnect, -r             Time to reconnect for the client in seconds (default: 10)\n"
+                    "    --readonly, -R              Do not allow clients to write to the TTY\n"
+                    "    --client-option, -t         Send option to client (format: key=value), repeat to add more options\n"
+                    "    --check-origin, -O          Do not allow websocket connection from different origin\n"
+                    "    --once, -o                  Accept only one client and exit on disconnection\n"
+                    "    --index, -I                 Custom index.html path\n"
+                    "    --ssl, -S                   Enable SSL\n"
+                    "    --ssl-cert, -C              SSL certificate file path\n"
+                    "    --ssl-key, -K               SSL key file path\n"
+                    "    --ssl-ca, -A                SSL CA file path for client certificate verification\n"
+                    "    --debug, -d                 Set log level (0-9, default: 7)\n"
+                    "    --version, -v               Print the version and exit\n"
+                    "    --help, -h                  Print this text and exit\n",
             TTYD_VERSION
     );
 }
@@ -122,13 +126,23 @@ tty_server_free(struct tty_server *ts) {
         free(ts->credential);
     if (ts->index != NULL)
         free(ts->index);
-    free(ts->command);
+    if (ts->command != NULL)
+        free(ts->command);
     free(ts->prefs_json);
-    int i = 0;
-    do {
-        free(ts->argv[i++]);
-    } while (ts->argv[i] != NULL);
-    free(ts->argv);
+    if (ts->argv) {
+        int i = 0;
+        do {
+            free(ts->argv[i++]);
+        } while (ts->argv[i] != NULL);
+        free(ts->argv);
+    }
+    if (ts->permitted_commands) {
+        int i = 0;
+        do {
+            free(ts->permitted_commands[i++]);
+        } while (ts->permitted_commands[i] != NULL);
+        free(ts->permitted_commands);
+    }
     free(ts->sig_name);
     if (ts->socket_path != NULL) {
         struct stat st;
@@ -189,6 +203,53 @@ calc_command_start(int argc, char **argv) {
     optind = 0;
 
     return start;
+}
+
+int
+parse_permitted_commands(char *path) {
+    size_t size = 5;
+    char buf[256];
+    int c = 0;
+
+    // Open file
+    FILE *fp = fopen(path, "r");
+    if (!fp) {
+        fprintf(stderr, "failed to open: %s\n", path);
+        return -1;
+    }
+
+    server->permitted_commands = (char **)xmalloc (size * (sizeof (char *)));
+    if (server->permitted_commands == NULL) {
+        fprintf(stderr, "failed to allocate list of permitted commands\n");
+        return -1;
+    }
+
+    // Parse commands from file
+    while (fgets(buf, sizeof(buf), fp)) {
+        if (c >= size - 1) {
+            size *= 2;
+            server->permitted_commands = xrealloc(server->permitted_commands, (size * (sizeof (char *))));
+            if (server->permitted_commands == NULL) {
+                fprintf(stderr, "failed to allocate list of permitted commands\n");
+                return -1;
+            }
+        }
+
+        // Strip newline
+        int len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') {
+            buf[len - 1] = 0;
+        }
+
+        server->permitted_commands[c] = strdup(buf);
+        c++;
+    }
+
+    server->permitted_commands[c] = NULL;
+
+    fclose(fp);
+
+    return 0;
 }
 
 int
@@ -263,6 +324,14 @@ main(int argc, char **argv) {
                     return -1;
                 }
                 server->credential = base64_encode((const unsigned char *) optarg, strlen(optarg));
+                break;
+            case 'l':
+                server->client_command = true;
+                break;
+            case 'P':
+                if (parse_permitted_commands(optarg) != 0) {
+                    return -1;
+                }
                 break;
             case 'u':
                 info.uid = atoi(optarg);
@@ -347,8 +416,10 @@ main(int argc, char **argv) {
     json_object_put(client_prefs);
 
     if (server->command == NULL || strlen(server->command) == 0) {
-        fprintf(stderr, "ttyd: missing start command\n");
-        return -1;
+        if (!server->client_command) {
+            fprintf(stderr, "ttyd: missing start command\n");
+            return -1;
+        }
     }
 
     lws_set_log_level(debug_level, NULL);
@@ -407,7 +478,8 @@ main(int argc, char **argv) {
     lwsl_notice("TTY configuration:\n");
     if (server->credential != NULL)
         lwsl_notice("  credential: %s\n", server->credential);
-    lwsl_notice("  start command: %s\n", server->command);
+    if (server->command != NULL)
+        lwsl_notice("  start command: %s\n", server->command);
     lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
     if (server->check_origin)
