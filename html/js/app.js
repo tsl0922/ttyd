@@ -1,7 +1,7 @@
 (function() {
     var terminalContainer = document.getElementById('terminal-container'),
         httpsEnabled = window.location.protocol == "https:",
-        url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname + 'ws',
+        url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname + 'ws' + window.location.search,
         protocols = ["tty"],
         autoReconnect = -1,
         term, pingTimer, wsError;
