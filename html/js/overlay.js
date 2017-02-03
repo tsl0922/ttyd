@@ -1,4 +1,6 @@
 // ported from hterm.Terminal.prototype.showOverlay
+// https://chromium.googlesource.com/apps/libapps/+/master/hterm/js/hterm_terminal.js
+
 Terminal.prototype.showOverlay = function(msg, timeout) {
     if (!this.overlayNode_) {
         if (!this.element)

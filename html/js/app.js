@@ -52,7 +52,7 @@
             var data = event.data.slice(1);
             switch(event.data[0]) {
                 case '0':
-                    term.write(decodeURIComponent(escape(window.atob(data))));
+                    term.writeUTF8(window.atob(data));
                     break;
                 case '1': // pong
                     break;

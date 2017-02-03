@@ -15,7 +15,7 @@ uppercase(char *str);
 
 // Check whether str ends with suffix
 bool
-endswith(const char * str, const char * suffix);
+endswith(const char *str, const char *suffix);
 
 // Get human readable signal string
 int
