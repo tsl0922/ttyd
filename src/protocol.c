@@ -122,6 +122,7 @@ parse_client_command(struct lws *wsi, struct tty_client *client) {
                 args[0] = strdup (server->permitted_commands[i]);
                 client->argc++;
                 valid_command = true;
+                break;
             }
             i++;
         }
