@@ -9,6 +9,11 @@
 
     var openWs = function() {
         var ws = new WebSocket(url, protocols);
+        var unloadCallback = function(event) {
+            var message = 'Close terminal? this will also terminate the command.';
+            (event || window.event).returnValue = message;
+            return message;
+        };
 
         ws.onopen = function(event) {
             console.log("Websocket connection opened");
@@ -38,9 +43,10 @@
             });
 
             term.on('open', function() {
-                window.onresize = function(event) {
+                window.addEventListener('resize', function(event) {
                     term.fit();
-                };
+                });
+                window.addEventListener('beforeunload', unloadCallback);
                 term.fit();
                 term.focus();
             });
@@ -86,6 +92,7 @@
                     term.showOverlay("Connection Closed", null);
                 }
             }
+            window.removeEventListener('beforeunload', unloadCallback);
             clearInterval(pingTimer);
             if (autoReconnect > 0) {
                 setTimeout(openWs, autoReconnect * 1000);
