@@ -2,6 +2,7 @@
     var terminalContainer = document.getElementById('terminal-container'),
         httpsEnabled = window.location.protocol == "https:",
         url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname + 'ws',
+        authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
         protocols = ["tty"],
         autoReconnect = -1,
         term, pingTimer, wsError;
@@ -10,10 +11,9 @@
         var ws = new WebSocket(url, protocols);
 
         ws.onopen = function(event) {
+            console.log("Websocket connection opened");
             wsError = false;
-            if (typeof tty_auth_token !== 'undefined') {
-                ws.send(JSON.stringify({AuthToken: tty_auth_token}));
-            }
+            ws.send(JSON.stringify({AuthToken: authToken}));
             pingTimer = setInterval(sendPing, 30 * 1000, ws);
 
             if (typeof term !== 'undefined') {
@@ -22,7 +22,7 @@
 
             term = new Terminal();
 
-            term.on('resize', function (size) {
+            term.on('resize', function(size) {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send("2" + JSON.stringify({columns: size.cols, rows: size.rows}));
                 }
@@ -30,22 +30,26 @@
                     term.showOverlay(size.cols + 'x' + size.rows);
                 }, 500);
             });
+
             term.on("data", function(data) {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send("0" + data);
                 }
             });
-            window.onresize = function(event) {
+
+            term.on('open', function() {
+                window.onresize = function(event) {
+                    term.fit();
+                };
                 term.fit();
-            };
+                term.focus();
+            });
 
             while (terminalContainer.firstChild) {
                 terminalContainer.removeChild(terminalContainer.firstChild);
             }
 
             term.open(terminalContainer);
-            term.fit();
-            term.focus();
         };
 
         ws.onmessage = function(event) {
@@ -68,12 +72,13 @@
                     break;
                 case '4':
                     autoReconnect = JSON.parse(data);
-                    console.log("Enabling reconnect: " + autoReconnect + " seconds")
+                    console.log("Enabling reconnect: " + autoReconnect + " seconds");
                     break;
             }
         };
 
         ws.onclose = function(event) {
+            console.log("Websocket connection closed with code: " + event.code);
             if (term) {
                 term.off('data');
                 term.off('resize');
@@ -85,11 +90,6 @@
             if (autoReconnect > 0) {
                 setTimeout(openWs, autoReconnect * 1000);
             }
-        };
-
-        ws.onerror = function(event) {
-            wsError = true;
-            term.showOverlay("Websocket handshake failed", null);
         };
     };
 

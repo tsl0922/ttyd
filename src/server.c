@@ -67,9 +67,10 @@ void print_help() {
                     "    --ssl-cert, -C          SSL certificate file path\n"
                     "    --ssl-key, -K           SSL key file path\n"
                     "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
-                    "    --debug, -d             Set log level (0-9, default: 7)\n"
+                    "    --debug, -d             Set log level (default: 7)\n"
                     "    --version, -v           Print the version and exit\n"
-                    "    --help, -h              Print this text and exit\n",
+                    "    --help, -h              Print this text and exit\n\n"
+                    "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
             TTYD_VERSION
     );
 }
@@ -215,7 +216,7 @@ main(int argc, char **argv) {
     info.extensions = extensions;
     info.timeout_secs = 5;
 
-    int debug_level = 7;
+    int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
     bool ssl = false;
     char cert_path[1024] = "";
@@ -371,6 +372,7 @@ main(int argc, char **argv) {
 #endif
         }
     }
+
     if (ssl) {
         info.ssl_cert_filepath = cert_path;
         info.ssl_private_key_filepath = key_path;
@@ -395,16 +397,8 @@ main(int argc, char **argv) {
 #endif
     }
 
-    signal(SIGINT, sig_handler);  // ^C
-    signal(SIGTERM, sig_handler); // kill
-
-    context = lws_create_context(&info);
-    if (context == NULL) {
-        lwsl_err("libwebsockets init failed\n");
-        return 1;
-    }
-
-    lwsl_notice("TTY configuration:\n");
+    lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
+    lwsl_notice("tty configuration:\n");
     if (server->credential != NULL)
         lwsl_notice("  credential: %s\n", server->credential);
     lwsl_notice("  start command: %s\n", server->command);
@@ -420,13 +414,27 @@ main(int argc, char **argv) {
         lwsl_notice("  custom index.html: %s\n", server->index);
     }
 
+    signal(SIGINT, sig_handler);  // ^C
+    signal(SIGTERM, sig_handler); // kill
+
+    context = lws_create_context(&info);
+    if (context == NULL) {
+        lwsl_err("libwebsockets init failed\n");
+        return 1;
+    }
+    if (server->socket_path != NULL) {
+        lwsl_notice("listening on socket %s\n", server->socket_path);
+    } else {
+        lwsl_notice("listening on port %d\n", info.port);
+    }
+
     // libwebsockets main loop
     while (!force_exit) {
         pthread_mutex_lock(&server->lock);
         if (!LIST_EMPTY(&server->clients)) {
             struct tty_client *client;
             LIST_FOREACH(client, &server->clients, list) {
-                if (!STAILQ_EMPTY(&client->queue)) {
+                if (client->running && !STAILQ_EMPTY(&client->queue)) {
                     lws_callback_on_writable(client->wsi);
                 }
             }

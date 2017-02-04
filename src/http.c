@@ -50,20 +50,18 @@ check_auth(struct lws *wsi) {
 int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
     unsigned char buffer[4096 + LWS_PRE], *p, *end;
-    char buf[256];
+    char buf[256], name[100], rip[50];
 
     switch (reason) {
         case LWS_CALLBACK_HTTP:
-            {
-                char name[100], rip[50];
-                lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
-                lwsl_notice("HTTP connect from %s (%s), path: %s\n", name, rip, in);
-            }
-
-            if (len < 1) {
+            // only GET method is allowed
+            if (!lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI) || len < 1) {
                 lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
                 goto try_to_reuse;
             }
+
+            lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
+            lwsl_notice("HTTP %s - %s (%s)\n", in, rip, name);
 
             switch (check_auth(wsi)) {
                 case 0:
@@ -74,10 +72,6 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 default:
                     return 1;
             }
-
-            // if a legal POST URL, let it continue and accept data
-            if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
-                return 0;
 
             p = buffer + LWS_PRE;
             end = p + sizeof(buffer) - LWS_PRE;
@@ -130,7 +124,6 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
             }
             goto try_to_reuse;
-
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
                 int err = X509_STORE_CTX_get_error((X509_STORE_CTX *) user);
@@ -140,7 +133,6 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 return 1;
             }
             break;
-
         default:
             break;
     }

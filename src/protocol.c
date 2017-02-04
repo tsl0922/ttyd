@@ -1,18 +1,5 @@
 #include "server.h"
 
-// client message
-#define INPUT '0'
-#define PING '1'
-#define RESIZE_TERMINAL '2'
-#define JSON_DATA '{'
-
-// server message
-#define OUTPUT '0'
-#define PONG '1'
-#define SET_WINDOW_TITLE '2'
-#define SET_PREFERENCES '3'
-#define SET_RECONNECT '4'
-
 #define BUF_SIZE 1024
 
 int
@@ -42,30 +29,29 @@ send_initial_message(struct lws *wsi) {
     return 0;
 }
 
-struct winsize *
-parse_window_size(const char *json) {
+bool
+parse_window_size(const char *json, struct winsize *size) {
     int columns, rows;
     json_object *obj = json_tokener_parse(json);
     struct json_object *o = NULL;
 
     if (!json_object_object_get_ex(obj, "columns", &o)) {
         lwsl_err("columns field not exists!\n");
-        return NULL;
+        return false;
     }
     columns = json_object_get_int(o);
     if (!json_object_object_get_ex(obj, "rows", &o)) {
         lwsl_err("rows field not exists!\n");
-        return NULL;
+        return false;
     }
     rows = json_object_get_int(o);
     json_object_put(obj);
 
-    struct winsize *size = xmalloc(sizeof(struct winsize));
     memset(size, 0, sizeof(struct winsize));
     size->ws_col = (unsigned short) columns;
     size->ws_row = (unsigned short) rows;
 
-    return size;
+    return true;
 }
 
 bool
@@ -93,11 +79,9 @@ check_host_origin(struct lws *wsi) {
 
 void
 tty_client_destroy(struct tty_client *client) {
-    if (client->exit || client->pid <= 0)
+    if (!client->running || client->pid <= 0)
         return;
-
-    // stop event loop
-    client->exit = true;
+    client->running = false;
 
     // kill process and free resource
     lwsl_notice("sending %s to process %d\n", server->sig_name, client->pid);
@@ -114,7 +98,7 @@ tty_client_destroy(struct tty_client *client) {
     if (client->buffer != NULL)
         free(client->buffer);
 
-    // remove from clients list
+    // remove from client list
     pthread_mutex_lock(&server->lock);
     LIST_REMOVE(client, list);
     server->client_count--;
@@ -150,14 +134,16 @@ thread_run_command(void *args) {
             lwsl_notice("started process, pid: %d\n", pid);
             client->pid = pid;
             client->pty = pty;
+            client->running = true;
+            if (client->size.ws_row > 0 && client->size.ws_col > 0)
+                ioctl(client->pty, TIOCSWINSZ, &client->size);
 
-            while (!client->exit) {
+            while (client->running) {
                 FD_ZERO (&des_set);
                 FD_SET (pty, &des_set);
 
-                if (select(pty + 1, &des_set, NULL, NULL, NULL) < 0) {
+                if (select(pty + 1, &des_set, NULL, NULL, NULL) < 0)
                     break;
-                }
 
                 if (FD_ISSET (pty, &des_set)) {
                     memset(buf, 0, BUF_SIZE);
@@ -173,7 +159,6 @@ thread_run_command(void *args) {
                     pthread_mutex_unlock(&client->lock);
                 }
             }
-            tty_client_destroy(client);
             break;
     }
 
@@ -184,22 +169,27 @@ int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
              void *user, void *in, size_t len) {
     struct tty_client *client = (struct tty_client *) user;
-    struct winsize *size;
+    char buf[256];
 
     switch (reason) {
         case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
             if (server->once && server->client_count > 0) {
-                lwsl_notice("refuse to serve new client due to the --once option.\n");
-                return -1;
+                lwsl_warn("refuse to serve WS client due to the --once option.\n");
+                return 1;
             }
+            if (lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI) <= 0 || strcmp(buf, WS_PATH)) {
+                lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", buf);
+                return 1;
+            }
+
             if (server->check_origin && !check_host_origin(wsi)) {
-                lwsl_notice("refuse to serve new client from different origin due to the --check-origin option.\n");
-                return -1;
+                lwsl_warn("refuse to serve WS client from different origin due to the --check-origin option.\n");
+                return 1;
             }
             break;
 
         case LWS_CALLBACK_ESTABLISHED:
-            client->exit = false;
+            client->running = false;
             client->initialized = false;
             client->authenticated = false;
             client->wsi = wsi;
@@ -208,17 +198,14 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                                    client->hostname, sizeof(client->hostname),
                                    client->address, sizeof(client->address));
             STAILQ_INIT(&client->queue);
-            if (pthread_create(&client->thread, NULL, thread_run_command, client) != 0) {
-                lwsl_err("pthread_create\n");
-                return -1;
-            }
 
             pthread_mutex_lock(&server->lock);
             LIST_INSERT_HEAD(&server->clients, client, list);
             server->client_count++;
             pthread_mutex_unlock(&server->lock);
+            lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
 
-            lwsl_notice("client connected from %s (%s), total: %d\n", client->hostname, client->address, server->client_count);
+            lwsl_notice("WS   %s - %s (%s), clients: %d\n", buf, client->address, client->hostname, server->client_count);
             break;
 
         case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -280,8 +267,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             // check auth
             if (server->credential != NULL && !client->authenticated && command != JSON_DATA) {
-                lwsl_notice("websocket authentication failed\n");
-                return -1;
+                lwsl_warn("WS client not authenticated\n");
+                return 1;
             }
 
             // check if there are more fragmented messages
@@ -291,6 +278,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             switch (command) {
                 case INPUT:
+                    if (client->pty == 0)
+                        break;
                     if (server->readonly)
                         return 0;
                     if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
@@ -308,32 +297,34 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     }
                     break;
                 case RESIZE_TERMINAL:
-                    size = parse_window_size(client->buffer + 1);
-                    if (size != NULL) {
-                        if (ioctl(client->pty, TIOCSWINSZ, size) == -1) {
+                    if (parse_window_size(client->buffer + 1, &client->size) && client->pty > 0) {
+                        if (ioctl(client->pty, TIOCSWINSZ, &client->size) == -1) {
                             lwsl_err("ioctl TIOCSWINSZ: %d (%s)\n", errno, strerror(errno));
                         }
-                        free(size);
                     }
                     break;
                 case JSON_DATA:
-                    if (server->credential == NULL)
+                    if (client->pid > 0)
                         break;
-                    {
+                    if (server->credential != NULL) {
                         json_object *obj = json_tokener_parse(client->buffer);
                         struct json_object *o = NULL;
                         if (json_object_object_get_ex(obj, "AuthToken", &o)) {
                             const char *token = json_object_get_string(o);
-                            if (strcmp(token, server->credential)) {
-                                lwsl_notice("websocket authentication failed with token: %s\n", token);
-                                return -1;
+                            if (token == NULL || strcmp(token, server->credential)) {
+                                lwsl_warn("WS authentication failed with token: %s\n", token);
+                                return 1;
                             }
                         }
                         client->authenticated = true;
                     }
+                    if (pthread_create(&client->thread, NULL, thread_run_command, client) != 0) {
+                        lwsl_err("pthread_create\n");
+                        return 1;
+                    }
                     break;
                 default:
-                    lwsl_notice("unknown message type: %c\n", command);
+                    lwsl_warn("unknown message type: %c\n", command);
                     break;
             }
 
@@ -345,7 +336,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_CLOSED:
             tty_client_destroy(client);
-            lwsl_notice("client disconnected from %s (%s), total: %d\n", client->hostname, client->address, server->client_count);
+            lwsl_notice("WS closed from %s (%s), clients: %d\n", client->address, client->hostname, server->client_count);
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;

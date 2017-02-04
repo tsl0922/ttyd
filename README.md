@@ -82,9 +82,11 @@ OPTIONS:
     --ssl-cert, -C          SSL certificate file path
     --ssl-key, -K           SSL key file path
     --ssl-ca, -A            SSL CA file path for client certificate verification
-    --debug, -d             Set log level (0-9, default: 7)
+    --debug, -d             Set log level (default: 7)
     --version, -v           Print the version and exit
     --help, -h              Print this text and exit
+
+Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
 ```
 
 ## Example Usage

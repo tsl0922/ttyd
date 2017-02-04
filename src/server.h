@@ -35,6 +35,22 @@
 
 #include "utils.h"
 
+// client message
+#define INPUT '0'
+#define PING '1'
+#define RESIZE_TERMINAL '2'
+#define JSON_DATA '{'
+
+// server message
+#define OUTPUT '0'
+#define PONG '1'
+#define SET_WINDOW_TITLE '2'
+#define SET_PREFERENCES '3'
+#define SET_RECONNECT '4'
+
+// websocket url path
+#define WS_PATH "/ws"
+
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct tty_server *server;
@@ -46,13 +62,14 @@ struct pty_data {
 };
 
 struct tty_client {
-    bool exit;
+    bool running;
     bool initialized;
     bool authenticated;
     char hostname[100];
     char address[50];
 
     struct lws *wsi;
+    struct winsize size;
     char *buffer;
     size_t len;
     int pid;
