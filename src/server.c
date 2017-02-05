@@ -37,12 +37,13 @@ static const struct option options[] = {
         {"readonly",     no_argument,       NULL, 'R'},
         {"check-origin", no_argument,       NULL, 'O'},
         {"once",         no_argument,       NULL, 'o'},
+        {"browser",      no_argument,       NULL, 'B'},
         {"debug",        required_argument, NULL, 'd'},
         {"version",      no_argument,       NULL, 'v'},
         {"help",         no_argument,       NULL, 'h'},
         {NULL, 0, 0,                              0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Ood:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:OoBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -62,6 +63,7 @@ void print_help() {
                     "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
+                    "    --browser, -B           Open terminal with the default system browser\n"
                     "    --index, -I             Custom index.html path\n"
                     "    --ssl, -S               Enable SSL\n"
                     "    --ssl-cert, -C          SSL certificate file path\n"
@@ -218,6 +220,7 @@ main(int argc, char **argv) {
 
     int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
+    bool browser = false;
     bool ssl = false;
     char cert_path[1024] = "";
     char key_path[1024] = "";
@@ -246,6 +249,9 @@ main(int argc, char **argv) {
                 break;
             case 'o':
                 server->once = true;
+                break;
+            case 'B':
+                browser = true;
                 break;
             case 'p':
                 info.port = atoi(optarg);
@@ -426,6 +432,11 @@ main(int argc, char **argv) {
         lwsl_notice("listening on socket %s\n", server->socket_path);
     } else {
         lwsl_notice("listening on port %d\n", info.port);
+        if (browser) {
+            char url[30];
+            sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
+            open_uri(url);
+        }
     }
 
     // libwebsockets main loop

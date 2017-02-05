@@ -7,6 +7,11 @@
 #include <string.h>
 #include <signal.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 void *
 xmalloc(size_t size) {
     if (size == 0)
@@ -61,6 +66,24 @@ get_sig(const char *sig_name) {
             return sig;
     }
     return -1;
+}
+
+int
+open_uri(char *uri) {
+#ifdef __APPLE__
+    char command[256];
+    sprintf(command, "open %s > /dev/null 2>&1", uri);
+    return system(command);
+#elif defined(_WIN32) || defined(__CYGWIN__)
+    return ShellExecute(0, 0, uri, 0, 0 , SW_SHOW) > 32 ? 0 : 1;
+#else
+    // check if X server is running
+    if (system("xset -q > /dev/null 2>&1"))
+        return 1;
+    char command[256];
+    sprintf(command, "xdg-open %s > /dev/null 2>&1", uri);
+    return system(command);
+#endif
 }
 
 // https://github.com/darkk/redsocks/blob/master/base64.c
