@@ -7,9 +7,29 @@
 #include <string.h>
 #include <signal.h>
 
+#ifdef __linux__
+// https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
+const char *sys_signame[NSIG] = {
+    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "ABRT", "UNUSED",
+    "FPE",   "KILL", "USR1",  "SEGV", "USR2",  "PIPE", "ALRM", "TERM",
+    "STKFLT","CHLD", "CONT",  "STOP", "TSTP",  "TTIN", "TTOU", "URG",
+    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", "IO",   "PWR",  "SYS", NULL
+};
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #include <shellapi.h>
+// https://github.com/mirror/newlib-cygwin/blob/master/winsup/cygwin/strsig.cc
+#ifndef NSIG
+#define NSIG 33
+#endif
+const char *sys_signame[NSIG] = {
+    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "IOT",  "EMT",
+    "FPE",   "KILL", "BUS",   "SEGV", "SYS",   "PIPE", "ALRM", "TERM",
+    "URG",   "STOP", "TSTP",  "CONT", "CHLD",  "TTIN", "TTOU", "IO",
+    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", "PWR",  "USR1", "USR2", NULL
+};
 #endif
 
 void *
@@ -50,19 +70,19 @@ endswith(const char *str, const char *suffix) {
 
 int
 get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? strsignal(sig) : "unknown");
+    int n = sprintf(buf, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
     uppercase(buf);
     return n;
 }
 
 int
 get_sig(const char *sig_name) {
-    if (strcasestr(sig_name, "sig") != sig_name || strlen(sig_name) <= 3) {
+    if (strlen(sig_name) <= 3 || strcasestr(sig_name, "sig") == NULL) {
         return -1;
     }
     for (int sig = 1; sig < NSIG; sig++) {
-        const char *name = strsignal(sig);
-        if (strcasecmp(name, sig_name + 3) == 0)
+        const char *name = sys_signame[sig];
+        if (name != NULL && strcasecmp(name, sig_name + 3) == 0)
             return sig;
     }
     return -1;
