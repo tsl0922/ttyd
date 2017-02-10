@@ -1413,9 +1413,9 @@ wrappy@1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-xterm@^2.2.3:
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-2.2.3.tgz#4121bd5412952bcb191819de4566a4b4f793ed8a"
+xterm@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-2.3.1.tgz#78acbcb1f88dac85916c7abb94424c827238849f"
 
 yargs@~3.10.0:
   version "3.10.0"
