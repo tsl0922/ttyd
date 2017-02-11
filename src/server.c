@@ -28,6 +28,7 @@ static const struct option options[] = {
         {"uid",          required_argument, NULL, 'u'},
         {"gid",          required_argument, NULL, 'g'},
         {"signal",       required_argument, NULL, 's'},
+        {"signal-list",  no_argument,       NULL,  1},
         {"reconnect",    required_argument, NULL, 'r'},
         {"index",        required_argument, NULL, 'I'},
         {"ssl",          no_argument,       NULL, 'S'},
@@ -41,7 +42,7 @@ static const struct option options[] = {
         {"debug",        required_argument, NULL, 'd'},
         {"version",      no_argument,       NULL, 'v'},
         {"help",         no_argument,       NULL, 'h'},
-        {NULL, 0, 0,                              0}
+        {NULL,           0,                 0,     0}
 };
 static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:OoBd:vh";
 
@@ -58,6 +59,7 @@ void print_help() {
                     "    --uid, -u               User id to run with\n"
                     "    --gid, -g               Group id to run with\n"
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
+                    "    --signal-list           Print a list of supported signals\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
                     "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
@@ -232,6 +234,9 @@ main(int argc, char **argv) {
     int c;
     while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
         switch (c) {
+            case 1:
+                print_sig_list();
+                exit(EXIT_SUCCESS);
             case 'h':
                 print_help();
                 return 0;

@@ -88,6 +88,16 @@ get_sig(const char *sig_name) {
     return -1;
 }
 
+void print_sig_list() {
+    char name[30];
+    for (int sig = 1; sig < NSIG; sig++) {
+        if (sys_signame[sig] != NULL) {
+            strcpy(name, sys_signame[sig]);
+            printf("%2d) SIG%s (%s)\n", sig, uppercase(name), strsignal(sig));
+        }
+    }
+}
+
 int
 open_uri(char *uri) {
 #ifdef __APPLE__
