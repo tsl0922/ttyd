@@ -25,7 +25,7 @@ RUN apk add --update --no-cache \
     && curl -LO \
         "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk" \
     && apk add --no-cache "glibc-${GLIBC_VERSION}.apk" \
-    && git clone -b "v${LIBWEBSOCKETS_VERSION}" https://github.com/warmcat/libwebsockets.git \
+    && git clone --depth=1 -b "v${LIBWEBSOCKETS_VERSION}" https://github.com/warmcat/libwebsockets.git \
         /tmp/libwebsockets \
     && git clone --depth=1 -b "${TTYD_VERSION}" https://github.com/tsl0922/ttyd.git \
         /tmp/ttyd \
