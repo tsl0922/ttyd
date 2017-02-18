@@ -86,7 +86,7 @@ tty_client_destroy(struct tty_client *client) {
     // kill process and free resource
     lwsl_notice("sending %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
     if (kill(client->pid, server->sig_code) != 0) {
-        lwsl_err("kill: pid, errno: %d (%s)\n", client->pid, errno, strerror(errno));
+        lwsl_err("kill: %d, errno: %d (%s)\n", client->pid, errno, strerror(errno));
     }
     int status;
     while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
