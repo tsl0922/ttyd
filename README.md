@@ -98,12 +98,12 @@ ttyd starts web server at port `7681` by default, you can use the `-p` option to
 ```bash
 ttyd -p 8080 bash -x
 ```
-Then open <http://localhost:8080> with a broswer, you will get a bash shell with debug mode enabled.
+Then open <http://localhost:8080> with a browser, you will get a bash shell with debug mode enabled.
 
 **More Examples:**
 
-- If you want to login with your system accounts on the web broswer, run `ttyd login`.
-- You can even run a none shell command like vim, try: `ttyd vim`, the web broswer will show you a vim editor.
+- If you want to login with your system accounts on the web browser, run `ttyd login`.
+- You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
 
 ## SSL how-to
