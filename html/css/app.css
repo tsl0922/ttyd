@@ -13,7 +13,7 @@ body, #terminal-container {
 .terminal {
     background-color: #101010;
     color: #f0f0f0;
-    font-family: "DejaVu Sans Mono","Everson Mono",FreeMono,Menlo,Terminal,monospace;
+    font-family: "DejaVu Sans Mono",Menlo,Consolas,"Liberation Mono",Courier,monospace;
     position: fixed;
     top: 0;
     bottom: 0;
