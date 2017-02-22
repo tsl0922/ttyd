@@ -1,31 +1,54 @@
-body, #terminal-container {
-    position: absolute;
+html, body {
     height: 100%;
-    width: 100%;
+    min-height: 100%;
     margin: 0;
-    padding: 0;
-    font-size:15px;
-    font-variant-ligatures: none;
-    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}
+
+#terminal-container {
+    width: auto;
+    height: 100%;
+    margin: 0 auto;
+    padding: 5px 0 0 8px;
     background-color: #101010;
 }
 
 .terminal {
     background-color: #101010;
     color: #f0f0f0;
-    font-family: "DejaVu Sans Mono",Menlo,Consolas,"Liberation Mono",Courier,monospace;
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: auto;
-    height: auto;
+    font-size: 10pt;
+    font-family: Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",Courier,monospace;
+    font-variant-ligatures: none;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
 }
 
 .terminal .xterm-viewport {
-    background-color: #101010;
-    overflow-x: hidden;
+    background-color: rgba(121, 121, 121, 0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background-color 800ms linear;
+}
+
+.terminal .xterm-viewport::-webkit-scrollbar {
+    width: 10px;
+}
+
+.terminal .xterm-viewport::-webkit-scrollbar-track {
+    opacity: 0;
+}
+
+.terminal .xterm-viewport::-webkit-scrollbar-thumb {
+    background-color: rgba(121, 121, 121, 0.4);
+}
+
+.terminal .xterm-viewport::-webkit-scrollbar-thumb:hover {
+    transition: opacity 0ms linear;
+    background-color: rgba(100, 100, 100, .7);
+}
+
+.terminal .xterm-viewport::-webkit-scrollbar-thumb:window-inactive {
+    background-color: inherit;
 }
 
 .terminal .terminal-cursor {
