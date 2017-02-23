@@ -36,12 +36,12 @@ parse_window_size(const char *json, struct winsize *size) {
     struct json_object *o = NULL;
 
     if (!json_object_object_get_ex(obj, "columns", &o)) {
-        lwsl_err("columns field not exists!\n");
+        lwsl_err("columns field not exists, json: %s\n", json);
         return false;
     }
     columns = json_object_get_int(o);
     if (!json_object_object_get_ex(obj, "rows", &o)) {
-        lwsl_err("rows field not exists!\n");
+        lwsl_err("rows field not exists, json: %s\n", json);
         return false;
     }
     rows = json_object_get_int(o);
@@ -118,7 +118,7 @@ thread_run_command(void *args) {
 
     switch (pid) {
         case -1: /* error */
-            lwsl_err("forkpty\n");
+            lwsl_err("forkpty, error: %d (%s)\n", errno, strerror(errno));
             break;
         case 0: /* child */
             if (setenv("TERM", "xterm-256color", true) < 0) {
@@ -235,7 +235,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 free(b64_text);
 
                 if (lws_write(wsi, p, n, LWS_WRITE_TEXT) < n) {
-                    lwsl_err("lws_write\n");
+                    lwsl_err("write data to WS\n");
                     break;
                 }
 
@@ -318,8 +318,9 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         }
                         client->authenticated = true;
                     }
-                    if (pthread_create(&client->thread, NULL, thread_run_command, client) != 0) {
-                        lwsl_err("pthread_create\n");
+                    int err = pthread_create(&client->thread, NULL, thread_run_command, client);
+                    if (err != 0) {
+                        lwsl_err("pthread_create return: %d\n", err);
                         return 1;
                     }
                     break;
