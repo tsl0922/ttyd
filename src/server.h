@@ -22,7 +22,18 @@
 #include <sys/wait.h>
 #include <assert.h>
 
-#ifdef __APPLE__
+#ifdef __OpenBSD__
+#define STAILQ_HEAD            SIMPLEQ_HEAD
+#define STAILQ_ENTRY           SIMPLEQ_ENTRY
+#define STAILQ_INIT            SIMPLEQ_INIT
+#define STAILQ_INSERT_TAIL     SIMPLEQ_INSERT_TAIL
+#define STAILQ_EMPTY           SIMPLEQ_EMPTY
+#define STAILQ_FIRST           SIMPLEQ_FIRST
+#define STAILQ_REMOVE_HEAD     SIMPLEQ_REMOVE_HEAD
+#define STAILQ_FOREACH         SIMPLEQ_FOREACH
+#endif
+
+#if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
 #elif defined(__FreeBSD__)
 #include <libutil.h>
