@@ -78,6 +78,14 @@ check_host_origin(struct lws *wsi) {
 }
 
 void
+tty_client_remove(struct tty_client *client) {
+    pthread_mutex_lock(&server->lock);
+    LIST_REMOVE(client, list);
+    server->client_count--;
+    pthread_mutex_unlock(&server->lock);
+}
+
+void
 tty_client_destroy(struct tty_client *client) {
     if (!client->running || client->pid <= 0)
         return;
@@ -99,10 +107,7 @@ tty_client_destroy(struct tty_client *client) {
         free(client->buffer);
 
     // remove from client list
-    pthread_mutex_lock(&server->lock);
-    LIST_REMOVE(client, list);
-    server->client_count--;
-    pthread_mutex_unlock(&server->lock);
+    tty_client_remove(client);
 }
 
 void *
@@ -210,8 +215,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_SERVER_WRITEABLE:
             if (!client->initialized) {
-                if (send_initial_message(wsi) < 0)
+                if (send_initial_message(wsi) < 0) {
+                    tty_client_remove(client);
                     return -1;
+                }
                 client->initialized = true;
                 break;
             }
@@ -223,6 +230,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 if (frame->len <= 0) {
                     STAILQ_REMOVE_HEAD(&client->queue, list);
                     free(frame);
+                    tty_client_remove(client);
                     return -1;
                 }
 
@@ -284,6 +292,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         return 0;
                     if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
                         lwsl_err("write INPUT to pty\n");
+                        tty_client_remove(client);
                         return -1;
                     }
                     break;
@@ -292,6 +301,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         unsigned char c = PONG;
                         if (lws_write(wsi, &c, 1, LWS_WRITE_TEXT) != 1) {
                             lwsl_err("send PONG\n");
+                            tty_client_remove(client);
                             return -1;
                         }
                     }
@@ -316,8 +326,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                             else
                                 lwsl_warn("WS authentication failed with token: %s\n", token);
                         }
-                        if (!client->authenticated)
-                            return 1;
+                        if (!client->authenticated) {
+                            tty_client_remove(client);
+                            return -1;
+                        }
                     }
                     int err = pthread_create(&client->thread, NULL, thread_run_command, client);
                     if (err != 0) {
