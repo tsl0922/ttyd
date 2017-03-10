@@ -311,12 +311,13 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         struct json_object *o = NULL;
                         if (json_object_object_get_ex(obj, "AuthToken", &o)) {
                             const char *token = json_object_get_string(o);
-                            if (token == NULL || strcmp(token, server->credential)) {
+                            if (token != NULL && !strcmp(token, server->credential))
+                                client->authenticated = true;
+                            else
                                 lwsl_warn("WS authentication failed with token: %s\n", token);
-                                return 1;
-                            }
                         }
-                        client->authenticated = true;
+                        if (!client->authenticated)
+                            return 1;
                     }
                     int err = pthread_create(&client->thread, NULL, thread_run_command, client);
                     if (err != 0) {
