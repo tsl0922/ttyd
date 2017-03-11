@@ -1,6 +1,6 @@
 #include "server.h"
 
-#define TTYD_VERSION "1.3.0"
+#define TTYD_VERSION "1.3.1"
 
 volatile bool force_exit = false;
 struct lws_context *context;
