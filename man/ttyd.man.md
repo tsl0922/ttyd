@@ -1,0 +1,135 @@
+ttyd 1 "September 2016" ttyd "User Manual"
+==================================================
+
+# NAME
+  ttyd - Share your terminal over the web
+
+# SYNOPSIS
+  **ttyd** [options] \<command\> [\<arguments...\>]
+
+# Description
+  ttyd is a command-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
+
+  - Built on top of Libwebsockets with C for speed
+  - Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
+  - SSL support based on OpenSSL
+  - Run any custom command with options
+  - Basic authentication support and many other custom options
+  - Cross platform: macOS, Linux, FreeBSD, OpenWrt/LEDE, Windows
+
+# OPTIONS
+  -p, --port <port>
+      Port to listen (default: 7681, use `0` for random port)
+
+  -i, --interface <interface>
+      Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
+
+  -c, --credential USER[:PASSWORD]
+      Credential for Basic Authentication (format: username:password)
+
+  -u, --uid <uid>
+      User id to run with
+
+  -g, --gid <gid>
+      Group id to run with
+
+  -s, --signal <signal string>
+      Signal to send to the command when exit it (default: SIGHUP)
+
+  --signal-list
+      Print a list of supported signals
+
+  -r, --reconnect <seconds>
+      Time to reconnect for the client in seconds (default: 10)
+
+  -R, --readonly
+      Do not allow clients to write to the TTY
+
+  -t, --client-option <key=value>
+      Send option to client (format: key=value), repeat to add more options
+
+  -O, --check-origin
+      Do not allow websocket connection from different origin
+
+  -o, --once
+      Accept only one client and exit on disconnection
+
+  -B, --browser
+      Open terminal with the default system browser
+
+  -I, --index <index file>
+      Custom index.html path
+
+  -S, --ssl
+      Enable SSL
+
+  -C, --ssl-cert <cert path>
+      SSL certificate file path
+
+  -K, --ssl-key <key path>
+      SSL key file path
+
+  -A, --ssl-ca <ca path>
+      SSL CA file path for client certificate verification
+
+  -d, --debug <level>
+      Set log level (default: 7)
+
+  -v, --version
+      Print the version and exit
+
+  -h, --help
+      Print this text and exit
+
+# Examples
+  ttyd starts web server at port 7681 by default, you can use the -p option to change it, the command will be started with arguments as options. For example, run:
+  
+```  
+ttyd -p 8080 bash -x
+```
+
+  Then open http://localhost:8080 with a browser, you will get a bash shell with debug mode enabled. More examples:
+
+  - If you want to login with your system accounts on the web browser, run `ttyd login`.
+  - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
+  - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
+
+# SSL how-to
+  Generate SSL CA and self signed server/client certificates:
+
+```
+# CA certificate (FQDN must be different from server/client)
+openssl genrsa -out ca.key 4096
+openssl req -new -x509 -days 365 -key ca.key -out ca.crt
+# server certificate
+openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr
+openssl x509 -req -days 365 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
+# client certificate (the p12/pem format may be useful for some clients)
+openssl req -newkey rsa:2048 -nodes -keyout client.key -out client.csr
+openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 02 -out client.crt
+openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
+openssl pkcs12 -in client.p12 -out client.pem -clcerts
+```
+
+  Then start ttyd:
+
+```
+ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
+```
+
+  You may want to test the client certificate verification with *curl*(1):
+
+```
+curl --insecure --cert client.p12[:password] -v https://localhost:7681
+```
+
+  If you don't want to enable client certificate verification, remove the `--ssl-ca` option.
+
+# Docker and ttyd
+  Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
+
+  - Sharing single docker container with multiple clients: docker run -it --rm -p 7681:7681 tsl0922/ttyd.
+  - Creating new docker container for each client: ttyd docker run -it --rm ubuntu.
+
+# AUTHOR
+  Shuanglei Tao \<tsl0922@gmail.com\> Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
