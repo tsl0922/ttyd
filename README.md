@@ -2,7 +2,7 @@
 
 ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY][1].
 
-![screenshot](screenshot.gif)
+![screenshot](https://github.com/tsl0922/ttyd/raw/master/screenshot.gif)
 
 # Features
 
