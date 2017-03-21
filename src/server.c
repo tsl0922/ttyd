@@ -107,14 +107,15 @@ tty_server_new(int argc, char **argv, int start) {
     }
     ts->argv[cmd_argc] = NULL;
 
-    ts->command = xmalloc(cmd_len);
+    ts->command = xmalloc(cmd_len + 1);
     char *ptr = ts->command;
     for (int i = 0; i < cmd_argc; i++) {
         ptr = stpcpy(ptr, ts->argv[i]);
         if (i != cmd_argc - 1) {
-            sprintf(ptr++, "%c", ' ');
+            *ptr++ = ' ';
         }
     }
+    *ptr = '\0'; // null terminator
 
     return ts;
 }
