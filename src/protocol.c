@@ -80,8 +80,14 @@ check_host_origin(struct lws *wsi) {
 void
 tty_client_remove(struct tty_client *client) {
     pthread_mutex_lock(&server->lock);
-    LIST_REMOVE(client, list);
-    server->client_count--;
+    struct tty_client *iterator;
+    LIST_FOREACH(iterator, &server->clients, list) {
+        if (iterator == client) {
+            LIST_REMOVE(iterator, list);
+            server->client_count--;
+            break;
+        }
+    }
     pthread_mutex_unlock(&server->lock);
 }
 
