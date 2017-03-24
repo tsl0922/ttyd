@@ -1,44 +1,11 @@
-FROM alpine:3.5
+FROM alpine:edge
 LABEL maintainer "Shuanglei Tao - tsl0922@gmail.com" \
     maintainer "Damien Duportal - damien.duportal@gmail.com"
 
-ENV GLIBC_VERSION=2.25-r0 \
-    LIBWEBSOCKETS_VERSION=2.1.1
-
-RUN apk add --update --no-cache \
-        bash \
-        bsd-compat-headers \
-        build-base \
-        ca-certificates \
-        cmake \
-        curl \
-        git \
-        g++ \
-        json-c \
-        json-c-dev \
-        openssl \
-        openssl-dev \
-        vim \
-    && curl -L -o /etc/apk/keys/sgerrand.rsa.pub \
-        https://raw.githubusercontent.com/sgerrand/alpine-pkg-glibc/master/sgerrand.rsa.pub \
-    && curl -LO \
-        "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk" \
-    && apk add --no-cache "glibc-${GLIBC_VERSION}.apk" \
-    && git clone --depth=1 -b "v${LIBWEBSOCKETS_VERSION}" https://github.com/warmcat/libwebsockets.git \
-        /tmp/libwebsockets \
-    && git clone --depth=1 https://github.com/tsl0922/ttyd.git \
-        /tmp/ttyd \
-    && mkdir -p /tmp/ttyd/build /tmp/libwebsockets/build \
-    && cd /tmp/libwebsockets/build \
-    && cmake .. \
-    && make \
-    && make install \
-    && cd /tmp/ttyd/build \
-    && cmake .. \
-    && make \
-    && make install \
-    && rm -rf /tmp/* /var/cache/apk/* /*.apk \
-    && apk del --purge build-base openssl-dev json-c-dev g++ cmake bsd-compat-headers
+RUN apk add --update \
+    bash \
+    ttyd \
+  && rm -rf /var/cache/apk/*
 
 EXPOSE 7681
 
