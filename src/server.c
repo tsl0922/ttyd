@@ -1,7 +1,5 @@
 #include "server.h"
 
-#define TTYD_VERSION "1.3.1"
-
 volatile bool force_exit = false;
 struct lws_context *context;
 struct tty_server *server;

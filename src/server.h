@@ -2,6 +2,10 @@
 #include "lws_config.h"
 #endif
 
+#ifndef TTYD_VERSION
+#define TTYD_VERSION "unknown"
+#endif
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
