@@ -30,4 +30,4 @@ Description: Web terminal sharing tool
   * SSL support based on OpenSSL
   * Run any custom command with options
   * Basic authentication support and many other custom options
-  * Cross platform: macOC, Linux, FreeBSD, OpenWrt/LEDE, Windows
+  * Cross platform: macOS, Linux, FreeBSD, OpenWrt/LEDE, Windows
