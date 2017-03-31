@@ -33,15 +33,25 @@
         <p>Install with <a href="http://brew.sh">homebrew</a>:</p>
         <pre><code class="language-bash">brew install ttyd</code></pre>
         <h2>Install on Linux</h2>
-        <p>Ubuntu 16.04 as example:</p>
-        <pre><code class="language-bash">sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
+        <ul>
+            <li>
+                <p>Install from ppa (ubuntu 16.04 only):</p>
+                <pre><code class="language-bash">sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:tsl0922/ttyd-dev
+sudo apt-get update
+sudo apt-get install ttyd</code></pre>
+            </li>
+            <li>
+                <p>Build from source (debian/ubuntu):</p>
+                <pre><code class="language-bash">sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
 git clone https://github.com/tsl0922/ttyd.git
 cd ttyd && mkdir build && cd build
 cmake ..
 make && make install</code></pre>
-        <blockquote>
-            <strong>NOTE:</strong> You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated <code>libwebsockets-dev</code> package (<a href="https://github.com/tsl0922/ttyd/issues/6">Issue #6</a>).
-        </blockquote>
+                <p>You may need to compile/install <a href="https://libwebsockets.org">libwebsockets</a> from source if
+                    the <code>libwebsockets-dev</code> package is outdated.</p>
+            </li>
+        </ul>
         <h2>Install on Windows</h2>
         <p>ttyd can be built with <a href="http://msys2.github.io">MSYS2</a> on windows, The build instructions is <a href="https://github.com/tsl0922/ttyd/tree/master/msys2">here</a>.</p>
         <blockquote>
@@ -49,10 +59,9 @@ make && make install</code></pre>
             <br> As a workaround, you can use <a href="https://github.com/rprichard/winpty">winpty</a> as a wrapper to invoke the windows program, eg: <code>ttyd winpty cmd</code>.
         </blockquote>
         <h2>Install on OpenWrt/LEDE</h2>
+        <p><a href="https://www.lede-project.org">LEDE</a> <code>17.01.0</code> and later:</p>
         <pre><code class="language-bash">opkg install ttyd</code></pre>
-        <blockquote>
-            <strong>NOTE:</strong> This may only works for <a href="https://www.lede-project.org">LEDE</a> snapshots currently, if the install command fails, <a href="https://github.com/tsl0922/ttyd/tree/master/openwrt">compile it yourself</a>.
-        </blockquote>
+        <p>If the install command fails, you can <a href="https://github.com/tsl0922/ttyd/tree/master/openwrt">compile it yourself</a>.</p>
         <h1>Usage</h1>
         <h2>Command-line Options</h2>
         <pre><code>ttyd is a tool for sharing terminal over the web
