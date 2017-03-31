@@ -3,17 +3,17 @@ Section: utils
 Priority: optional
 Maintainer: Boyuan Yang <073plan@gmail.com>
 Build-Depends:
- debhelper (>= 10),
+ debhelper (>= 9),
  cmake,
  pkg-config,
  libwebsockets-dev,
  libjson-c-dev,
  libssl-dev,
- xxd,
+ xxd | vim-common,
 Standards-Version: 3.9.8
 Homepage: https://tsl0922.github.io/ttyd/
-Vcs-Git: https://github.com/hosiet/ttyd.git
-Vcs-Browser: https://github.com/hosiet/ttyd.git
+Vcs-Git: https://github.com/tsl0922/ttyd.git
+Vcs-Browser: https://github.com/tsl0922/ttyd.git
 
 Package: ttyd
 Architecture: any
