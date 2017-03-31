@@ -25,17 +25,26 @@ brew install ttyd
 
 ## Install on Linux
 
-Ubuntu 16.04 as example:
+- Install from ppa (ubuntu 16.04 only):
 
-```bash
-sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
-git clone https://github.com/tsl0922/ttyd.git
-cd ttyd && mkdir build && cd build
-cmake ..
-make && make install
-```
+    ```bash
+    sudo apt-get install -y software-properties-common
+    sudo add-apt-repository ppa:tsl0922/ttyd-dev
+    sudo apt-get update
+    sudo apt-get install ttyd
+    ```
 
-> **NOTE:** You may need to compile libwebsockets from source for ubuntu versions old than 16.04, since they have outdated `libwebsockets-dev` package ([Issue #6][9]).
+- Build from source (debian/ubuntu):
+
+    ```bash
+    sudo apt-get install cmake g++ pkg-config git vim-common libwebsockets-dev libjson-c-dev libssl-dev
+    git clone https://github.com/tsl0922/ttyd.git
+    cd ttyd && mkdir build && cd build
+    cmake ..
+    make && make install
+    ```
+
+    You may need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
 
 ## Install on Windows
 
@@ -46,11 +55,13 @@ ttyd can be built with [MSYS2][10] on windows, The build instructions is [here][
 
 ## Install on OpenWrt/LEDE
 
+[LEDE][6] `17.01.0` and later:
+
 ```bash
 opkg install ttyd
 ```
 
-> **NOTE:** This may only works for [LEDE][6] snapshots currently, if the install command fails, [compile it yourself][14].
+If the install command fails, you can [compile it yourself][14].
 
 # Usage
 
