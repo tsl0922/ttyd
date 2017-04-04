@@ -25,7 +25,7 @@ brew install ttyd
 
 ## Install on Linux
 
-- Install from ppa (ubuntu 16.04 only):
+- Install from ppa (ubuntu 16.04 and later):
 
     ```bash
     sudo apt-get install -y software-properties-common
