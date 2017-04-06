@@ -61,7 +61,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             }
 
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
-            lwsl_notice("HTTP %s - %s (%s)\n", in, rip, name);
+            lwsl_notice("HTTP %s - %s (%s)\n", (char *) in, rip, name);
 
             switch (check_auth(wsi)) {
                 case 0:

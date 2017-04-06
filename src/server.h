@@ -110,6 +110,7 @@ struct tty_server {
     char *sig_name;                           // human readable signal string
     bool readonly;                            // whether not allow clients to write to the TTY
     bool check_origin;                        // whether allow websocket connection from different origin
+    int max_clients;                          // maximum clients to support
     bool once;                                // whether accept only one client and exit on disconnection
     char *socket_path;                        // UNIX domain socket path
     pthread_mutex_t lock;

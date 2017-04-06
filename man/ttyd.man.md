@@ -51,6 +51,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -O, --check-origin
       Do not allow websocket connection from different origin
 
+  -m, --max-clients
+      Maximum clients to support (default: 0, no limit)
+
   -o, --once
       Accept only one client and exit on disconnection
 

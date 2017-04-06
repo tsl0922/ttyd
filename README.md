@@ -88,6 +88,7 @@ OPTIONS:
     --readonly, -R          Do not allow clients to write to the TTY
     --client-option, -t     Send option to client (format: key=value), repeat to add more options
     --check-origin, -O      Do not allow websocket connection from different origin
+    --max-clients, -m       Maximum clients to support (default: 0, no limit)
     --once, -o              Accept only one client and exit on disconnection
     --browser, -B           Open terminal with the default system browser
     --index, -I             Custom index.html path

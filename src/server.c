@@ -35,6 +35,7 @@ static const struct option options[] = {
         {"ssl-ca",       required_argument, NULL, 'A'},
         {"readonly",     no_argument,       NULL, 'R'},
         {"check-origin", no_argument,       NULL, 'O'},
+        {"max-clients",  required_argument, NULL, 'm'},
         {"once",         no_argument,       NULL, 'o'},
         {"browser",      no_argument,       NULL, 'B'},
         {"debug",        required_argument, NULL, 'd'},
@@ -42,7 +43,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:OoBd:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Om:oBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -62,6 +63,7 @@ void print_help() {
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
                     "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
+                    "    --max-clients, -m       Maximum clients to support (default: 0, no limit)\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
                     "    --browser, -B           Open terminal with the default system browser\n"
                     "    --index, -I             Custom index.html path\n"
@@ -251,6 +253,9 @@ main(int argc, char **argv) {
             case 'O':
                 server->check_origin = true;
                 break;
+            case 'm':
+                server->max_clients = atoi(optarg);
+                break;
             case 'o':
                 server->once = true;
                 break;
@@ -418,6 +423,8 @@ main(int argc, char **argv) {
         lwsl_notice("  check origin: true\n");
     if (server->readonly)
         lwsl_notice("  readonly: true\n");
+    if (server->max_clients > 0)
+        lwsl_notice("  max clients: %d\n", server->max_clients);
     if (server->once)
         lwsl_notice("  once: true\n");
     if (server->index != NULL) {
