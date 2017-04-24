@@ -122,8 +122,9 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
 
                 if (lws_write_http(wsi, index_html, index_html_len) < 0)
                     return 1;
+                goto try_to_reuse;
             }
-            goto try_to_reuse;
+            break;
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
                 int err = X509_STORE_CTX_get_error((X509_STORE_CTX *) user);
