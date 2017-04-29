@@ -439,15 +439,11 @@ main(int argc, char **argv) {
         lwsl_err("libwebsockets init failed\n");
         return 1;
     }
-    if (server->socket_path != NULL) {
-        lwsl_notice("listening on socket %s\n", server->socket_path);
-    } else {
-        lwsl_notice("listening on port %d\n", info.port);
-        if (browser) {
-            char url[30];
-            sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
-            open_uri(url);
-        }
+
+    if (browser) {
+        char url[30];
+        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
+        open_uri(url);
     }
 
     // libwebsockets main loop
