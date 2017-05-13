@@ -48,14 +48,13 @@
                 });
                 window.addEventListener('beforeunload', unloadCallback);
                 term.fit();
-                term.focus();
             });
 
             while (terminalContainer.firstChild) {
                 terminalContainer.removeChild(terminalContainer.firstChild);
             }
 
-            term.open(terminalContainer);
+            term.open(terminalContainer, true);
         };
 
         ws.onmessage = function(event) {

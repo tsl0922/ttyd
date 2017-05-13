@@ -15,6 +15,6 @@
   "dependencies": {
     "gulp": "^3.9.1",
     "gulp-inline-source": "^3.0.0",
-    "xterm": "^2.5.0"
+    "xterm": "^2.6.0"
   }
 }
