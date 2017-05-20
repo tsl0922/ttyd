@@ -227,6 +227,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             if (!client->initialized) {
                 if (send_initial_message(wsi) < 0) {
                     tty_client_remove(client);
+                    lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                     return -1;
                 }
                 client->initialized = true;
@@ -241,6 +242,9 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     STAILQ_REMOVE_HEAD(&client->queue, list);
                     free(frame);
                     tty_client_remove(client);
+                    lws_close_reason(wsi,
+                                     frame->len == 0 ? LWS_CLOSE_STATUS_NORMAL : LWS_CLOSE_STATUS_UNEXPECTED_CONDITION,
+                                     NULL, 0);
                     return -1;
                 }
 
@@ -303,6 +307,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
                         lwsl_err("write INPUT to pty\n");
                         tty_client_remove(client);
+                        lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                         return -1;
                     }
                     break;
@@ -312,6 +317,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         if (lws_write(wsi, &c, 1, LWS_WRITE_TEXT) != 1) {
                             lwsl_err("send PONG\n");
                             tty_client_remove(client);
+                            lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                             return -1;
                         }
                     }
@@ -338,6 +344,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         }
                         if (!client->authenticated) {
                             tty_client_remove(client);
+                            lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
                             return -1;
                         }
                     }
@@ -349,7 +356,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     break;
                 default:
                     lwsl_warn("unknown message type: %c\n", command);
-                    break;
+                    lws_close_reason(wsi, LWS_CLOSE_STATUS_INVALID_PAYLOAD, NULL, 0);
+                    return -1;
             }
 
             if (client->buffer != NULL) {

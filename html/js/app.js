@@ -93,7 +93,8 @@
             }
             window.removeEventListener('beforeunload', unloadCallback);
             clearInterval(pingTimer);
-            if (autoReconnect > 0) {
+            // 1000: CLOSE_NORMAL
+            if (event.code !== 1000 && autoReconnect > 0) {
                 setTimeout(openWs, autoReconnect * 1000);
             }
         };
