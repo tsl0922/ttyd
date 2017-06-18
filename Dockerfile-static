@@ -1,0 +1,21 @@
+FROM alpine:3.6
+
+RUN apk add --update --no-cache \
+    autoconf automake bash bsd-compat-headers \
+    build-base ca-certificates cmake curl file g++ git libtool vim
+
+RUN curl -sLo- https://s3.amazonaws.com/json-c_releases/releases/json-c-0.12.1.tar.gz | tar xz \
+ && cd json-c-0.12.1 && env CFLAGS=-fPIC ./configure && make install && cd .. \
+ && curl -sLo- https://zlib.net/zlib-1.2.11.tar.gz | tar xz \
+ && cd zlib-1.2.11 && ./configure && make install && cd .. \
+ && curl -sLo- https://www.openssl.org/source/openssl-1.0.2l.tar.gz | tar xz \
+ && cd openssl-1.0.2l && ./config -fPIC --prefix=/usr/local --openssldir=/usr/local/openssl && make install && cd .. \
+ && curl -sLo- https://github.com/warmcat/libwebsockets/archive/v2.2.1.tar.gz | tar xz \
+ && cd libwebsockets-2.2.1 && cmake -DLWS_WITHOUT_TESTAPPS=ON -DLWS_STATIC_PIC=ON -DLWS_UNIX_SOCK=ON && make install && cd .. \
+ && sed -i 's/libz.so/libz.a/g' /usr/local/lib/cmake/libwebsockets/LibwebsocketsTargets-release.cmake \
+ && sed -i 's/ websockets_shared//' /usr/local/lib/cmake/libwebsockets/LibwebsocketsConfig.cmake \
+ && rm -rf json-c-0.12.1 zlib-1.2.11 openssl-1.0.2l libwebsockets-2.2.1
+
+RUN git clone --depth=1 https://github.com/tsl0922/ttyd.git \
+ && cd ttyd && sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt \
+ && cmake . && make install && cd .. && rm -rf ttyd
