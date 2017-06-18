@@ -15,7 +15,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
   - SSL support based on OpenSSL
   - Run any custom command with options
   - Basic authentication support and many other custom options
-  - Cross platform: macOS, Linux, FreeBSD, OpenWrt/LEDE, Windows
+  - Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 
 # OPTIONS
   -p, --port <port>

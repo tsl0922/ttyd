@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(SET CMP0048 NEW)
 
-project(ttyd VERSION "1.3.2")
+project(ttyd VERSION "1.3.3")
 
 if(CMAKE_VERSION VERSION_LESS "3.1")
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
