@@ -5,7 +5,7 @@ init_env() {
         cd /root/init
         wget "${INITSH}" -O init.sh
         chmod +x init.sh
-        ./init.sh
+        source init.sh
     fi
 }
 
