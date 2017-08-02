@@ -69,8 +69,8 @@ endswith(const char *str, const char *suffix) {
 }
 
 int
-get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
+get_sig_name(int sig, char *buf, size_t s) {
+    int n = snprintf(buf, s, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
     uppercase(buf);
     return n;
 }
@@ -88,21 +88,11 @@ get_sig(const char *sig_name) {
     return -1;
 }
 
-void print_sig_list() {
-    char name[30];
-    for (int sig = 1; sig < NSIG; sig++) {
-        if (sys_signame[sig] != NULL) {
-            strcpy(name, sys_signame[sig]);
-            printf("%2d) SIG%s (%s)\n", sig, uppercase(name), strsignal(sig));
-        }
-    }
-}
-
 int
 open_uri(char *uri) {
 #ifdef __APPLE__
     char command[256];
-    sprintf(command, "open %s > /dev/null 2>&1", uri);
+    snprintf(command, 256, "open %s > /dev/null 2>&1", uri);
     return system(command);
 #elif defined(_WIN32) || defined(__CYGWIN__)
     return ShellExecute(0, 0, uri, 0, 0 , SW_SHOW) > 32 ? 0 : 1;
@@ -111,7 +101,7 @@ open_uri(char *uri) {
     if (system("xset -q > /dev/null 2>&1"))
         return 1;
     char command[256];
-    sprintf(command, "xdg-open %s > /dev/null 2>&1", uri);
+    snprintf(command, 256, "xdg-open %s > /dev/null 2>&1", uri);
     return system(command);
 #endif
 }
