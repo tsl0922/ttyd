@@ -272,9 +272,7 @@ main(int argc, char **argv) {
                 ca_path[sizeof(ca_path) - 1] = '\0';
                 break;
             case ':':
-                    fprintf(stderr, "ttyd: got :\n", optind);
             case '?':
-                    fprintf(stderr, "ttyd: got ?\n", optind);
             default:
                 print_help();
                 return -1;
