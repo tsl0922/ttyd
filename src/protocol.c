@@ -138,8 +138,16 @@ thread_run_command(void *args) {
                 perror("setenv");
                 exit(1);
             }
-            if (execvp(server->argv[0], server->argv) < 0) {
-                perror("execvp");
+            int e = -1;
+            if ( 0 == access(server->argv[0], R_OK | X_OK) ) {
+                e = execvp(server->argv[0], server->argv);
+            } else {
+                char *argp[] = {"sh", "-c", NULL, NULL};
+                argp[2] = server->argv[0];
+                e = execv("/bin/sh", argp);
+            } 
+            if (e < 0) {
+                perror("execv?");
                 exit(1);
             }
             break;

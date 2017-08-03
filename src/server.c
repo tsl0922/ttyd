@@ -43,7 +43,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "l:p:i:c:u:g:s:r:I:aSC:K:A:Rt:Om:oBd:vhd";
+static const char *opt_string = "+A:Bc:C:dg:hi:I:K:l:m:Oop:r:Rs:Su:v";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -272,18 +272,18 @@ main(int argc, char **argv) {
                 ca_path[sizeof(ca_path) - 1] = '\0';
                 break;
             case ':':
+                    fprintf(stderr, "ttyd: got :\n", optind);
             case '?':
+                    fprintf(stderr, "ttyd: got ?\n", optind);
             default:
                 print_help();
                 return -1;
         }
-        // test if command start
-        if ( 0 == access(argv[optind], R_OK | X_OK) ) {
-            server->argc = argc - optind;
-            server->argv = &argv[optind];
-            break;
-        }
     }
+    argc -= optind;
+    argv += optind;
+    server->argc = argc;
+    server->argv = argv;
 
     if ( server->argc < 1 ) {
         tty_server_free(server);
@@ -343,7 +343,7 @@ main(int argc, char **argv) {
         lwsl_notice("  credential: %s\n", server->credential);
     
     lwsl_notice("  start command: \n");
-    for (c = optind; c < argc; c++) {
+    for (c = 0; c < argc; c++) {
         lwsl_notice(" %s\n", argv[c]);
     }
     lwsl_notice("\n");
