@@ -17,10 +17,6 @@ uppercase(char *str);
 bool
 endswith(const char *str, const char *suffix);
 
-// Get human readable signal string
-int
-get_sig_name(int sig, char *buf, size_t s);
-
 // Get signal code from string like SIGHUP
 int
 get_sig(const char *sig_name);

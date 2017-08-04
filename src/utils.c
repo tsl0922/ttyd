@@ -69,13 +69,6 @@ endswith(const char *str, const char *suffix) {
 }
 
 int
-get_sig_name(int sig, char *buf, size_t s) {
-    int n = snprintf(buf, s, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
-    uppercase(buf);
-    return n;
-}
-
-int
 get_sig(const char *sig_name) {
     if (strlen(sig_name) <= 3 || strcasestr(sig_name, "sig") == NULL) {
         return -1;

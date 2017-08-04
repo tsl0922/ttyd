@@ -116,10 +116,7 @@ void
 sig_handler(int sig) {
     if (force_exit)
         exit(EXIT_FAILURE);
-
-    char sig_name[20];
-    get_sig_name(sig, sig_name, 20);
-    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
+    lwsl_notice("received signal: %s (%d), exiting...\n", strsignal(sig), sig);
     force_exit = true;
     lws_cancel_service(context);
     lwsl_notice("send ^C to force exit.\n");
