@@ -38,12 +38,11 @@ static const struct option options[] = {
         {"once",         no_argument,       NULL, 'o'},
         {"browser",      no_argument,       NULL, 'B'},
         {"log",          required_argument, NULL, 'l'},
-        {"daemon",       no_argument,       NULL, 'd'},
         {"version",      no_argument,       NULL, 'v'},
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "+A:Bc:C:dg:hi:I:K:l:m:Oop:r:Rs:Su:v";
+static const char *opt_string = "+A:Bc:C:g:hi:I:K:l:m:Oop:r:Rs:Su:v";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -71,7 +70,6 @@ void print_help() {
                     "    --ssl-key, -K           SSL key file path\n"
                     "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
                     "    --log, -l               Set log level (default: 7)\n"
-                    "    --daemonize, -d         Fork to background\n"
                     "    --version, -v           Print the version and exit\n"
                     "    --help, -h              Print this text and exit\n\n"
                     "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
@@ -129,7 +127,6 @@ sig_handler(int sig) {
 
 int
 main(int argc, char **argv) {
-    int daemonize = 0;
 
     server = tty_server_new();
 
@@ -362,8 +359,7 @@ main(int argc, char **argv) {
     }
 
     signal(SIGINT, sig_handler);  // ^C
-    if (!daemonize)
-      signal(SIGTERM, sig_handler); // kill
+    signal(SIGTERM, sig_handler); // kill
 
     context = lws_create_context(&info);
     if (context == NULL) {
@@ -376,9 +372,6 @@ main(int argc, char **argv) {
         snprintf(url, 30, "%s://localhost:%d", ssl ? "https" : "http", info.port);
         open_uri(url);
     }
-
-    if (daemonize)
-      daemon(0, 0);
 
     // libwebsockets main loop
     while (!force_exit) {
