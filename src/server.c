@@ -163,9 +163,6 @@ main(int argc, char **argv) {
             case 'v':
                 printf("ttyd version %s\n", TTYD_VERSION);
                 return 0;
-            case 'd':
-                daemonize = 1;
-                break;
             case 'l': {
                     long x = strtol(optarg, &end,  10);
                     if (end - optarg != strlen(optarg)) {
