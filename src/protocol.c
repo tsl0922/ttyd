@@ -23,7 +23,7 @@ send_initial_message(struct lws *wsi) {
         return -1;
     }
     // client preferences
-    n = snprintf((char *) p, 4, "%c{}", SET_PREFERENCES);
+    n = snprintf((char *) p, 256, "%c%s", SET_PREFERENCES, server->client_opt);
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }

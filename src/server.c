@@ -33,6 +33,7 @@ static const struct option options[] = {
         {"ssl-key",      required_argument, NULL, 'K'},
         {"ssl-ca",       required_argument, NULL, 'A'},
         {"readonly",     no_argument,       NULL, 'R'},
+        {"client-option",required_argument, NULL, 't'},
         {"check-origin", no_argument,       NULL, 'O'},
         {"max-clients",  required_argument, NULL, 'm'},
         {"once",         no_argument,       NULL, 'o'},
@@ -42,7 +43,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "+A:Bc:C:g:hi:I:K:l:m:Oop:r:Rs:Su:v";
+static const char *opt_string = "+A:Bc:C:g:hi:I:K:l:m:Oop:r:Rs:St:u:v";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -149,7 +150,6 @@ main(int argc, char **argv) {
     char key_path[1024] = "";
     char ca_path[1024] = "";
 
-    // parse command line options
     int c;
     char* end; // parsing int
     while ((c = getopt_long(argc, argv, opt_string, options, NULL)) != -1) {
@@ -171,6 +171,20 @@ main(int argc, char **argv) {
                 break;
             case 'R':
                 server->readonly = true;
+                break;
+            case 't':{
+                    struct json_object *obj = json_tokener_parse(optarg);
+                    if (obj == NULL) {
+                        fprintf(stderr, "ttyd: client-option: takes json as arg not %s\n", optarg);
+                        return -1;
+                    }
+                    if (strlen(optarg) > 254) {
+                        fprintf(stderr, "ttyd: client-option: takes json as arg less than 254 char sorry , not %s\n", optarg);
+                        return -1;
+                    }
+                    json_object_put (obj);
+                    server->client_opt = optarg;
+                }
                 break;
             case 'O':
                 server->check_origin = true;
