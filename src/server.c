@@ -201,7 +201,7 @@ main(int argc, char **argv) {
             case 'p': {
                     long x = strtol(optarg, &end,  10);
                     if (end - optarg != strlen(optarg) || x < 0 || x > 65535) {
-                        fprintf(stderr, "ttyd: -p: takes port number  argument not %s\n", optarg);
+                        fprintf(stderr, "ttyd: -p: takes port number argument not %s\n", optarg);
                         return -1;
                     }
                     info.port = x;
