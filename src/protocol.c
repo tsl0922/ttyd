@@ -99,7 +99,7 @@ tty_client_destroy(struct tty_client *client) {
     client->running = false;
 
     // kill process and free resource
-    lwsl_notice("tty_client_destroy sending %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
+    lwsl_notice("tty_client_destroy sending:  %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
     if (kill(client->pid, server->sig_code) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", client->pid, errno, strerror(errno));
     }
@@ -126,7 +126,6 @@ thread_run_command(void *args) {
     fd_set des_set;
 
     client = (struct tty_client *) args;
-    lwsl_notice("pre starting process, %d: %s %s\n", server->argc, server->argv[0], server->argv[1]);
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
 
     switch (pid) {

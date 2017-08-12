@@ -60,7 +60,7 @@ void print_help() {
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
-                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
+                    "    --client-option, -t     Send option to client (format: { \"key\":\"value\", ... } )\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --max-clients, -m       Maximum clients to support (default: 0, no limit)\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
@@ -246,7 +246,7 @@ main(int argc, char **argv) {
                 if (!strncmp(optarg, "~/", 2)) {
                     const char* home = getenv("HOME");
                     int index_size = strlen(home) + strlen(optarg) - 1;
-                    server->index = malloc(index_size);
+                    server->index = xmalloc(index_size);
                     snprintf(server->index, index_size,"%s%s", home, optarg + 1);
                 } else {
                     server->index = strdup(optarg);
