@@ -77,7 +77,10 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             end = p + sizeof(buffer) - LWS_PRE;
 
             if (!strncmp((const char *) in, "/auth_token.js", 14)) {
-                size_t n = server->credential != NULL ? sprintf(buf, "var tty_auth_token = '%s';", server->credential) : 0;
+                size_t n = 0;
+                if (server->credential != NULL) {
+                  n = snprintf(buf, 256, "var tty_auth_token = '%s';", server->credential);
+                }
 
                 if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
                     return 1;

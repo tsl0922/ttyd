@@ -100,15 +100,15 @@ struct tty_client {
 struct tty_server {
     LIST_HEAD(client, tty_client) clients;    // client list
     int client_count;                         // client count
-    char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential
     int reconnect;                            // reconnect timeout
     char *index;                              // custom index.html
-    char *command;                            // full command line
+    int argc;                                 // command with arguments
     char **argv;                              // command with arguments
     int sig_code;                             // close signal
     char *sig_name;                           // human readable signal string
     bool readonly;                            // whether not allow clients to write to the TTY
+    char* client_opt;                         // json string to pass to xterm.js
     bool check_origin;                        // whether allow websocket connection from different origin
     int max_clients;                          // maximum clients to support
     bool once;                                // whether accept only one client and exit on disconnection

@@ -10,19 +10,20 @@ send_initial_message(struct lws *wsi) {
 
     char hostname[128];
     gethostname(hostname, sizeof(hostname) - 1);
+    hostname[127] = '\0';
 
     // window title
-    n = sprintf((char *) p, "%c%s (%s)", SET_WINDOW_TITLE, server->command, hostname);
+    n = snprintf((char *) p, 256 - LWS_PRE, "%c%s (%s)", SET_WINDOW_TITLE, server->argv[0], hostname);
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }
     // reconnect time
-    n = sprintf((char *) p, "%c%d", SET_RECONNECT, server->reconnect);
+    n = snprintf((char *) p, 12, "%c%d", SET_RECONNECT, server->reconnect);
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }
     // client preferences
-    n = sprintf((char *) p, "%c%s", SET_PREFERENCES, server->prefs_json);
+    n = snprintf((char *) p, 256, "%c%s", SET_PREFERENCES, server->client_opt);
     if (lws_write(wsi, p, (size_t) n, LWS_WRITE_TEXT) < n) {
         return -1;
     }
@@ -65,7 +66,7 @@ check_host_origin(struct lws *wsi) {
         int port;
         if (lws_parse_uri(buf, &prot, &address, &port, &path))
             return false;
-        sprintf(buf, "%s:%d", address, port);
+        snprintf(buf, origin_length, "%s:%d", address, port);
         int host_length = lws_hdr_total_length(wsi, WSI_TOKEN_HOST);
         if (host_length != strlen(buf))
             return false;
@@ -98,7 +99,7 @@ tty_client_destroy(struct tty_client *client) {
     client->running = false;
 
     // kill process and free resource
-    lwsl_notice("sending %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
+    lwsl_notice("tty_client_destroy: sending  %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
     if (kill(client->pid, server->sig_code) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", client->pid, errno, strerror(errno));
     }
@@ -136,8 +137,16 @@ thread_run_command(void *args) {
                 perror("setenv");
                 exit(1);
             }
-            if (execvp(server->argv[0], server->argv) < 0) {
-                perror("execvp");
+            int e = -1;
+            if ( 0 == access(server->argv[0], R_OK | X_OK) ) {
+                e = execvp(server->argv[0], server->argv);
+            } else {
+                char *argp[] = {"sh", "-c", NULL, NULL};
+                argp[2] = server->argv[0];
+                e = execv("/bin/sh", argp);
+            } 
+            if (e < 0) {
+                perror("execv?");
                 exit(1);
             }
             break;
@@ -226,6 +235,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_SERVER_WRITEABLE:
             if (!client->initialized) {
                 if (send_initial_message(wsi) < 0) {
+                    lwsl_err("tty_client_remove: failed\n");
                     tty_client_remove(client);
                     lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                     return -1;
@@ -252,7 +262,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 size_t msg_len = LWS_PRE + strlen(b64_text) + 1;
                 unsigned char message[msg_len];
                 unsigned char *p = &message[LWS_PRE];
-                size_t n = sprintf((char *) p, "%c%s", OUTPUT, b64_text);
+                size_t n = snprintf((char *) p, msg_len-LWS_PRE+1, "%c%s", OUTPUT, b64_text);
 
                 free(b64_text);
 

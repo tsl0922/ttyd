@@ -17,17 +17,9 @@ uppercase(char *str);
 bool
 endswith(const char *str, const char *suffix);
 
-// Get human readable signal string
-int
-get_sig_name(int sig, char *buf);
-
 // Get signal code from string like SIGHUP
 int
 get_sig(const char *sig_name);
-
-// print signal list
-void
-print_sig_list();
 
 // Open uri with the default application of system
 int

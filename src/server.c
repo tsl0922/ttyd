@@ -26,7 +26,6 @@ static const struct option options[] = {
         {"uid",          required_argument, NULL, 'u'},
         {"gid",          required_argument, NULL, 'g'},
         {"signal",       required_argument, NULL, 's'},
-        {"signal-list",  no_argument,       NULL,  1},
         {"reconnect",    required_argument, NULL, 'r'},
         {"index",        required_argument, NULL, 'I'},
         {"ssl",          no_argument,       NULL, 'S'},
@@ -34,16 +33,17 @@ static const struct option options[] = {
         {"ssl-key",      required_argument, NULL, 'K'},
         {"ssl-ca",       required_argument, NULL, 'A'},
         {"readonly",     no_argument,       NULL, 'R'},
+        {"client-option",required_argument, NULL, 't'},
         {"check-origin", no_argument,       NULL, 'O'},
         {"max-clients",  required_argument, NULL, 'm'},
         {"once",         no_argument,       NULL, 'o'},
         {"browser",      no_argument,       NULL, 'B'},
-        {"debug",        required_argument, NULL, 'd'},
+        {"log",          required_argument, NULL, 'l'},
         {"version",      no_argument,       NULL, 'v'},
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Om:oBd:vh";
+static const char *opt_string = "+A:Bc:C:g:hi:I:K:l:m:Oop:r:Rs:St:u:v";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -58,10 +58,9 @@ void print_help() {
                     "    --uid, -u               User id to run with\n"
                     "    --gid, -g               Group id to run with\n"
                     "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
-                    "    --signal-list           Print a list of supported signals\n"
                     "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
                     "    --readonly, -R          Do not allow clients to write to the TTY\n"
-                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
+                    "    --client-option, -t     Send option to client (format: { \"key\":\"value\", ... } )\n"
                     "    --check-origin, -O      Do not allow websocket connection from different origin\n"
                     "    --max-clients, -m       Maximum clients to support (default: 0, no limit)\n"
                     "    --once, -o              Accept only one client and exit on disconnection\n"
@@ -71,7 +70,7 @@ void print_help() {
                     "    --ssl-cert, -C          SSL certificate file path\n"
                     "    --ssl-key, -K           SSL key file path\n"
                     "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
-                    "    --debug, -d             Set log level (default: 7)\n"
+                    "    --log, -l               Set log level (default: 7)\n"
                     "    --version, -v           Print the version and exit\n"
                     "    --help, -h              Print this text and exit\n\n"
                     "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
@@ -80,7 +79,7 @@ void print_help() {
 }
 
 struct tty_server *
-tty_server_new(int argc, char **argv, int start) {
+tty_server_new() {
     struct tty_server *ts;
     size_t cmd_len = 0;
 
@@ -92,31 +91,7 @@ tty_server_new(int argc, char **argv, int start) {
     ts->reconnect = 10;
     ts->sig_code = SIGHUP;
     ts->sig_name = strdup("SIGHUP");
-    if (start == argc)
-        return ts;
-
-    int cmd_argc = argc - start;
-    char **cmd_argv = &argv[start];
-    ts->argv = xmalloc(sizeof(char *) * (cmd_argc + 1));
-    for (int i = 0; i < cmd_argc; i++) {
-        ts->argv[i] = strdup(cmd_argv[i]);
-        cmd_len += strlen(ts->argv[i]);
-        if (i != cmd_argc - 1) {
-            cmd_len++; // for space
-        }
-    }
-    ts->argv[cmd_argc] = NULL;
-
-    ts->command = xmalloc(cmd_len + 1);
-    char *ptr = ts->command;
-    for (int i = 0; i < cmd_argc; i++) {
-        ptr = stpcpy(ptr, ts->argv[i]);
-        if (i != cmd_argc - 1) {
-            *ptr++ = ' ';
-        }
-    }
-    *ptr = '\0'; // null terminator
-
+    ts->argc = 0;
     return ts;
 }
 
@@ -124,17 +99,9 @@ void
 tty_server_free(struct tty_server *ts) {
     if (ts == NULL)
         return;
-    if (ts->credential != NULL)
-        free(ts->credential);
-    if (ts->index != NULL)
-        free(ts->index);
-    free(ts->command);
-    free(ts->prefs_json);
+    free(ts->credential);
+    free(ts->index);
     int i = 0;
-    do {
-        free(ts->argv[i++]);
-    } while (ts->argv[i] != NULL);
-    free(ts->argv);
     free(ts->sig_name);
     if (ts->socket_path != NULL) {
         struct stat st;
@@ -150,62 +117,16 @@ void
 sig_handler(int sig) {
     if (force_exit)
         exit(EXIT_FAILURE);
-
-    char sig_name[20];
-    get_sig_name(sig, sig_name);
-    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
+    lwsl_notice("received signal: %s (%d), exiting...\n", strsignal(sig), sig);
     force_exit = true;
     lws_cancel_service(context);
     lwsl_notice("send ^C to force exit.\n");
 }
 
 int
-calc_command_start(int argc, char **argv) {
-    // make a copy of argc and argv
-    int argc_copy = argc;
-    char **argv_copy = xmalloc(sizeof(char *) * argc);
-    for (int i = 0; i < argc; i++) {
-        argv_copy[i] = strdup(argv[i]);
-    }
-
-    // do not print error message for invalid option
-    opterr = 0;
-    while (getopt_long(argc_copy, argv_copy, opt_string, options, NULL) != -1)
-        ;
-
-    int start = argc;
-    if (optind < argc) {
-        char *command = argv_copy[optind];
-        for (int i = 0; i < argc; i++) {
-            if (strcmp(argv[i], command) == 0) {
-                start = i;
-                break;
-            }
-        }
-    }
-
-    // free argv copy
-    for (int i = 0; i < argc; i++) {
-        free(argv_copy[i]);
-    }
-    free(argv_copy);
-
-    // reset for next use
-    opterr = 1;
-    optind = 0;
-
-    return start;
-}
-
-int
 main(int argc, char **argv) {
-    if (argc == 1) {
-        print_help();
-        return 0;
-    }
 
-    int start = calc_command_start(argc, argv);
-    server = tty_server_new(argc, argv, start);
+    server = tty_server_new();
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -229,26 +150,41 @@ main(int argc, char **argv) {
     char key_path[1024] = "";
     char ca_path[1024] = "";
 
-    struct json_object *client_prefs = json_object_new_object();
-
-    // parse command line options
     int c;
-    while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
+    char* end; // parsing int
+    while ((c = getopt_long(argc, argv, opt_string, options, NULL)) != -1) {
         switch (c) {
-            case 1:
-                print_sig_list();
-                exit(EXIT_SUCCESS);
             case 'h':
                 print_help();
                 return 0;
             case 'v':
                 printf("ttyd version %s\n", TTYD_VERSION);
                 return 0;
-            case 'd':
-                debug_level = atoi(optarg);
+            case 'l': {
+                    long x = strtol(optarg, &end,  10);
+                    if (end - optarg != strlen(optarg)) {
+                        fprintf(stderr, "ttyd: -l: takes integer argument not %s\n", optarg);
+                        return -1;
+                    }
+                    debug_level = (int)x;
+                }
                 break;
             case 'R':
                 server->readonly = true;
+                break;
+            case 't':{
+                    struct json_object *obj = json_tokener_parse(optarg);
+                    if (obj == NULL) {
+                        fprintf(stderr, "ttyd: client-option: takes json as arg not %s\n", optarg);
+                        return -1;
+                    }
+                    if (strlen(optarg) > 254) {
+                        fprintf(stderr, "ttyd: client-option: takes json as arg less than 254 char sorry , not %s\n", optarg);
+                        return -1;
+                    }
+                    json_object_put (obj);
+                    server->client_opt = optarg;
+                }
                 break;
             case 'O':
                 server->check_origin = true;
@@ -262,11 +198,13 @@ main(int argc, char **argv) {
             case 'B':
                 browser = true;
                 break;
-            case 'p':
-                info.port = atoi(optarg);
-                if (info.port < 0) {
-                    fprintf(stderr, "ttyd: invalid port: %s\n", optarg);
-                    return -1;
+            case 'p': {
+                    long x = strtol(optarg, &end,  10);
+                    if (end - optarg != strlen(optarg) || x < 0 || x > 65535) {
+                        fprintf(stderr, "ttyd: -p: takes port number argument not %s\n", optarg);
+                        return -1;
+                    }
+                    info.port = x;
                 }
                 break;
             case 'i':
@@ -307,18 +245,19 @@ main(int argc, char **argv) {
             case 'I':
                 if (!strncmp(optarg, "~/", 2)) {
                     const char* home = getenv("HOME");
-                    server->index = malloc(strlen(home) + strlen(optarg) - 1);
-                    sprintf(server->index, "%s%s", home, optarg + 1);
+                    int index_size = strlen(home) + strlen(optarg) - 1;
+                    server->index = xmalloc(index_size);
+                    snprintf(server->index, index_size,"%s%s", home, optarg + 1);
                 } else {
                     server->index = strdup(optarg);
                 }
                 struct stat st;
                 if (stat(server->index, &st) == -1) {
-                    fprintf(stderr, "Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
+                    fprintf(stderr, "ttyd: Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
                     return -1;
                 }
                 if (S_ISDIR(st.st_mode)) {
-                    fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
+                    fprintf(stderr, "ttyd: Invalid index.html path: %s, is it a dir?\n", server->index);
                     return -1;
                 }
                 break;
@@ -337,33 +276,22 @@ main(int argc, char **argv) {
                 strncpy(ca_path, optarg, sizeof(ca_path) - 1);
                 ca_path[sizeof(ca_path) - 1] = '\0';
                 break;
+            case ':':
             case '?':
-                break;
-            case 't':
-                optind--;
-                for (; optind < start && *argv[optind] != '-'; optind++) {
-                    char *option = strdup(optarg);
-                    char *key = strsep(&option, "=");
-                    if (key == NULL) {
-                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
-                        return -1;
-                    }
-                    char *value = strsep(&option, "=");
-                    free(option);
-                    struct json_object *obj = json_tokener_parse(value);
-                    json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
-                }
-                break;
             default:
                 print_help();
                 return -1;
         }
     }
-    server->prefs_json = strdup(json_object_to_json_string(client_prefs));
-    json_object_put(client_prefs);
+    argc -= optind;
+    argv += optind;
+    server->argc = argc;
+    server->argv = argv;
 
-    if (server->command == NULL || strlen(server->command) == 0) {
-        fprintf(stderr, "ttyd: missing start command\n");
+    if ( server->argc < 1 ) {
+        tty_server_free(server);
+        fprintf( stderr, "ttyd: no command to start in child terminal\n");
+        print_help();
         return -1;
     }
 
@@ -371,7 +299,7 @@ main(int argc, char **argv) {
 
 #if LWS_LIBRARY_VERSION_MAJOR >= 2
     char server_hdr[128] = "";
-    sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
+    snprintf(server_hdr, 128, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
     info.server_string = server_hdr;
 #endif
 
@@ -416,7 +344,14 @@ main(int argc, char **argv) {
     lwsl_notice("tty configuration:\n");
     if (server->credential != NULL)
         lwsl_notice("  credential: %s\n", server->credential);
-    lwsl_notice("  start command: %s\n", server->command);
+    
+    lwsl_notice("  start command: \n");
+    for (c = 0; c < argc; c++) {
+        lwsl_notice(" %s\n", argv[c]);
+    }
+    lwsl_notice("\n");
+
+
     lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
     if (server->check_origin)
@@ -442,7 +377,7 @@ main(int argc, char **argv) {
 
     if (browser) {
         char url[30];
-        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
+        snprintf(url, 30, "%s://localhost:%d", ssl ? "https" : "http", info.port);
         open_uri(url);
     }
 
