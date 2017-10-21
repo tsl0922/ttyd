@@ -65,7 +65,7 @@ check_host_origin(struct lws *wsi) {
         int port;
         if (lws_parse_uri(buf, &prot, &address, &port, &path))
             return false;
-        sprintf(buf, "%s:%d", address, port);
+        sprintf(buf, "%s", address);
         int host_length = lws_hdr_total_length(wsi, WSI_TOKEN_HOST);
         if (host_length != strlen(buf))
             return false;
