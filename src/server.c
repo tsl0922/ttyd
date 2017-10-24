@@ -270,7 +270,7 @@ main(int argc, char **argv) {
                 }
                 break;
             case 'i':
-                strncpy(iface, optarg, sizeof(iface));
+                strncpy(iface, optarg, sizeof(iface) - 1);
                 iface[sizeof(iface) - 1] = '\0';
                 break;
             case 'c':
