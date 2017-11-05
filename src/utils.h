@@ -25,10 +25,6 @@ get_sig_name(int sig, char *buf);
 int
 get_sig(const char *sig_name);
 
-// print signal list
-void
-print_sig_list();
-
 // Open uri with the default application of system
 int
 open_uri(char *uri);

@@ -36,9 +36,6 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -s, --signal <signal string>
       Signal to send to the command when exit it (default: SIGHUP)
 
-  --signal-list
-      Print a list of supported signals
-
   -r, --reconnect <seconds>
       Time to reconnect for the client in seconds (default: 10)
 

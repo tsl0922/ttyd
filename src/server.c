@@ -52,28 +52,27 @@ void print_help() {
                     "VERSION:\n"
                     "    %s\n\n"
                     "OPTIONS:\n"
-                    "    --port, -p              Port to listen (default: 7681, use `0` for random port)\n"
-                    "    --interface, -i         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
-                    "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
-                    "    --uid, -u               User id to run with\n"
-                    "    --gid, -g               Group id to run with\n"
-                    "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
-                    "    --signal-list           Print a list of supported signals\n"
-                    "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
-                    "    --readonly, -R          Do not allow clients to write to the TTY\n"
-                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
-                    "    --check-origin, -O      Do not allow websocket connection from different origin\n"
-                    "    --max-clients, -m       Maximum clients to support (default: 0, no limit)\n"
-                    "    --once, -o              Accept only one client and exit on disconnection\n"
-                    "    --browser, -B           Open terminal with the default system browser\n"
-                    "    --index, -I             Custom index.html path\n"
-                    "    --ssl, -S               Enable SSL\n"
-                    "    --ssl-cert, -C          SSL certificate file path\n"
-                    "    --ssl-key, -K           SSL key file path\n"
-                    "    --ssl-ca, -A            SSL CA file path for client certificate verification\n"
-                    "    --debug, -d             Set log level (default: 7)\n"
-                    "    --version, -v           Print the version and exit\n"
-                    "    --help, -h              Print this text and exit\n\n"
+                    "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
+                    "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
+                    "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
+                    "    -u, --uid               User id to run with\n"
+                    "    -g, --gid               Group id to run with\n"
+                    "    -s, --signal            Signal to send to the command when exit it (default: SIGHUP)\n"
+                    "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
+                    "    -R, --readonly          Do not allow clients to write to the TTY\n"
+                    "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
+                    "    -O, --check-origin      Do not allow websocket connection from different origin\n"
+                    "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
+                    "    -o, --once              Accept only one client and exit on disconnection\n"
+                    "    -B, --browser           Open terminal with the default system browser\n"
+                    "    -I, --index             Custom index.html path\n"
+                    "    -S, --ssl               Enable SSL\n"
+                    "    -C, --ssl-cert          SSL certificate file path\n"
+                    "    -K, --ssl-key           SSL key file path\n"
+                    "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
+                    "    -d, --debug             Set log level (default: 7)\n"
+                    "    -v, --version           Print the version and exit\n"
+                    "    -h, --help              Print this text and exit\n\n"
                     "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
             TTYD_VERSION
     );
@@ -235,9 +234,6 @@ main(int argc, char **argv) {
     int c;
     while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
         switch (c) {
-            case 1:
-                print_sig_list();
-                exit(EXIT_SUCCESS);
             case 'h':
                 print_help();
                 return 0;
