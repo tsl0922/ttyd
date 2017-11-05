@@ -69,23 +69,20 @@ endswith(const char *str, const char *suffix) {
 }
 
 int
-get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
+get_sig_name(int sig, char *buf, size_t len) {
+    int n = snprintf(buf, len, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
     uppercase(buf);
     return n;
 }
 
 int
 get_sig(const char *sig_name) {
-    if (strlen(sig_name) <= 3 || strcasestr(sig_name, "sig") == NULL) {
-        return -1;
-    }
     for (int sig = 1; sig < NSIG; sig++) {
         const char *name = sys_signame[sig];
-        if (name != NULL && strcasecmp(name, sig_name + 3) == 0)
+        if (name != NULL && (strcasecmp(name, sig_name) == 0 || strcasecmp(name, sig_name + 3) == 0))
             return sig;
     }
-    return -1;
+    return atoi(sig_name);
 }
 
 int

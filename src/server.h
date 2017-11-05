@@ -107,12 +107,12 @@ struct tty_server {
     char *command;                            // full command line
     char **argv;                              // command with arguments
     int sig_code;                             // close signal
-    char *sig_name;                           // human readable signal string
+    char sig_name[20];                        // human readable signal string
     bool readonly;                            // whether not allow clients to write to the TTY
     bool check_origin;                        // whether allow websocket connection from different origin
     int max_clients;                          // maximum clients to support
     bool once;                                // whether accept only one client and exit on disconnection
-    char *socket_path;                        // UNIX domain socket path
+    char socket_path[255];                    // UNIX domain socket path
     pthread_mutex_t lock;
 };
 

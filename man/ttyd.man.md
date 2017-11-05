@@ -34,7 +34,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
       Group id to run with
 
   -s, --signal <signal string>
-      Signal to send to the command when exit it (default: SIGHUP)
+      Signal to send to the command when exit it (default: 9, SIGHUP)
 
   -r, --reconnect <seconds>
       Time to reconnect for the client in seconds (default: 10)

@@ -57,7 +57,7 @@ void print_help() {
                     "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
                     "    -u, --uid               User id to run with\n"
                     "    -g, --gid               Group id to run with\n"
-                    "    -s, --signal            Signal to send to the command when exit it (default: SIGHUP)\n"
+                    "    -s, --signal            Signal to send to the command when exit it (default: 9, SIGHUP)\n"
                     "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
                     "    -R, --readonly          Do not allow clients to write to the TTY\n"
                     "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
@@ -90,7 +90,7 @@ tty_server_new(int argc, char **argv, int start) {
     ts->client_count = 0;
     ts->reconnect = 10;
     ts->sig_code = SIGHUP;
-    ts->sig_name = strdup("SIGHUP");
+    get_sig_name(ts->sig_code, ts->sig_name, sizeof(ts->sig_name));
     if (start == argc)
         return ts;
 
@@ -134,13 +134,11 @@ tty_server_free(struct tty_server *ts) {
         free(ts->argv[i++]);
     } while (ts->argv[i] != NULL);
     free(ts->argv);
-    free(ts->sig_name);
-    if (ts->socket_path != NULL) {
+    if (strlen(ts->socket_path) > 0) {
         struct stat st;
         if (!stat(ts->socket_path, &st)) {
             unlink(ts->socket_path);
         }
-        free(ts->socket_path);
     }
     free(ts);
 }
@@ -151,7 +149,7 @@ sig_handler(int sig) {
         exit(EXIT_FAILURE);
 
     char sig_name[20];
-    get_sig_name(sig, sig_name);
+    get_sig_name(sig, sig_name, sizeof(sig_name));
     lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
     force_exit = true;
     lws_cancel_service(context);
@@ -285,8 +283,8 @@ main(int argc, char **argv) {
             case 's': {
                 int sig = get_sig(optarg);
                 if (sig > 0) {
-                    server->sig_code = get_sig(optarg);
-                    server->sig_name = uppercase(strdup(optarg));
+                    server->sig_code = sig;
+                    get_sig_name(sig, server->sig_name, sizeof(server->sig_code));
                 } else {
                     fprintf(stderr, "ttyd: invalid signal: %s\n", optarg);
                     return -1;
@@ -374,9 +372,9 @@ main(int argc, char **argv) {
     if (strlen(iface) > 0) {
         info.iface = iface;
         if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
-#ifdef LWS_USE_UNIX_SOCK
+#if defined(LWS_USE_UNIX_SOCK) || defined(LWS_WITH_UNIX_SOCK)
             info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
-            server->socket_path = strdup(info.iface);
+            strncpy(server->socket_path, info.iface, sizeof(server->socket_path));
 #else
             fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
             return -1;
