@@ -8,7 +8,6 @@ curl -sLo- https://downloads.lede-project.org/snapshots/targets/ar71xx/generic/l
 cd lede-sdk-ar71xx-generic_gcc-5.4.0_musl-1.1.15.Linux-x86_64
 ./scripts/feeds update -a
 ./scripts/feeds install -a
-sed -i 's/$(eval $(call BuildPackage,libwebsockets-cyassl))/#\0/' package/feeds/packages/libwebsockets/Makefile
 make defconfig
 make package/feeds/packages/ttyd/compile V=99
 ```
