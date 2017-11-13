@@ -3,27 +3,31 @@
 
 // malloc with NULL check
 void *
-t_malloc(size_t size);
-
-// free with NULL check
-void
-t_free(void *p);
+xmalloc(size_t size);
 
 // realloc with NULL check
 void *
-t_realloc(void *p, size_t size);
+xrealloc(void *p, size_t size);
 
 // Convert a string to upper case
 char *
 uppercase(char *str);
 
+// Check whether str ends with suffix
+bool
+endswith(const char *str, const char *suffix);
+
 // Get human readable signal string
 int
-get_sig_name(int sig, char *buf);
+get_sig_name(int sig, char *buf, size_t len);
 
 // Get signal code from string like SIGHUP
 int
 get_sig(const char *sig_name);
+
+// Open uri with the default application of system
+int
+open_uri(char *uri);
 
 // Encode text to base64, the caller should free the returned string
 char *

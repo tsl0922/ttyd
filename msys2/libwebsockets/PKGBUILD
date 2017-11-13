@@ -1,0 +1,37 @@
+# Maintainer: Shuanglei Tao <tsl0922@gmail.com>
+
+pkgname="libwebsockets"
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="A lightweight pure C library for websockets (msys)"
+arch=('i686' 'x86_64')
+url="http://libwebsockets.org"
+license=('LGPL 2.1')
+makedepends=('gcc' 'cmake' 'zlib-devel' 'openssl-devel')
+source=(${pkgname}-${pkgver}.tar.gz::"https://github.com/warmcat/${pkgname}/archive/v${pkgver}.tar.gz")
+sha256sums=('bcc96aaa609daae4d3f7ab1ee480126709ef4f6a8bf9c85de40aae48e38cce66')
+
+prepare() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+}
+
+build() {
+  mkdir -p "${srcdir}/build-${CARCH}"
+  cd "${srcdir}/build-${CARCH}"
+
+  cmake \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DLWS_USE_BUNDLED_ZLIB=OFF \
+    -DLWS_WITHOUT_TESTAPPS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    ../${pkgname}-${pkgver}
+
+  make
+}
+
+package() {
+  depends=('zlib-devel' 'openssl-devel')
+  options=('staticlibs')
+  cd "${srcdir}/build-${CARCH}"
+  make DESTDIR=${pkgdir} install
+}

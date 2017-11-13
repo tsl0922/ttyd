@@ -1,0 +1,34 @@
+# Maintainer: Shuanglei Tao <tsl0922@gmail.com>
+
+pkgname="ttyd"
+pkgver=1.3.3
+pkgrel=1
+pkgdesc="A command-line tool for sharing terminal over the web"
+arch=('i686' 'x86_64')
+url="https://github.com/tsl0922/ttyd"
+license=('MIT')
+makedepends=('gcc' 'cmake' 'json-c' 'libwebsockets' 'vim')
+source=(${pkgname}-${pkgver}.tar.gz::"https://github.com/tsl0922/${pkgname}/archive/${pkgver}.tar.gz")
+sha256sums=('6e85335c11df68e6401178269920a586bce7e66045bd0b225f6d2bc58356d105')
+
+prepare() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+}
+
+build() {
+  mkdir -p "${srcdir}/build-${CARCH}"
+  cd "${srcdir}/build-${CARCH}"
+
+  cmake \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_BUILD_TYPE=Release \
+    ../${pkgname}-${pkgver}
+
+  make
+}
+
+package() {
+  options=('staticlibs' 'strip')
+  cd "${srcdir}/build-${CARCH}"
+  make DESTDIR=${pkgdir} install
+}

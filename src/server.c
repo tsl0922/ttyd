@@ -1,7 +1,5 @@
 #include "server.h"
 
-#define TTYD_VERSION "1.1.0"
-
 volatile bool force_exit = false;
 struct lws_context *context;
 struct tty_server *server;
@@ -22,26 +20,30 @@ static const struct lws_extension extensions[] = {
 
 // command line options
 static const struct option options[] = {
-        {"port", required_argument, NULL, 'p'},
-        {"interface", required_argument, NULL, 'i'},
-        {"credential", required_argument, NULL, 'c'},
-        {"uid", required_argument, NULL, 'u'},
-        {"gid", required_argument, NULL, 'g'},
-        {"signal", required_argument, NULL, 's'},
-        {"reconnect", required_argument, NULL, 'r'},
-        {"ssl", no_argument, NULL, 'S'},
-        {"ssl-cert", required_argument, NULL, 'C'},
-        {"ssl-key", required_argument, NULL, 'K'},
-        {"ssl-ca", required_argument, NULL, 'A'},
-        {"readonly", no_argument, NULL, 'R'},
-        {"check-origin", no_argument, NULL, 'O'},
-        {"once", no_argument, NULL, 'o'},
-        {"debug", required_argument, NULL, 'd'},
-        {"version", no_argument, NULL, 'v'},
-        {"help", no_argument, NULL, 'h'},
-        {NULL, 0, 0, 0}
+        {"port",         required_argument, NULL, 'p'},
+        {"interface",    required_argument, NULL, 'i'},
+        {"credential",   required_argument, NULL, 'c'},
+        {"uid",          required_argument, NULL, 'u'},
+        {"gid",          required_argument, NULL, 'g'},
+        {"signal",       required_argument, NULL, 's'},
+        {"signal-list",  no_argument,       NULL,  1},
+        {"reconnect",    required_argument, NULL, 'r'},
+        {"index",        required_argument, NULL, 'I'},
+        {"ssl",          no_argument,       NULL, 'S'},
+        {"ssl-cert",     required_argument, NULL, 'C'},
+        {"ssl-key",      required_argument, NULL, 'K'},
+        {"ssl-ca",       required_argument, NULL, 'A'},
+        {"readonly",     no_argument,       NULL, 'R'},
+        {"check-origin", no_argument,       NULL, 'O'},
+        {"max-clients",  required_argument, NULL, 'm'},
+        {"once",         no_argument,       NULL, 'o'},
+        {"browser",      no_argument,       NULL, 'B'},
+        {"debug",        required_argument, NULL, 'd'},
+        {"version",      no_argument,       NULL, 'v'},
+        {"help",         no_argument,       NULL, 'h'},
+        {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:aSC:K:A:Rt:Ood:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Om:oBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -50,24 +52,28 @@ void print_help() {
                     "VERSION:\n"
                     "    %s\n\n"
                     "OPTIONS:\n"
-                    "    --port, -p              Port to listen (default: 7681)\n"
-                    "    --interface, -i         Network interface to bind\n"
-                    "    --credential, -c        Credential for Basic Authentication (format: username:password)\n"
-                    "    --uid, -u               User id to run with\n"
-                    "    --gid, -g               Group id to run with\n"
-                    "    --signal, -s            Signal to send to the command when exit it (default: SIGHUP)\n"
-                    "    --reconnect, -r         Time to reconnect for the client in seconds (default: 10)\n"
-                    "    --readonly, -R          Do not allow clients to write to the TTY\n"
-                    "    --client-option, -t     Send option to client (format: key=value), repeat to add more options\n"
-                    "    --check-origin, -O      Do not allow websocket connection from different origin\n"
-                    "    --once, -o              Accept only one client and exit on disconnection\n"
-                    "    --ssl, -S               Enable ssl\n"
-                    "    --ssl-cert, -C          Ssl certificate file path\n"
-                    "    --ssl-key, -K           Ssl key file path\n"
-                    "    --ssl-ca, -A            Ssl ca file path\n"
-                    "    --debug, -d             Set log level (0-9, default: 7)\n"
-                    "    --version, -v           Print the version and exit\n"
-                    "    --help, -h              Print this text and exit\n",
+                    "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
+                    "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
+                    "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
+                    "    -u, --uid               User id to run with\n"
+                    "    -g, --gid               Group id to run with\n"
+                    "    -s, --signal            Signal to send to the command when exit it (default: 9, SIGHUP)\n"
+                    "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
+                    "    -R, --readonly          Do not allow clients to write to the TTY\n"
+                    "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
+                    "    -O, --check-origin      Do not allow websocket connection from different origin\n"
+                    "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
+                    "    -o, --once              Accept only one client and exit on disconnection\n"
+                    "    -B, --browser           Open terminal with the default system browser\n"
+                    "    -I, --index             Custom index.html path\n"
+                    "    -S, --ssl               Enable SSL\n"
+                    "    -C, --ssl-cert          SSL certificate file path\n"
+                    "    -K, --ssl-key           SSL key file path\n"
+                    "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
+                    "    -d, --debug             Set log level (default: 7)\n"
+                    "    -v, --version           Print the version and exit\n"
+                    "    -h, --help              Print this text and exit\n\n"
+                    "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
             TTYD_VERSION
     );
 }
@@ -77,20 +83,20 @@ tty_server_new(int argc, char **argv, int start) {
     struct tty_server *ts;
     size_t cmd_len = 0;
 
-    ts = t_malloc(sizeof(struct tty_server));
+    ts = xmalloc(sizeof(struct tty_server));
 
     memset(ts, 0, sizeof(struct tty_server));
     LIST_INIT(&ts->clients);
     ts->client_count = 0;
     ts->reconnect = 10;
     ts->sig_code = SIGHUP;
-    ts->sig_name = strdup("SIGHUP");
+    get_sig_name(ts->sig_code, ts->sig_name, sizeof(ts->sig_name));
     if (start == argc)
         return ts;
 
     int cmd_argc = argc - start;
     char **cmd_argv = &argv[start];
-    ts->argv = t_malloc(sizeof(char *) * (cmd_argc + 1));
+    ts->argv = xmalloc(sizeof(char *) * (cmd_argc + 1));
     for (int i = 0; i < cmd_argc; i++) {
         ts->argv[i] = strdup(cmd_argv[i]);
         cmd_len += strlen(ts->argv[i]);
@@ -100,16 +106,41 @@ tty_server_new(int argc, char **argv, int start) {
     }
     ts->argv[cmd_argc] = NULL;
 
-    ts->command = t_malloc(cmd_len);
+    ts->command = xmalloc(cmd_len + 1);
     char *ptr = ts->command;
     for (int i = 0; i < cmd_argc; i++) {
         ptr = stpcpy(ptr, ts->argv[i]);
         if (i != cmd_argc - 1) {
-            sprintf(ptr++, "%c", ' ');
+            *ptr++ = ' ';
         }
     }
+    *ptr = '\0'; // null terminator
 
     return ts;
+}
+
+void
+tty_server_free(struct tty_server *ts) {
+    if (ts == NULL)
+        return;
+    if (ts->credential != NULL)
+        free(ts->credential);
+    if (ts->index != NULL)
+        free(ts->index);
+    free(ts->command);
+    free(ts->prefs_json);
+    int i = 0;
+    do {
+        free(ts->argv[i++]);
+    } while (ts->argv[i] != NULL);
+    free(ts->argv);
+    if (strlen(ts->socket_path) > 0) {
+        struct stat st;
+        if (!stat(ts->socket_path, &st)) {
+            unlink(ts->socket_path);
+        }
+    }
+    free(ts);
 }
 
 void
@@ -118,7 +149,7 @@ sig_handler(int sig) {
         exit(EXIT_FAILURE);
 
     char sig_name[20];
-    get_sig_name(sig, sig_name);
+    get_sig_name(sig, sig_name, sizeof(sig_name));
     lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
     force_exit = true;
     lws_cancel_service(context);
@@ -129,7 +160,7 @@ int
 calc_command_start(int argc, char **argv) {
     // make a copy of argc and argv
     int argc_copy = argc;
-    char **argv_copy = t_malloc(sizeof(char *) * argc);
+    char **argv_copy = xmalloc(sizeof(char *) * argc);
     for (int i = 0; i < argc; i++) {
         argv_copy[i] = strdup(argv[i]);
     }
@@ -152,9 +183,9 @@ calc_command_start(int argc, char **argv) {
 
     // free argv copy
     for (int i = 0; i < argc; i++) {
-        t_free(argv_copy[i]);
+        free(argv_copy[i]);
     }
-    t_free(argv_copy);
+    free(argv_copy);
 
     // reset for next use
     opterr = 1;
@@ -187,8 +218,9 @@ main(int argc, char **argv) {
     info.extensions = extensions;
     info.timeout_secs = 5;
 
-    int debug_level = 7;
+    int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
+    bool browser = false;
     bool ssl = false;
     char cert_path[1024] = "";
     char key_path[1024] = "";
@@ -215,8 +247,14 @@ main(int argc, char **argv) {
             case 'O':
                 server->check_origin = true;
                 break;
+            case 'm':
+                server->max_clients = atoi(optarg);
+                break;
             case 'o':
                 server->once = true;
+                break;
+            case 'B':
+                browser = true;
                 break;
             case 'p':
                 info.port = atoi(optarg);
@@ -226,7 +264,7 @@ main(int argc, char **argv) {
                 }
                 break;
             case 'i':
-                strncpy(iface, optarg, sizeof(iface));
+                strncpy(iface, optarg, sizeof(iface) - 1);
                 iface[sizeof(iface) - 1] = '\0';
                 break;
             case 'c':
@@ -245,8 +283,8 @@ main(int argc, char **argv) {
             case 's': {
                 int sig = get_sig(optarg);
                 if (sig > 0) {
-                    server->sig_code = get_sig(optarg);
-                    server->sig_name = uppercase(strdup(optarg));
+                    server->sig_code = sig;
+                    get_sig_name(sig, server->sig_name, sizeof(server->sig_code));
                 } else {
                     fprintf(stderr, "ttyd: invalid signal: %s\n", optarg);
                     return -1;
@@ -257,6 +295,24 @@ main(int argc, char **argv) {
                 server->reconnect = atoi(optarg);
                 if (server->reconnect <= 0) {
                     fprintf(stderr, "ttyd: invalid reconnect: %s\n", optarg);
+                    return -1;
+                }
+                break;
+            case 'I':
+                if (!strncmp(optarg, "~/", 2)) {
+                    const char* home = getenv("HOME");
+                    server->index = malloc(strlen(home) + strlen(optarg) - 1);
+                    sprintf(server->index, "%s%s", home, optarg + 1);
+                } else {
+                    server->index = strdup(optarg);
+                }
+                struct stat st;
+                if (stat(server->index, &st) == -1) {
+                    fprintf(stderr, "Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
+                    return -1;
+                }
+                if (S_ISDIR(st.st_mode)) {
+                    fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
                     return -1;
                 }
                 break;
@@ -279,15 +335,15 @@ main(int argc, char **argv) {
                 break;
             case 't':
                 optind--;
-                for(;optind < start && *argv[optind] != '-'; optind++){
-                    char *option =strdup(optarg);
+                for (; optind < start && *argv[optind] != '-'; optind++) {
+                    char *option = strdup(optarg);
                     char *key = strsep(&option, "=");
                     if (key == NULL) {
                         fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
                         return -1;
                     }
                     char *value = strsep(&option, "=");
-                    t_free(option);
+                    free(option);
                     struct json_object *obj = json_tokener_parse(value);
                     json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
                 }
@@ -307,14 +363,25 @@ main(int argc, char **argv) {
 
     lws_set_log_level(debug_level, NULL);
 
-#if LWS_LIBRARY_VERSION_MAJOR == 2
+#if LWS_LIBRARY_VERSION_MAJOR >= 2
     char server_hdr[128] = "";
     sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
     info.server_string = server_hdr;
 #endif
 
-    if (strlen(iface) > 0)
+    if (strlen(iface) > 0) {
         info.iface = iface;
+        if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
+#if defined(LWS_USE_UNIX_SOCK) || defined(LWS_WITH_UNIX_SOCK)
+            info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
+            strncpy(server->socket_path, info.iface, sizeof(server->socket_path));
+#else
+            fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
+            return -1;
+#endif
+        }
+    }
+
     if (ssl) {
         info.ssl_cert_filepath = cert_path;
         info.ssl_private_key_filepath = key_path;
@@ -332,9 +399,30 @@ main(int argc, char **argv) {
                 "!DHE-RSA-AES256-SHA256:"
                 "!AES256-GCM-SHA384:"
                 "!AES256-SHA256";
-#if LWS_LIBRARY_VERSION_MAJOR == 2
+        if (strlen(info.ssl_ca_filepath) > 0)
+            info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
+#if LWS_LIBRARY_VERSION_MAJOR >= 2
         info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
 #endif
+    }
+
+    lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
+    lwsl_notice("tty configuration:\n");
+    if (server->credential != NULL)
+        lwsl_notice("  credential: %s\n", server->credential);
+    lwsl_notice("  start command: %s\n", server->command);
+    lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
+    lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+    if (server->check_origin)
+        lwsl_notice("  check origin: true\n");
+    if (server->readonly)
+        lwsl_notice("  readonly: true\n");
+    if (server->max_clients > 0)
+        lwsl_notice("  max clients: %d\n", server->max_clients);
+    if (server->once)
+        lwsl_notice("  once: true\n");
+    if (server->index != NULL) {
+        lwsl_notice("  custom index.html: %s\n", server->index);
     }
 
     signal(SIGINT, sig_handler);  // ^C
@@ -346,18 +434,11 @@ main(int argc, char **argv) {
         return 1;
     }
 
-    lwsl_notice("TTY configuration:\n");
-    if (server->credential != NULL)
-        lwsl_notice("  credential: %s\n", server->credential);
-    lwsl_notice("  start command: %s\n", server->command);
-    lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
-    lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
-    if (server->check_origin)
-        lwsl_notice("  check origin: true\n");
-    if (server->readonly)
-        lwsl_notice("  readonly: true\n");
-    if (server->once)
-        lwsl_notice("  once: true\n");
+    if (browser) {
+        char url[30];
+        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
+        open_uri(url);
+    }
 
     // libwebsockets main loop
     while (!force_exit) {
@@ -365,7 +446,7 @@ main(int argc, char **argv) {
         if (!LIST_EMPTY(&server->clients)) {
             struct tty_client *client;
             LIST_FOREACH(client, &server->clients, list) {
-                if (!STAILQ_EMPTY(&client->queue)) {
+                if (client->running && !STAILQ_EMPTY(&client->queue)) {
                     lws_callback_on_writable(client->wsi);
                 }
             }
@@ -377,17 +458,7 @@ main(int argc, char **argv) {
     lws_context_destroy(context);
 
     // cleanup
-    if (server->credential != NULL)
-        t_free(server->credential);
-    t_free(server->command);
-    t_free(server->prefs_json);
-    int i = 0;
-    do {
-        t_free(server->argv[i++]);
-    } while (server->argv[i] != NULL);
-    t_free(server->argv);
-    t_free(server->sig_name);
-    t_free(server);
+    tty_server_free(server);
 
     return 0;
 }

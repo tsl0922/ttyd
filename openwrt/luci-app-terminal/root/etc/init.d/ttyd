@@ -6,7 +6,7 @@ SERVICE_DAEMONIZE=1
 
 start() {
 	logger -t TTYD 'Starting ttyd service'
-	service_start /usr/bin/ttyd login
+	service_start /usr/bin/ttyd -i br-lan /bin/login
 	return 0
 }
 
@@ -21,6 +21,6 @@ stop() {
 restart() {
 	logger -t TTYD 'Restarting ttyd service'
 	stop
-	sleep 2 # give time to shutdown
+	sleep 2
 	start
 }

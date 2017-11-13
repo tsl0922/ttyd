@@ -2,28 +2,38 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
 
-// http://web.mit.edu/~svalente/src/kill/kill.c
 #ifdef __linux__
-/*
- *  sys_signame -- an ordered list of signals.
- *  lifted from /usr/include/linux/signal.h
- *  this particular order is only correct for linux.
- *  this is _not_ portable.
- */
+// https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
 const char *sys_signame[NSIG] = {
-    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "IOT",  "UNUSED",
+    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "ABRT", "UNUSED",
     "FPE",   "KILL", "USR1",  "SEGV", "USR2",  "PIPE", "ALRM", "TERM",
-    "STKFLT","CHLD", "CONT",  "STOP", "TSTP",  "TTIN", "TTOU", "IO",
-    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", NULL
+    "STKFLT","CHLD", "CONT",  "STOP", "TSTP",  "TTIN", "TTOU", "URG",
+    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", "IO",   "PWR",  "SYS", NULL
+};
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#include <windows.h>
+#include <shellapi.h>
+// https://github.com/mirror/newlib-cygwin/blob/master/winsup/cygwin/strsig.cc
+#ifndef NSIG
+#define NSIG 33
+#endif
+const char *sys_signame[NSIG] = {
+    "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "IOT",  "EMT",
+    "FPE",   "KILL", "BUS",   "SEGV", "SYS",   "PIPE", "ALRM", "TERM",
+    "URG",   "STOP", "TSTP",  "CONT", "CHLD",  "TTIN", "TTOU", "IO",
+    "XCPU",  "XFSZ", "VTALRM","PROF", "WINCH", "PWR",  "USR1", "USR2", NULL
 };
 #endif
 
 void *
-t_malloc(size_t size) {
+xmalloc(size_t size) {
     if (size == 0)
         return NULL;
     void *p = malloc(size);
@@ -32,12 +42,8 @@ t_malloc(size_t size) {
     return p;
 }
 
-void t_free(void *p) {
-    free(p);
-}
-
 void *
-t_realloc(void *p, size_t size) {
+xrealloc(void *p, size_t size) {
     if ((size == 0) && (p == NULL))
         return NULL;
     p = realloc(p, size);
@@ -55,24 +61,46 @@ uppercase(char *str) {
     return str;
 }
 
+bool
+endswith(const char *str, const char *suffix) {
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+    return str_len > suffix_len && !strcmp(str + (str_len - suffix_len), suffix);
+}
+
 int
-get_sig_name(int sig, char *buf) {
-    int n = sprintf(buf, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
+get_sig_name(int sig, char *buf, size_t len) {
+    int n = snprintf(buf, len, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
     uppercase(buf);
     return n;
 }
 
 int
 get_sig(const char *sig_name) {
-    if (strcasestr(sig_name, "sig") != sig_name || strlen(sig_name) <= 3) {
-        return -1;
-    }
     for (int sig = 1; sig < NSIG; sig++) {
         const char *name = sys_signame[sig];
-        if (strcasecmp(name, sig_name + 3) == 0)
+        if (name != NULL && (strcasecmp(name, sig_name) == 0 || strcasecmp(name, sig_name + 3) == 0))
             return sig;
     }
-    return -1;
+    return atoi(sig_name);
+}
+
+int
+open_uri(char *uri) {
+#ifdef __APPLE__
+    char command[256];
+    sprintf(command, "open %s > /dev/null 2>&1", uri);
+    return system(command);
+#elif defined(_WIN32) || defined(__CYGWIN__)
+    return ShellExecute(0, 0, uri, 0, 0 , SW_SHOW) > 32 ? 0 : 1;
+#else
+    // check if X server is running
+    if (system("xset -q > /dev/null 2>&1"))
+        return 1;
+    char command[256];
+    sprintf(command, "xdg-open %s > /dev/null 2>&1", uri);
+    return system(command);
+#endif
 }
 
 // https://github.com/darkk/redsocks/blob/master/base64.c
@@ -84,7 +112,7 @@ base64_encode(const unsigned char *buffer, size_t length) {
     int i_shift = 0;
     int bytes_remaining = (int) length;
 
-    ret = dst = t_malloc((size_t) (((length + 2) / 3 * 4) + 1));
+    ret = dst = xmalloc((size_t) (((length + 2) / 3 * 4) + 1));
     while (bytes_remaining) {
         i_bits = (i_bits << 8) + *buffer++;
         bytes_remaining--;

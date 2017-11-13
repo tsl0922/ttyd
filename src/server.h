@@ -2,12 +2,17 @@
 #include "lws_config.h"
 #endif
 
+#ifndef TTYD_VERSION
+#define TTYD_VERSION "unknown"
+#endif
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -21,7 +26,18 @@
 #include <sys/wait.h>
 #include <assert.h>
 
-#ifdef __APPLE__
+#ifdef __OpenBSD__
+#define STAILQ_HEAD            SIMPLEQ_HEAD
+#define STAILQ_ENTRY           SIMPLEQ_ENTRY
+#define STAILQ_INIT            SIMPLEQ_INIT
+#define STAILQ_INSERT_TAIL     SIMPLEQ_INSERT_TAIL
+#define STAILQ_EMPTY           SIMPLEQ_EMPTY
+#define STAILQ_FIRST           SIMPLEQ_FIRST
+#define STAILQ_REMOVE_HEAD     SIMPLEQ_REMOVE_HEAD
+#define STAILQ_FOREACH         SIMPLEQ_FOREACH
+#endif
+
+#if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
 #elif defined(__FreeBSD__)
 #include <libutil.h>
@@ -34,6 +50,22 @@
 
 #include "utils.h"
 
+// client message
+#define INPUT '0'
+#define PING '1'
+#define RESIZE_TERMINAL '2'
+#define JSON_DATA '{'
+
+// server message
+#define OUTPUT '0'
+#define PONG '1'
+#define SET_WINDOW_TITLE '2'
+#define SET_PREFERENCES '3'
+#define SET_RECONNECT '4'
+
+// websocket url path
+#define WS_PATH "/ws"
+
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct tty_server *server;
@@ -45,13 +77,14 @@ struct pty_data {
 };
 
 struct tty_client {
-    bool exit;
+    bool running;
     bool initialized;
     bool authenticated;
     char hostname[100];
     char address[50];
 
     struct lws *wsi;
+    struct winsize size;
     char *buffer;
     size_t len;
     int pid;
@@ -70,13 +103,16 @@ struct tty_server {
     char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential
     int reconnect;                            // reconnect timeout
+    char *index;                              // custom index.html
     char *command;                            // full command line
     char **argv;                              // command with arguments
     int sig_code;                             // close signal
-    char *sig_name;                           // human readable signal string
+    char sig_name[20];                        // human readable signal string
     bool readonly;                            // whether not allow clients to write to the TTY
     bool check_origin;                        // whether allow websocket connection from different origin
+    int max_clients;                          // maximum clients to support
     bool once;                                // whether accept only one client and exit on disconnection
+    char socket_path[255];                    // UNIX domain socket path
     pthread_mutex_t lock;
 };
 

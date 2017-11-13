@@ -50,20 +50,18 @@ check_auth(struct lws *wsi) {
 int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
     unsigned char buffer[4096 + LWS_PRE], *p, *end;
-    char buf[256];
+    char buf[256], name[100], rip[50];
 
     switch (reason) {
         case LWS_CALLBACK_HTTP:
-            {
-                char name[100], rip[50];
-                lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
-                lwsl_notice("HTTP connect from %s (%s), path: %s\n", name, rip, in);
-            }
-
-            if (len < 1) {
+            // only GET method is allowed
+            if (!lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI) || len < 1) {
                 lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
                 goto try_to_reuse;
             }
+
+            lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
+            lwsl_notice("HTTP %s - %s (%s)\n", (char *) in, rip, name);
 
             switch (check_auth(wsi)) {
                 case 0:
@@ -75,14 +73,10 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
             }
 
-            // if a legal POST URL, let it continue and accept data
-            if (lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI))
-                return 0;
-
             p = buffer + LWS_PRE;
             end = p + sizeof(buffer) - LWS_PRE;
 
-            if (!strncmp((const char *)in, "/auth_token.js", 14)) {
+            if (!strncmp((const char *) in, "/auth_token.js", 14)) {
                 size_t n = server->credential != NULL ? sprintf(buf, "var tty_auth_token = '%s';", server->credential) : 0;
 
                 if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
@@ -109,24 +103,37 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 goto try_to_reuse;
             }
 
-            if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
-                return 1;
-            if (lws_add_http_header_by_token(wsi,
-                                             WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                             (unsigned char *) "text/html",
-                                             9, &p, end))
-                return 1;
-            if (lws_add_http_header_content_length(wsi, (unsigned long) index_html_len, &p, end))
-                return 1;
-            if (lws_finalize_http_header(wsi, &p, end))
-                return 1;
-            if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0) {
+            const char* content_type = "text/html";
+            if (server->index != NULL) {
+                int n = lws_serve_http_file(wsi, server->index, content_type, NULL, 0);
+                if (n < 0 || (n > 0 && lws_http_transaction_completed(wsi)))
+                    return 1;
+            } else {
+                if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
+                    return 1;
+                if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, (const unsigned char *) content_type, 9, &p, end))
+                    return 1;
+                if (lws_add_http_header_content_length(wsi, (unsigned long) index_html_len, &p, end))
+                    return 1;
+                if (lws_finalize_http_header(wsi, &p, end))
+                    return 1;
+                if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
+                    return 1;
+
+                if (lws_write_http(wsi, index_html, index_html_len) < 0)
+                    return 1;
+                goto try_to_reuse;
+            }
+            break;
+        case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
+            if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
+                int err = X509_STORE_CTX_get_error((X509_STORE_CTX *) user);
+                int depth = X509_STORE_CTX_get_error_depth((X509_STORE_CTX *) user);
+                const char *msg = X509_verify_cert_error_string(err);
+                lwsl_err("client certificate verification error: %s (%d), depth: %d\n", msg, err, depth);
                 return 1;
             }
-
-            if (lws_write_http(wsi, index_html, index_html_len) < 0)
-                return 1;
-            goto try_to_reuse;
+            break;
         default:
             break;
     }

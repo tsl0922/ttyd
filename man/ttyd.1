@@ -1,0 +1,205 @@
+.TH ttyd 1 "September 2016" ttyd "User Manual"
+
+.SH NAME
+.PP
+ttyd \- Share your terminal over the web
+
+
+.SH SYNOPSIS
+.PP
+\fBttyd\fP [options] <command> [<arguments...>]
+
+
+.SH Description
+.PP
+ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
+.IP \(bu 2
+Built on top of Libwebsockets with C for speed
+.IP \(bu 2
+Fully\-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
+.IP \(bu 2
+SSL support based on OpenSSL
+.IP \(bu 2
+Run any custom command with options
+.IP \(bu 2
+Basic authentication support and many other custom options
+.IP \(bu 2
+Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
+
+
+.SH OPTIONS
+.PP
+\-p, \-\-port <port>
+      Port to listen (default: 7681, use \fB\fC0\fR for random port)
+
+.PP
+\-i, \-\-interface <interface>
+      Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
+
+.PP
+\-c, \-\-credential USER[:PASSWORD]
+      Credential for Basic Authentication (format: username:password)
+
+.PP
+\-u, \-\-uid <uid>
+      User id to run with
+
+.PP
+\-g, \-\-gid <gid>
+      Group id to run with
+
+.PP
+\-s, \-\-signal <signal string>
+      Signal to send to the command when exit it (default: 9, SIGHUP)
+
+.PP
+\-r, \-\-reconnect <seconds>
+      Time to reconnect for the client in seconds (default: 10)
+
+.PP
+\-R, \-\-readonly
+      Do not allow clients to write to the TTY
+
+.PP
+\-t, \-\-client\-option <key=value>
+      Send option to client (format: key=value), repeat to add more options
+
+.PP
+\-O, \-\-check\-origin
+      Do not allow websocket connection from different origin
+
+.PP
+\-m, \-\-max\-clients
+      Maximum clients to support (default: 0, no limit)
+
+.PP
+\-o, \-\-once
+      Accept only one client and exit on disconnection
+
+.PP
+\-B, \-\-browser
+      Open terminal with the default system browser
+
+.PP
+\-I, \-\-index <index file>
+      Custom index.html path
+
+.PP
+\-S, \-\-ssl
+      Enable SSL
+
+.PP
+\-C, \-\-ssl\-cert <cert path>
+      SSL certificate file path
+
+.PP
+\-K, \-\-ssl\-key <key path>
+      SSL key file path
+
+.PP
+\-A, \-\-ssl\-ca <ca path>
+      SSL CA file path for client certificate verification
+
+.PP
+\-d, \-\-debug <level>
+      Set log level (default: 7)
+
+.PP
+\-v, \-\-version
+      Print the version and exit
+
+.PP
+\-h, \-\-help
+      Print this text and exit
+
+
+.SH Examples
+.PP
+ttyd starts web server at port 7681 by default, you can use the \-p option to change it, the command will be started with arguments as options. For example, run:
+
+.PP
+.RS
+
+.nf
+ttyd \-p 8080 bash \-x
+
+.fi
+.RE
+
+.PP
+Then open 
+\[la]http://localhost:8080\[ra] with a browser, you will get a bash shell with debug mode enabled. More examples:
+.IP \(bu 2
+If you want to login with your system accounts on the web browser, run \fB\fCttyd login\fR\&.
+.IP \(bu 2
+You can even run a none shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
+.IP \(bu 2
+Sharing single process with multiple clients: \fB\fCttyd tmux new \-A \-s ttyd vim\fR, run \fB\fCtmux new \-A \-s ttyd\fR to connect to the tmux session from terminal.
+
+
+.SH SSL how\-to
+.PP
+Generate SSL CA and self signed server/client certificates:
+
+.PP
+.RS
+
+.nf
+# CA certificate (FQDN must be different from server/client)
+openssl genrsa \-out ca.key 2048
+openssl req \-new \-x509 \-days 365 \-key ca.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" \-out ca.crt
+
+# server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
+openssl req \-newkey rsa:2048 \-nodes \-keyout server.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" \-out server.csr
+openssl x509 \-req \-extfile <(printf "subjectAltName=DNS:localhost") \-days 365 \-in server.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out server.crt
+
+# client certificate (the p12/pem format may be useful for some clients)
+openssl req \-newkey rsa:2048 \-nodes \-keyout client.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" \-out client.csr
+openssl x509 \-req \-days 365 \-in client.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out client.crt
+openssl pkcs12 \-export \-clcerts \-in client.crt \-inkey client.key \-out client.p12
+openssl pkcs12 \-in client.p12 \-out client.pem \-clcerts
+
+.fi
+.RE
+
+.PP
+Then start ttyd:
+
+.PP
+.RS
+
+.nf
+ttyd \-\-ssl \-\-ssl\-cert server.crt \-\-ssl\-key server.key \-\-ssl\-ca ca.crt bash
+
+.fi
+.RE
+
+.PP
+You may want to test the client certificate verification with \fIcurl\fP(1):
+
+.PP
+.RS
+
+.nf
+curl \-\-insecure \-\-cert client.p12[:password] \-v https://localhost:7681
+
+.fi
+.RE
+
+.PP
+If you don't want to enable client certificate verification, remove the \fB\fC\-\-ssl\-ca\fR option.
+
+
+.SH Docker and ttyd
+.PP
+Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
+.IP \(bu 2
+Sharing single docker container with multiple clients: docker run \-it \-\-rm \-p 7681:7681 tsl0922/ttyd.
+.IP \(bu 2
+Creating new docker container for each client: ttyd docker run \-it \-\-rm ubuntu.
+
+
+.SH AUTHOR
+.PP
+Shuanglei Tao <tsl0922@gmail.com> Visit 
+\[la]https://github.com/tsl0922/ttyd\[ra] to get more information and report bugs.

@@ -1,0 +1,20 @@
+ttyd (1.3.3-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <073plan@gmail.com>  Mon, 24 Jul 2017 15:47:53 +0800
+
+ttyd (1.3.2-1) unstable; urgency=medium
+
+  * New upstream release.
+    + Add support for --max-clients option.
+    + Upgrade to use xterm.js 2.5.0.
+    + Add man page for ttyd(1).
+
+ -- Boyuan Yang <073plan@gmail.com>  Fri, 21 Apr 2017 18:12:43 +0800
+
+ttyd (1.3.1-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Boyuan Yang <073plan@gmail.com>  Thu, 30 Mar 2017 12:10:50 +0800

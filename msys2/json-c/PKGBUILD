@@ -1,0 +1,27 @@
+# Maintainer: Shuanglei Tao <tsl0922@gmail.com>
+
+pkgname=json-c
+pkgver=0.12.1
+pkgrel=1
+pkgdesc="A JSON implementation in C"
+arch=('i686' 'x86_64')
+url="https://github.com/json-c/json-c"
+license=('MIT')
+makedepends=('gcc' 'make' 'autoconf')
+source=("https://s3.amazonaws.com/json-c_releases/releases/${pkgname}-${pkgver}.tar.gz")
+sha256sums=('2a136451a7932d80b7d197b10441e26e39428d67b1443ec43bbba824705e1123')
+
+build() {
+  cd ${srcdir}/${pkgname}-${pkgver}
+  ./configure \
+    --prefix=/usr \
+    --enable-shared \
+    --enable-static
+  make
+}
+
+package() {
+  options=('staticlibs')
+  cd ${srcdir}/${pkgname}-${pkgver}
+  make DESTDIR="$pkgdir" install
+}

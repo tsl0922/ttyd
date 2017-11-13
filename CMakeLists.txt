@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
+cmake_policy(SET CMP0048 NEW)
 
-# enable C99 mode
+project(ttyd VERSION "1.3.3")
+
 if(CMAKE_VERSION VERSION_LESS "3.1")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    endif()
 else()
-    set (CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD 99)
 endif()
-
-project(ttyd)
 
 set(LIBWEBSOCKETS_MIN_VERSION 1.7.0)
 set(SOURCE_FILES src/server.c src/http.c src/protocol.c src/utils.c)
@@ -52,8 +56,30 @@ list(APPEND SOURCE_FILES html.h)
 set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR})
 set(LINK_LIBS util pthread ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY})
 
+if(WIN32)
+    list(APPEND LINK_LIBS shell32)
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE TTYD_VERSION="${PROJECT_VERSION}")
 
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+include(GNUInstallDirs)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT prog)
+install(FILES man/ttyd.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1" COMPONENT doc)
+
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_NAME} - Share your terminal over the web")
+set(CPACK_PACKAGE_CONTACT "Shuanglei Tao <tsl0922@gmail.com>")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+
+set(CPACK_GENERATOR "DEB")
+SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_DEBIAN_PACKAGE_SECTION "shells")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://tsl0922.github.io/ttyd")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libjson-c2, libwebsockets7, libssl1.0.0, libc6 (>= 2.14)")
+
+include(CPack)

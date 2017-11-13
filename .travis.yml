@@ -1,13 +1,13 @@
 language: c
 os:
   - linux
-  - osx
 env:
-  - LIBWEBSOCKETS_VERSION=v1.7.9
-  - LIBWEBSOCKETS_VERSION=v2.0.3
-  - LIBWEBSOCKETS_VERSION=v2.1.0
-sudo: required
-dist: trusty
+  - LIBWEBSOCKETS_VERSION=1.7.9
+  - LIBWEBSOCKETS_VERSION=2.0.3
+  - LIBWEBSOCKETS_VERSION=2.1.1
+  - LIBWEBSOCKETS_VERSION=2.2.2
+  - LIBWEBSOCKETS_VERSION=2.3.0
+  - LIBWEBSOCKETS_VERSION=2.4.1
 branches:
   only:
     - master
@@ -17,13 +17,16 @@ addons:
       - cmake
       - libjson-c-dev
       - libssl-dev
-install:
-  - echo $TRAVIS_OS_NAME
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install cmake openssl json-c; export CMAKE_OPTIONS="-DOPENSSL_ROOT_DIR=/usr/local/opt/openssl"; fi
-  - echo "Compiling libwebsockets-$LIBWEBSOCKETS_VERSION from source..."
-  - pushd /tmp; curl -sLo- https://github.com/warmcat/libwebsockets/archive/$LIBWEBSOCKETS_VERSION.tar.gz | tar xz; cd libwebsockets-*; cmake $CMAKE_OPTIONS .; make && sudo make install; popd
+install: |
+  echo "Compiling libwebsockets-$LIBWEBSOCKETS_VERSION from source..."
+  pushd /tmp
+    curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz
+    cd libwebsockets-$LIBWEBSOCKETS_VERSION
+    cmake $CMAKE_OPTIONS .
+    make && sudo make install
+  popd
 script:
-  - echo $TRAVIS_OS_NAME
-  - cmake --version
   - mkdir build && cd build
-  - cmake $CMAKE_OPTIONS .. && make
+  - cmake $CMAKE_OPTIONS ..
+  - make && sudo make install
+  - ttyd -v
