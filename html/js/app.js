@@ -8,18 +8,30 @@
         term, pingTimer, wsError;
 
     var openWs = function() {
-        var ws = new WebSocket(url, protocols);
+        var ws = new WebSocket(url, protocols),
+            textDecoder = new TextDecoder(),
+            textEncoder = new TextEncoder();
         var unloadCallback = function(event) {
             var message = 'Close terminal? this will also terminate the command.';
             (event || window.event).returnValue = message;
             return message;
         };
+        var sendMessage = function (msg) {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(textEncoder.encode(msg));
+            }
+        };
+        var sendPing = function() {
+            sendMessage("1");
+        };
 
-        ws.onopen = function(event) {
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = function() {
             console.log("Websocket connection opened");
             wsError = false;
-            ws.send(JSON.stringify({AuthToken: authToken}));
-            pingTimer = setInterval(sendPing, 30 * 1000, ws);
+            sendMessage(JSON.stringify({AuthToken: authToken}));
+            pingTimer = setInterval(sendPing, 30 * 1000);
 
             if (typeof term !== 'undefined') {
                 term.destroy();
@@ -28,18 +40,14 @@
             term = new Terminal();
 
             term.on('resize', function(size) {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send("2" + JSON.stringify({columns: size.cols, rows: size.rows}));
-                }
+                sendMessage("2" + JSON.stringify({columns: size.cols, rows: size.rows}));
                 setTimeout(function() {
                     term.showOverlay(size.cols + 'x' + size.rows);
                 }, 500);
             });
 
             term.on("data", function(data) {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send("0" + data);
-                }
+                sendMessage("0" + data);
             });
 
             term.on('open', function() {
@@ -62,10 +70,11 @@
         };
 
         ws.onmessage = function(event) {
-            var data = event.data.slice(1);
-            switch(event.data[0]) {
+            var cmd = String.fromCharCode(new DataView(event.data).getUint8()),
+                data = textDecoder.decode(event.data.slice(1));
+            switch(cmd) {
                 case '0':
-                    term.writeUTF8(window.atob(data));
+                    term.write(data);
                     break;
                 case '1': // pong
                     break;
@@ -102,10 +111,6 @@
                 setTimeout(openWs, autoReconnect * 1000);
             }
         };
-    };
-
-    var sendPing = function(ws) {
-        ws.send("1");
     };
 
     openWs();

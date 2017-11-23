@@ -17,7 +17,7 @@ html, body {
     background-color: #101010;
     color: #f0f0f0;
     font-size: 10pt;
-    font-family: Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",Courier,monospace;
+    font-family: "Menlo for Powerline", Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",Courier,monospace;
     font-variant-ligatures: none;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;

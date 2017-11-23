@@ -66,14 +66,14 @@
 // websocket url path
 #define WS_PATH "/ws"
 
+#define BUF_SIZE 32768 // 32K
+
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct tty_server *server;
 
-struct pty_data {
-    char *data;
-    int len;
-    STAILQ_ENTRY(pty_data) list;
+enum pty_state {
+    STATE_INIT, STATE_READY, STATE_DONE
 };
 
 struct tty_client {
@@ -87,12 +87,14 @@ struct tty_client {
     struct winsize size;
     char *buffer;
     size_t len;
+
     int pid;
     int pty;
+    enum pty_state state;
+    char pty_buffer[BUF_SIZE];
+    ssize_t pty_len;
     pthread_t thread;
-
-    STAILQ_HEAD(pty, pty_data) queue;
-    pthread_mutex_t lock;
+    pthread_mutex_t mutex;
 
     LIST_ENTRY(tty_client) list;
 };
@@ -113,7 +115,7 @@ struct tty_server {
     int max_clients;                          // maximum clients to support
     bool once;                                // whether accept only one client and exit on disconnection
     char socket_path[255];                    // UNIX domain socket path
-    pthread_mutex_t lock;
+    pthread_mutex_t mutex;
 };
 
 extern int

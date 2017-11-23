@@ -140,6 +140,7 @@ tty_server_free(struct tty_server *ts) {
             unlink(ts->socket_path);
         }
     }
+    pthread_mutex_destroy(&ts->mutex);
     free(ts);
 }
 
@@ -203,6 +204,7 @@ main(int argc, char **argv) {
 
     int start = calc_command_start(argc, argv);
     server = tty_server_new(argc, argv, start);
+    pthread_mutex_init(&server->mutex, NULL);
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -442,16 +444,19 @@ main(int argc, char **argv) {
 
     // libwebsockets main loop
     while (!force_exit) {
-        pthread_mutex_lock(&server->lock);
+        pthread_mutex_lock(&server->mutex);
         if (!LIST_EMPTY(&server->clients)) {
             struct tty_client *client;
             LIST_FOREACH(client, &server->clients, list) {
-                if (client->running && !STAILQ_EMPTY(&client->queue)) {
-                    lws_callback_on_writable(client->wsi);
+                if (client->running) {
+                    pthread_mutex_lock(&client->mutex);
+                    if (client->state != STATE_DONE)
+                        lws_callback_on_writable(client->wsi);
+                    pthread_mutex_unlock(&client->mutex);
                 }
             }
         }
-        pthread_mutex_unlock(&server->lock);
+        pthread_mutex_unlock(&server->mutex);
         lws_service(context, 10);
     }
 
