@@ -1,8 +1,12 @@
 var Zmodem = require('zmodem.js/src/zmodem_browser');
 var Terminal = require('xterm').Terminal;
+var fit = require('xterm/lib/addons/fit');
+var winptyCompat = require('xterm/lib/addons/winptyCompat');
+var overlay = require('./overlay');
 
-require('xterm/lib/addons/fit');
-require('./overlay');
+Terminal.applyAddon(fit);
+Terminal.applyAddon(winptyCompat);
+Terminal.applyAddon(overlay);
 
 function showReceiveModal(xfer) {
     resetModal('Receiving files');
@@ -224,8 +228,6 @@ var openWs = function() {
             terminalContainer.removeChild(terminalContainer.firstChild);
         }
 
-        term.open(terminalContainer, true);
-
         // https://stackoverflow.com/a/27923937/1727928
         window.addEventListener('resize', function() {
             clearTimeout(window.resizedFinished);
@@ -234,7 +236,11 @@ var openWs = function() {
             }, 250);
         });
         window.addEventListener('beforeunload', unloadCallback);
+
+        term.open(terminalContainer, true);
+        term.winptyCompatInit();
         term.fit();
+        term.focus();
     };
 
     ws.onmessage = function(event) {

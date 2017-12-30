@@ -2838,9 +2838,9 @@ wrappy@1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-xterm@Tyriar/xterm.js#vscode-release/1.19:
-  version "2.9.1"
-  resolved "https://codeload.github.com/Tyriar/xterm.js/tar.gz/d242c552cb5c88125ac257ccaebed7fe336d9266"
+xterm@Tyriar/xterm.js#vscode-release/1.20:
+  version "3.0.0-beta3"
+  resolved "https://codeload.github.com/Tyriar/xterm.js/tar.gz/b8ae5968e5e774d4161a635d91b9d798bea4f6e9"
 
 yargs@~3.10.0:
   version "3.10.0"
