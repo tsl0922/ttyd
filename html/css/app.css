@@ -9,68 +9,8 @@ html, body {
     width: auto;
     height: 100%;
     margin: 0 auto;
-    padding: 0 5px;
+    padding: 0;
     background-color: #101010;
-}
-
-.xterm {
-    background-color: #101010;
-    color: #f0f0f0;
-    font-size: 13px;
-    font-family: "Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace;
-    font-variant-ligatures: none;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased;
-}
-
-.xterm .xterm-viewport {
-    background-color: rgba(121, 121, 121, 0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    transition: background-color 800ms linear;
-    overflow-y: auto;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar {
-    width: 10px;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-track {
-    opacity: 0;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-thumb {
-    background-color: rgba(121, 121, 121, 0.4);
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-    transition: opacity 0ms linear;
-    background-color: rgba(100, 100, 100, .7);
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-thumb:window-inactive {
-    background-color: inherit;
-}
-
-.xterm .terminal-cursor {
-    background-color: #f0f0f0;
-    color: #101010;
-    opacity: .7;
-}
-
-.xterm:not(.focus) .terminal-cursor {
-    outline: 1px solid #f0f0f0;
-}
-
-@keyframes blink-cursor {
-    0% {
-        background-color: #f0f0f0;
-        color: #101010;
-    }
-    50% {
-        background-color: transparent;
-        color: #f0f0f0;
-    }
 }
 
 #modal strong {

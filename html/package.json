@@ -20,7 +20,7 @@
     "bulma": "^0.6.1",
     "gulp": "^3.9.1",
     "gulp-inline-source": "^3.0.0",
-    "xterm": "Tyriar/xterm.js#vscode-release/1.19",
+    "xterm": "^3.0.1",
     "zmodem.js": "^0.1.5"
   }
 }

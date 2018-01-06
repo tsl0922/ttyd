@@ -1,8 +1,12 @@
 var Zmodem = require('zmodem.js/src/zmodem_browser');
 var Terminal = require('xterm').Terminal;
+var fit = require('xterm/lib/addons/fit');
+var winptyCompat = require('xterm/lib/addons/winptyCompat');
+var overlay = require('./overlay');
 
-require('xterm/lib/addons/fit');
-require('./overlay');
+Terminal.applyAddon(fit);
+Terminal.applyAddon(winptyCompat);
+Terminal.applyAddon(overlay);
 
 function showReceiveModal(xfer) {
     resetModal('Receiving files');
@@ -206,7 +210,30 @@ var openWs = function() {
 
         term = new Terminal({
             fontSize: 13,
-            fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace'
+            fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
+            theme: {
+                foreground: '#f0f0f0',
+                background: '#101010',
+                cursor: '#f0f0f033',
+                cursorAccent: "#101010",
+                selection: '#c1deff33',
+                black: '#1a1a1a',
+                red: '#d81e00',
+                green: '#5ea702',
+                yellow: '#cfae00',
+                blue: '#427ab3',
+                magenta: '#89658e',
+                cyan: '#00a7aa',
+                white: '#dbded8',
+                brightBlack: '#686a66',
+                brightRed: '#f54235',
+                brightGreen: '#99e343',
+                brightYellow: '#fdeb61',
+                brightBlue: '#84b0d8',
+                brightMagenta: '#bc94b7',
+                brightCyan: '#37e6e8',
+                brightWhite: '#f1f1f0'
+            }
         });
 
         term.on('resize', function(size) {
@@ -224,8 +251,6 @@ var openWs = function() {
             terminalContainer.removeChild(terminalContainer.firstChild);
         }
 
-        term.open(terminalContainer, true);
-
         // https://stackoverflow.com/a/27923937/1727928
         window.addEventListener('resize', function() {
             clearTimeout(window.resizedFinished);
@@ -234,7 +259,11 @@ var openWs = function() {
             }, 250);
         });
         window.addEventListener('beforeunload', unloadCallback);
+
+        term.open(terminalContainer, true);
+        term.winptyCompatInit();
         term.fit();
+        term.focus();
     };
 
     ws.onmessage = function(event) {
