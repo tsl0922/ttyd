@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "babel-core": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babelify": "^8.0.0",
     "browserify": "^14.5.0",
     "bulma": "^0.6.1",
+    "fast-text-encoding": "^1.0.0",
     "gulp": "^3.9.1",
     "gulp-inline-source": "^3.0.0",
     "xterm": "^3.0.1",

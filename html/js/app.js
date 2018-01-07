@@ -1,12 +1,12 @@
+require("babel-polyfill");
+require('fast-text-encoding');
+
 var Zmodem = require('zmodem.js/src/zmodem_browser');
 var Terminal = require('xterm').Terminal;
-var fit = require('xterm/lib/addons/fit');
-var winptyCompat = require('xterm/lib/addons/winptyCompat');
-var overlay = require('./overlay');
 
-Terminal.applyAddon(fit);
-Terminal.applyAddon(winptyCompat);
-Terminal.applyAddon(overlay);
+Terminal.applyAddon(require('xterm/lib/addons/fit'));
+Terminal.applyAddon(require('xterm/lib/addons/winptyCompat'));
+Terminal.applyAddon(require('./overlay'));
 
 function showReceiveModal(xfer) {
     resetModal('Receiving files');
@@ -214,9 +214,7 @@ var openWs = function() {
             theme: {
                 foreground: '#f0f0f0',
                 background: '#101010',
-                cursor: '#f0f0f033',
-                cursorAccent: "#101010",
-                selection: '#c1deff33',
+                cursor: '#f0f0f0',
                 black: '#1a1a1a',
                 red: '#d81e00',
                 green: '#5ea702',
@@ -267,7 +265,7 @@ var openWs = function() {
     };
 
     ws.onmessage = function(event) {
-        var cmd = String.fromCharCode(new DataView(event.data).getUint8()),
+        var cmd = String.fromCharCode(new Uint8Array(event.data)[0]),
             data = event.data.slice(1);
         switch(cmd) {
             case '0':
