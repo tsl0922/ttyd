@@ -117,6 +117,10 @@ Then open <http://localhost:8080> with a browser, you will get a bash shell with
 - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
 
+## Browser Support
+
+Modern browsers, See [Browser Support][15].
+
 ## SSL how-to
 
 Generate SSL CA and self signed server/client certificates:
@@ -165,7 +169,7 @@ Docker containers are jailed environments which are more secure, this is useful 
 
   [1]: https://github.com/yudai/gotty
   [2]: https://libwebsockets.org
-  [3]: https://github.com/sourcelair/xterm.js
+  [3]: https://github.com/xtermjs/xterm.js
   [4]: https://www.openssl.org
   [5]: https://openwrt.org
   [6]: https://www.lede-project.org
@@ -177,3 +181,4 @@ Docker containers are jailed environments which are more secure, this is useful 
   [12]: https://github.com/rprichard/winpty
   [13]: https://github.com/tsl0922/ttyd/tree/master/msys2
   [14]: https://github.com/tsl0922/ttyd/tree/master/openwrt
+  [15]: https://github.com/xtermjs/xterm.js#browser-support
