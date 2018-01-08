@@ -82,7 +82,7 @@ OPTIONS:
     -c, --credential        Credential for Basic Authentication (format: username:password)
     -u, --uid               User id to run with
     -g, --gid               Group id to run with
-    -s, --signal            Signal to send to the command when exit it (default: SIGHUP)
+    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)
     -r, --reconnect         Time to reconnect for the client in seconds (default: 10)
     -R, --readonly          Do not allow clients to write to the TTY
     -t, --client-option     Send option to client (format: key=value), repeat to add more options

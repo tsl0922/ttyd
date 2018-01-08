@@ -57,7 +57,7 @@ void print_help() {
                     "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
                     "    -u, --uid               User id to run with\n"
                     "    -g, --gid               Group id to run with\n"
-                    "    -s, --signal            Signal to send to the command when exit it (default: 9, SIGHUP)\n"
+                    "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
                     "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
                     "    -R, --readonly          Do not allow clients to write to the TTY\n"
                     "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
@@ -286,7 +286,7 @@ main(int argc, char **argv) {
                 int sig = get_sig(optarg);
                 if (sig > 0) {
                     server->sig_code = sig;
-                    get_sig_name(sig, server->sig_name, sizeof(server->sig_code));
+                    get_sig_name(sig, server->sig_name, sizeof(server->sig_name));
                 } else {
                     fprintf(stderr, "ttyd: invalid signal: %s\n", optarg);
                     return -1;
