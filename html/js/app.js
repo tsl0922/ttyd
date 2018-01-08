@@ -110,7 +110,6 @@ function handleSend(zsession) {
                 zsession.close.bind(zsession),
                 console.error.bind(console)
             ).then(function () {
-                hideModal();
                 res();
             });
         });
@@ -134,7 +133,6 @@ function handleReceive(zsession) {
     });
     var promise = new Promise(function (res) {
         zsession.on('session_end', function () {
-            hideModal();
             res();
         });
     });
@@ -184,12 +182,12 @@ var openWs = function() {
         },
 
         on_detect: function _on_detect(detection) {
-            term.off('data');
+            term.setOption('disableStdin', true);
             var zsession = detection.confirm();
             var promise = zsession.type === 'send' ? handleSend(zsession) : handleReceive(zsession);
             promise.catch(console.error.bind(console)).then(function () {
                 hideModal();
-                term.on('data', sendData);
+                term.setOption('disableStdin', false);
             });
         }
     });
@@ -212,10 +210,10 @@ var openWs = function() {
             fontSize: 13,
             fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
             theme: {
-                foreground: '#f0f0f0',
-                background: '#101010',
-                cursor: '#f0f0f0',
-                black: '#1a1a1a',
+                foreground: '#d2d2d2',
+                background: '#2b2b2b',
+                cursor: '#adadad',
+                black: '#000000',
                 red: '#d81e00',
                 green: '#5ea702',
                 yellow: '#cfae00',
@@ -265,8 +263,9 @@ var openWs = function() {
     };
 
     ws.onmessage = function(event) {
-        var cmd = String.fromCharCode(new Uint8Array(event.data)[0]),
-            data = event.data.slice(1);
+        var rawData = new Uint8Array(event.data),
+            cmd = String.fromCharCode(rawData[0]),
+            data = rawData.slice(1).buffer;
         switch(cmd) {
             case '0':
                 zsentry.consume(data);
