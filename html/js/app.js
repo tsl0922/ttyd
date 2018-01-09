@@ -147,7 +147,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
     autoReconnect = -1,
-    term, pingTimer, wsError;
+    term, pingTimer, title, wsError;
 
 var openWs = function() {
     var ws = new WebSocket(url, ['tty']);
@@ -241,6 +241,12 @@ var openWs = function() {
             }, 500);
         });
 
+        term.on('title', function (data) {
+            if (data && data !== '') {
+                document.title = (data + ' | ' + title);
+            }
+        });
+
         term.on('data', sendData);
 
         while (terminalContainer.firstChild) {
@@ -273,7 +279,8 @@ var openWs = function() {
             case '1': // pong
                 break;
             case '2':
-                document.title = textDecoder.decode(data);
+                title = textDecoder.decode(data);
+                document.title = title;
                 break;
             case '3':
                 var preferences = JSON.parse(textDecoder.decode(data));
