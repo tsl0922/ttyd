@@ -99,7 +99,8 @@ tty_client_remove(struct tty_client *client) {
 void
 tty_client_destroy(struct tty_client *client) {
     if (!client->running || client->pid <= 0)
-        return;
+        goto cleanup;
+
     client->running = false;
 
     // kill process and free resource
@@ -113,6 +114,7 @@ tty_client_destroy(struct tty_client *client) {
     lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
     close(client->pty);
 
+cleanup:
     // free the buffer
     if (client->buffer != NULL)
         free(client->buffer);
