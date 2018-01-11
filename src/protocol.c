@@ -273,15 +273,14 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_RECEIVE:
             if (client->buffer == NULL) {
-                client->buffer = xmalloc(len + 1);
+                client->buffer = xmalloc(len);
                 client->len = len;
                 memcpy(client->buffer, in, len);
             } else {
-                client->buffer = xrealloc(client->buffer, client->len + len + 1);
+                client->buffer = xrealloc(client->buffer, client->len + len);
                 memcpy(client->buffer + client->len, in, len);
                 client->len += len;
             }
-            client->buffer[client->len] = '\0';
 
             const char command = client->buffer[0];
 
@@ -302,22 +301,11 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         break;
                     if (server->readonly)
                         return 0;
-                    if (write(client->pty, client->buffer + 1, client->len - 1) < client->len - 1) {
-                        lwsl_err("write INPUT to pty\n");
+                    if (write(client->pty, client->buffer + 1, client->len - 1) == -1) {
+                        lwsl_err("write INPUT to pty: %d (%s)\n", errno, strerror(errno));
                         tty_client_remove(client);
                         lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                         return -1;
-                    }
-                    break;
-                case PING:
-                    {
-                        unsigned char c = PONG;
-                        if (lws_write(wsi, &c, 1, LWS_WRITE_BINARY) != 1) {
-                            lwsl_err("send PONG\n");
-                            tty_client_remove(client);
-                            lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
-                            return -1;
-                        }
                     }
                     break;
                 case RESIZE_TERMINAL:

@@ -52,16 +52,14 @@
 
 // client message
 #define INPUT '0'
-#define PING '1'
-#define RESIZE_TERMINAL '2'
+#define RESIZE_TERMINAL '1'
 #define JSON_DATA '{'
 
 // server message
 #define OUTPUT '0'
-#define PONG '1'
-#define SET_WINDOW_TITLE '2'
-#define SET_PREFERENCES '3'
-#define SET_RECONNECT '4'
+#define SET_WINDOW_TITLE '1'
+#define SET_PREFERENCES '2'
+#define SET_RECONNECT '3'
 
 // websocket url path
 #define WS_PATH "/ws"

@@ -218,7 +218,6 @@ main(int argc, char **argv) {
     info.max_http_header_pool = 16;
     info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
     info.extensions = extensions;
-    info.timeout_secs = 5;
 
     int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
@@ -369,6 +368,9 @@ main(int argc, char **argv) {
     char server_hdr[128] = "";
     sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
     info.server_string = server_hdr;
+#if LWS_LIBRARY_VERSION_MINOR >= 1
+    info.ws_ping_pong_interval = 5;
+#endif
 #endif
 
     if (strlen(iface) > 0) {

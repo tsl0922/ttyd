@@ -147,7 +147,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
     autoReconnect = -1,
-    term, pingTimer, title, wsError;
+    term, title, wsError;
 
 var openWs = function() {
     var ws = new WebSocket(url, ['tty']);
@@ -198,9 +198,6 @@ var openWs = function() {
         console.log('Websocket connection opened');
         wsError = false;
         sendMessage(JSON.stringify({AuthToken: authToken}));
-        pingTimer = setInterval(function() {
-            sendMessage('1');
-        }, 30 * 1000);
 
         if (typeof term !== 'undefined') {
             term.destroy();
@@ -234,7 +231,7 @@ var openWs = function() {
 
         term.on('resize', function(size) {
             if (ws.readyState === WebSocket.OPEN) {
-                sendMessage('2' + JSON.stringify({columns: size.cols, rows: size.rows}));
+                sendMessage('1' + JSON.stringify({columns: size.cols, rows: size.rows}));
             }
             setTimeout(function() {
                 term.showOverlay(size.cols + 'x' + size.rows);
@@ -276,20 +273,18 @@ var openWs = function() {
             case '0':
                 zsentry.consume(data);
                 break;
-            case '1': // pong
-                break;
-            case '2':
+            case '1':
                 title = textDecoder.decode(data);
                 document.title = title;
                 break;
-            case '3':
+            case '2':
                 var preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(function(key) {
                     console.log('Setting ' + key + ': ' +  preferences[key]);
                     term.setOption(key, preferences[key]);
                 });
                 break;
-            case '4':
+            case '3':
                 autoReconnect = JSON.parse(textDecoder.decode(data));
                 console.log('Enabling reconnect: ' + autoReconnect + ' seconds');
                 break;
@@ -309,7 +304,6 @@ var openWs = function() {
             }
         }
         window.removeEventListener('beforeunload', unloadCallback);
-        clearInterval(pingTimer);
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
             setTimeout(openWs, autoReconnect * 1000);
