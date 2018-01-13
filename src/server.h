@@ -89,7 +89,7 @@ struct tty_client {
     int pid;
     int pty;
     enum pty_state state;
-    char pty_buffer[BUF_SIZE];
+    char pty_buffer[LWS_PRE + 1 + BUF_SIZE];
     ssize_t pty_len;
     pthread_t thread;
     pthread_mutex_t mutex;
