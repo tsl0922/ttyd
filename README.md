@@ -7,7 +7,8 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 # Features
 
 - Built on top of [Libwebsockets][2] with C for speed
-- Fully-featured terminal based on [Xterm.js][3] with CJK (*Chinese, Japanese, Korean*) and IME support
+- Fully-featured terminal based on [Xterm.js][3] with [CJK][18] and IME support
+- Graphical [ZMODEM][16] integration with [lrzsz][17] support
 - SSL support based on [OpenSSL][4]
 - Run any custom command with options
 - Basic authentication support and many other custom options
@@ -182,3 +183,6 @@ Docker containers are jailed environments which are more secure, this is useful 
   [13]: https://github.com/tsl0922/ttyd/tree/master/msys2
   [14]: https://github.com/tsl0922/ttyd/tree/master/openwrt
   [15]: https://github.com/xtermjs/xterm.js#browser-support
+  [16]: https://en.wikipedia.org/wiki/ZMODEM
+  [17]: https://ohse.de/uwe/software/lrzsz.html
+  [18]: https://en.wikipedia.org/wiki/CJK_characters

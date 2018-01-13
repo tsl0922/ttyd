@@ -12,6 +12,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
 
   - Built on top of Libwebsockets with C for speed
   - Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
+  - Graphical ZMODEM integration with lrzsz support 
   - SSL support based on OpenSSL
   - Run any custom command with options
   - Basic authentication support and many other custom options
