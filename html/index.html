@@ -16,14 +16,9 @@
         <div class="modal-content">
             <div class="box">
                 <header id="header"></header>
-                <div id="file">
-                    <div><strong>Name: </strong><span id="name"></span></div>
-                    <div><strong>Size: </strong><span id="size"></span></div>
-                    <div><strong>Last modified: </strong><span id="mtime"></span></div>
-                    <div><strong>Mode: </strong><span id="mode"></span></div>
-                    <br>
-                    <div><strong>Files remaining: </strong><span id="files-remaining"></span></div>
-                    <div><strong>Bytes remaining: </strong><span id="bytes-remaining"></span></div>
+                <div id="status">
+                    <strong>Files remaining: </strong><span id="files-remaining"></span>,
+                    <strong>Bytes remaining: </strong><span id="bytes-remaining"></span>
                 </div>
                 <div id="choose" class="file has-name is-fullwidth">
                     <label class="file-label">
@@ -37,6 +32,7 @@
                     </label>
                 </div>
                 <div id="progress">
+                    <p id="file-name"></p>
                     <progress id="progress-bar" class="progress is-link" max="100"></progress>
                     <p id="progress-info">
                         <span id="bytes-received">-</span>/<span id="bytes-file">-</span> (<span id="percent-received"></span>)

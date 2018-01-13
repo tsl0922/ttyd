@@ -8,36 +8,58 @@ Terminal.applyAddon(require('xterm/lib/addons/fit'));
 Terminal.applyAddon(require('xterm/lib/addons/winptyCompat'));
 Terminal.applyAddon(require('./overlay'));
 
+var modal = {
+    self: document.getElementById('modal'),
+    header: document.getElementById('header'),
+    status: {
+        self: document.getElementById('status'),
+        filesRemaining: document.getElementById('files-remaining'),
+        bytesRemaining: document.getElementById('bytes-remaining')
+    },
+    choose: {
+        self: document.getElementById('choose'),
+        files: document.getElementById('files'),
+        filesNames: document.getElementById('file-names')
+    },
+    progress: {
+        self: document.getElementById('progress'),
+        fileName: document.getElementById('file-name'),
+        progressBar: document.getElementById('progress-bar'),
+        bytesReceived: document.getElementById('bytes-received'),
+        bytesFile: document.getElementById('bytes-file'),
+        percentReceived: document.getElementById('percent-received'),
+        skip: document.getElementById('skip')
+    }
+};
+
+function updateFileInfo(fileInfo) {
+    modal.status.self.style.display = '';
+    modal.choose.self.style.display = 'none';
+    modal.progress.self.style.display = '';
+    modal.status.filesRemaining.textContent = fileInfo.files_remaining;
+    modal.status.bytesRemaining.textContent = bytesHuman(fileInfo.bytes_remaining, 2);
+    modal.progress.fileName.textContent = fileInfo.name;
+}
+
 function showReceiveModal(xfer) {
     resetModal('Receiving files');
-    var fileInfo = xfer.get_details();
-    document.getElementById('name').textContent = fileInfo.name;
-    document.getElementById('size').textContent = bytesHuman(fileInfo.size, 2);
-    document.getElementById('mtime').textContent = fileInfo.mtime;
-    document.getElementById('files-remaining').textContent = fileInfo.files_remaining;
-    document.getElementById('bytes-remaining').textContent = bytesHuman(fileInfo.bytes_remaining, 2);
-    document.getElementById('mode').textContent = '0' + fileInfo.mode.toString(8);
-    document.getElementById('choose').style.display = 'none';
-    document.getElementById('file').style.display = '';
-    var skip = document.getElementById('skip');
-    skip.disabled = false;
-    skip.onclick = function () {
+    updateFileInfo(xfer.get_details());
+    modal.progress.skip.disabled = false;
+    modal.progress.skip.onclick = function () {
         this.disabled = true;
         xfer.skip();
     };
-    skip.style.display = '';
-    document.getElementById('modal').classList.add('is-active');
+    modal.progress.skip.style.display = '';
+    modal.self.classList.add('is-active');
 }
 
 function showSendModal(callback) {
     resetModal('Sending files');
-    document.getElementById('file').style.display = 'none';
-    document.getElementById('skip').style.display = 'none';
-    document.getElementById('choose').style.display = '';
-    var filesInput = document.getElementById('files');
-    filesInput.disabled = false;
-    filesInput.value = '';
-    filesInput.onchange = function () {
+    modal.choose.self.style.display = '';
+    modal.choose.files.disabled = false;
+    modal.choose.files.value = '';
+    modal.choose.filesNames.textContent = '';
+    modal.choose.files.onchange = function () {
         this.disabled = true;
         var files = this.files;
         var fileNames = '';
@@ -45,42 +67,42 @@ function showSendModal(callback) {
             if (i === 0) {
                 fileNames = files[i].name;
             } else {
-                fileNames += ' | ' + files[i].name;
+                fileNames += ', ' + files[i].name;
             }
         }
-        document.getElementById('file-names').textContent = fileNames;
+        modal.choose.filesNames.textContent = fileNames;
         callback(files);
     };
-    document.getElementById('modal').classList.add('is-active');
+    modal.self.classList.add('is-active');
 }
 
 function hideModal() {
-    document.getElementById('modal').classList.remove('is-active');
+    modal.self.classList.remove('is-active');
 }
 
 function resetModal(title) {
-    document.getElementById('header').textContent = title;
-    document.getElementById('bytes-received').textContent = '-';
-    document.getElementById('percent-received').textContent = '-%';
-    document.getElementById('progress-info').style.display = 'none';
-    var progressBar = document.getElementById('progress-bar');
-    progressBar.textContent = '0%';
-    progressBar.value = 0;
+    modal.header.textContent = title;
+    modal.status.self.style.display = 'none';
+    modal.choose.self.style.display = 'none';
+    modal.progress.self.style.display = 'none';
+    modal.progress.bytesReceived.textContent = '-';
+    modal.progress.percentReceived.textContent = '-%';
+    modal.progress.progressBar.textContent = '0%';
+    modal.progress.progressBar.value = 0;
+    modal.progress.skip.style.display = 'none';
 }
 
 function updateProgress(xfer) {
     var size = xfer.get_details().size;
     var offset = xfer.get_offset();
-    document.getElementById('bytes-received').textContent = bytesHuman(offset, 2);
-    document.getElementById('bytes-file').textContent = bytesHuman(size, 2);
+    modal.progress.bytesReceived.textContent = bytesHuman(offset, 2);
+    modal.progress.bytesFile.textContent = bytesHuman(size, 2);
 
     var percentReceived = (100 * offset / size).toFixed(2);
-    document.getElementById('percent-received').textContent = percentReceived + '%';
-    document.getElementById('progress-info').style.display = '';
+    modal.progress.percentReceived.textContent = percentReceived + '%';
 
-    var progressBar = document.getElementById('progress-bar');
-    progressBar.textContent = percentReceived + '%';
-    progressBar.setAttribute('value', percentReceived);
+    modal.progress.progressBar.textContent = percentReceived + '%';
+    modal.progress.progressBar.setAttribute('value', percentReceived);
 }
 
 function bytesHuman (bytes, precision) {
@@ -100,10 +122,11 @@ function handleSend(zsession) {
                 files,
                 {
                     on_progress: function(obj, xfer) {
+                        updateFileInfo(xfer.get_details());
                         updateProgress(xfer);
                     },
                     on_file_complete: function(obj) {
-                        hideModal();
+                        // console.log(obj);
                     }
                 }
             ).then(
@@ -147,7 +170,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
     autoReconnect = -1,
-    term, title, wsError;
+    reconnectTimer, term, title, wsError;
 
 var openWs = function() {
     var ws = new WebSocket(url, ['tty']);
@@ -164,6 +187,15 @@ var openWs = function() {
         (event || window.event).returnValue = message;
         return message;
     };
+    var resetTerm = function() {
+        hideModal();
+        clearTimeout(reconnectTimer);
+        if (ws.readyState !== WebSocket.CLOSED) {
+            ws.close();
+        }
+        openWs();
+    };
+
     var zsentry = new Zmodem.Sentry({
         to_terminal: function _to_terminal(octets) {
             var buffer = new Uint8Array(octets).buffer;
@@ -171,10 +203,14 @@ var openWs = function() {
         },
 
         sender: function _ws_sender_func(octets) {
-            var array = new Uint8Array(octets.length + 1);
-            array[0] = '0'.charCodeAt(0);
-            array.set(new Uint8Array(octets), 1);
-            ws.send(array.buffer);
+            // limit max packet size to 4096
+            while (octets.length) {
+                var chunk = octets.splice(0, 4095);
+                var buffer = new Uint8Array(chunk.length + 1);
+                buffer[0]= '0'.charCodeAt(0);
+                buffer.set(chunk, 1);
+                ws.send(buffer);
+            }
         },
 
         on_retract: function _on_retract() {
@@ -271,7 +307,12 @@ var openWs = function() {
             data = rawData.slice(1).buffer;
         switch(cmd) {
             case '0':
-                zsentry.consume(data);
+                try {
+                    zsentry.consume(data);
+                } catch (e) {
+                    console.error(e);
+                    resetTerm();
+                }
                 break;
             case '1':
                 title = textDecoder.decode(data);
@@ -306,7 +347,7 @@ var openWs = function() {
         window.removeEventListener('beforeunload', unloadCallback);
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
-            setTimeout(openWs, autoReconnect * 1000);
+            reconnectTimer = setTimeout(openWs, autoReconnect * 1000);
         }
     };
 };
