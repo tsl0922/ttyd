@@ -1,4 +1,8 @@
-require("babel-polyfill");
+// polyfills for ie11
+require('core-js/fn/array');
+require('core-js/fn/object');
+require('core-js/fn/promise');
+require('core-js/fn/typed');
 require('fast-text-encoding');
 
 var Zmodem = require('zmodem.js/src/zmodem_browser');

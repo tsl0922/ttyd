@@ -1,23 +1,20 @@
-var gulp = require('gulp'),
-    fs = require("fs"),
-    browserify = require('browserify'),
-    inlinesource = require('gulp-inline-source');
+const gulp = require('gulp'),
+    inlinesource = require('gulp-inline-source'),
+    webpack = require('webpack-stream');
 
-gulp.task('browserify', function () {
-    return browserify('./js/app.js')
-        .transform("babelify", {
-            presets: ["env"],
-            global: true,
-            ignore: /\/node_modules\/(?!zmodem.js\/)/
-        })
-        .bundle()
-        .pipe(fs.createWriteStream("./js/bundle.js"));
+gulp.task('webpack', function() {
+    return gulp.src([
+            'js/app.js',
+            'sass/app.scss'
+        ])
+        .pipe(webpack(require('./webpack.config.js')))
+        .pipe(gulp.dest('dist/'));
 });
 
-gulp.task('inlinesource', ['browserify'], function () {
+gulp.task('inlinesource', ['webpack'], function () {
     return gulp.src('index.html')
         .pipe(inlinesource())
-        .pipe(gulp.dest('../src'));
+        .pipe(gulp.dest('../src/'));
 });
 
 gulp.task('default', ['inlinesource']);

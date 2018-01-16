@@ -1,3 +1,12 @@
+@import "~bulma/sass/utilities/_all";
+@import "~bulma/sass/base/helpers";
+@import "~bulma/sass/elements/box";
+@import "~bulma/sass/elements/button";
+@import "~bulma/sass/elements/form";
+@import "~bulma/sass/elements/progress";
+@import "~bulma/sass/components/modal";
+@import "~xterm/src/xterm.css";
+
 html, body {
     height: 100%;
     min-height: 100%;
