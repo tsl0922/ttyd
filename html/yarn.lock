@@ -5134,9 +5134,9 @@ wrappy@1:
   version "4.0.1"
   resolved "http://registry.npm.taobao.org/xtend/download/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-xterm@^3.0.1:
-  version "3.0.1"
-  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.0.1.tgz#6fef126c6198699d08c3d1dfd43f4c7c45740d39"
+xterm@^3.0.2:
+  version "3.0.2"
+  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.0.2.tgz#1acc6317367f4290b6be2d4ac1af0d2631fdbb35"
 
 y18n@^3.2.1:
   version "3.2.1"

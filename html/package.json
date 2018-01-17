@@ -16,7 +16,7 @@
     "bulma": "^0.6.1",
     "core-js": "^2.5.3",
     "fast-text-encoding": "^1.0.0",
-    "xterm": "^3.0.1",
+    "xterm": "^3.0.2",
     "zmodem.js": "^0.1.5"
   },
   "devDependencies": {
