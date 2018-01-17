@@ -1,7 +1,7 @@
 # Maintainer: Shuanglei Tao <tsl0922@gmail.com>
 
 pkgname="ttyd"
-pkgver=1.3.3
+pkgver=1.4.0
 pkgrel=1
 pkgdesc="A command-line tool for sharing terminal over the web"
 arch=('i686' 'x86_64')
