@@ -45,7 +45,9 @@ brew install ttyd
     make && make install
     ```
 
-    You may need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
+    [CMake][19] of at least 3.0 is required. If you get the error message 'Policy "CMP0048" is not known to this version of CMake,' that means you have an old CMake.
+    
+    You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
 
 ## Install on Windows
 
@@ -186,3 +188,4 @@ Docker containers are jailed environments which are more secure, this is useful 
   [16]: https://en.wikipedia.org/wiki/ZMODEM
   [17]: https://ohse.de/uwe/software/lrzsz.html
   [18]: https://en.wikipedia.org/wiki/CJK_characters
+  [19]: https://cmake.org/
