@@ -336,9 +336,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     }
                     break;
                 default:
-                    lwsl_warn("unknown message type: %c\n", command);
-                    lws_close_reason(wsi, LWS_CLOSE_STATUS_INVALID_PAYLOAD, NULL, 0);
-                    return -1;
+                    lwsl_warn("ignored unknown message type: %c\n", command);
+                    break;
             }
 
             if (client->buffer != NULL) {
