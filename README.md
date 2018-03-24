@@ -45,7 +45,7 @@ brew install ttyd
     make && make install
     ```
 
-    [CMake][19] of at least 3.0 is required. If you get the error message 'Policy "CMP0048" is not known to this version of CMake,' that means you have an old CMake.
+    [CMake][19] of at least 3.0 is required. If you get the error message `Policy "CMP0048" is not known to this version of CMake`, that means you have an old CMake.
     
     You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
 
