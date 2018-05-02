@@ -9,34 +9,34 @@ module.exports = {
         filename: devMode ? '[name].js' : '[name].[hash].js'
     },
     module: {
-      rules: [
-        {
-          test: /\.js$/,
-          exclude: /node_modules\/(?!zmodem.js\/)/,
-          use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['env']
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules\/(?!zmodem.js\/)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['env']
+                    }
+                }
+            },
+            {
+                test: /\.s?[ac]ss$/,
+                use: [
+                    devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+                    'css-loader',
+                    'sass-loader',
+                ]
             }
-          }
-        },
-        {
-            test: /\.s?[ac]ss$/,
-            use: [
-              devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
-              'css-loader',
-              'sass-loader',
-            ]
-        }
-      ]
+        ]
     },
     plugins: [
         new CopyWebpackPlugin([
-          {from: 'favicon.png', to: '.' }
+            {from: 'favicon.png', to: '.' }
         ], {}),
         new MiniCssExtractPlugin({
-          filename: devMode ? '[name].css' : '[name].[hash].css',
-          chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
+            filename: devMode ? '[name].css' : '[name].[hash].css',
+            chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
         })
     ]
 }

@@ -1,46 +1,46 @@
 {
-  "name": "ttyd",
-  "version": "1.1.0",
-  "description": "Share your terminal over the web",
-  "main": "js/app.js",
-  "repository": {
-    "url": "git@github.com:tsl0922/ttyd.git",
-    "type": "git"
-  },
-  "author": "Shuanglei Tao <tsl0922@gmail.com>",
-  "license": "MIT",
-  "scripts": {
-    "build": "webpack --config webpack.prod.js && gulp",
-    "clean": "gulp clean",
-    "start": "webpack-serve webpack.dev.js"
-  },
-  "dependencies": {
-    "bulma": "^0.6.1",
-    "core-js": "^2.5.3",
-    "fast-text-encoding": "^1.0.0",
-    "xterm": "^3.2.0",
-    "zmodem.js": "^0.1.5"
-  },
-  "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.4",
-    "babel-preset-env": "^1.6.1",
-    "copy-webpack-plugin": "^4.5.1",
-    "css-loader": "^0.28.8",
-    "gulp": "^3.9.1",
-    "gulp-clean": "^0.4.0",
-    "gulp-inline-source": "^3.1.0",
-    "html-webpack-inline-source-plugin": "^0.0.10",
-    "html-webpack-plugin": "^3.2.0",
-    "http-proxy-middleware": "^0.18.0",
-    "koa-connect": "^2.0.1",
-    "mini-css-extract-plugin": "^0.4.0",
-    "node-sass": "^4.7.2",
-    "sass-loader": "^6.0.6",
-    "style-loader": "^0.19.1",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.1.2",
-    "webpack-merge": "^4.1.2",
-    "webpack-serve": "^0.3.2"
-  }
+    "name": "ttyd",
+    "version": "1.1.0",
+    "description": "Share your terminal over the web",
+    "main": "js/app.js",
+    "repository": {
+        "url": "git@github.com:tsl0922/ttyd.git",
+        "type": "git"
+    },
+    "author": "Shuanglei Tao <tsl0922@gmail.com>",
+    "license": "MIT",
+    "scripts": {
+        "build": "webpack --config webpack.prod.js && gulp",
+        "clean": "gulp clean",
+        "start": "webpack-serve webpack.dev.js"
+    },
+    "dependencies": {
+        "bulma": "^0.6.1",
+        "core-js": "^2.5.3",
+        "fast-text-encoding": "^1.0.0",
+        "xterm": "^3.2.0",
+        "zmodem.js": "^0.1.5"
+    },
+    "devDependencies": {
+        "babel-core": "^6.26.3",
+        "babel-loader": "^7.1.4",
+        "babel-preset-env": "^1.6.1",
+        "copy-webpack-plugin": "^4.5.1",
+        "css-loader": "^0.28.8",
+        "gulp": "^3.9.1",
+        "gulp-clean": "^0.4.0",
+        "gulp-inline-source": "^3.1.0",
+        "html-webpack-inline-source-plugin": "^0.0.10",
+        "html-webpack-plugin": "^3.2.0",
+        "http-proxy-middleware": "^0.18.0",
+        "koa-connect": "^2.0.1",
+        "mini-css-extract-plugin": "^0.4.0",
+        "node-sass": "^4.7.2",
+        "sass-loader": "^6.0.6",
+        "style-loader": "^0.19.1",
+        "webpack": "^4.6.0",
+        "webpack-cli": "^2.1.2",
+        "webpack-merge": "^4.1.2",
+        "webpack-serve": "^0.3.2"
+    }
 }

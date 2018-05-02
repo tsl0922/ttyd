@@ -1,9 +1,9 @@
 const gulp = require('gulp'),
-	clean = require('gulp-clean'),
+    clean = require('gulp-clean'),
     inlinesource = require('gulp-inline-source');
 
 gulp.task('clean', function () {
-	return gulp.src('dist', {read: false})
+    return gulp.src('dist', {read: false})
         .pipe(clean());
 });
 
