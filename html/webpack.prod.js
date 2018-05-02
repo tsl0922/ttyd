@@ -9,8 +9,8 @@ module.exports = merge(config, {
     plugins: [
         new HtmlWebpackPlugin({
             inlineSource: '.(js|css)$',
-            template: 'index.html'
+            template: 'index.html',
         }),
-        new HtmlWebpackInlineSourcePlugin()
+        new HtmlWebpackInlineSourcePlugin(),
     ]
 });

@@ -10,8 +10,8 @@ module.exports = merge(config, {
     mode: 'development',
     plugins: [
         new HtmlWebpackPlugin({
-            template: 'index.html'
-        })
+            template: 'index.html',
+        }),
     ],
     serve: {
         content: __dirname + '/dist',
@@ -27,6 +27,6 @@ module.exports = merge(config, {
                 }
             );
             app.use(convert(ttydProxy));
-        }
+        },
     }
 });

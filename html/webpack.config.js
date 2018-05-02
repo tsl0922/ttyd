@@ -6,7 +6,7 @@ module.exports = {
     entry: './js/app.js',
     output: {
         path: __dirname + '/dist',
-        filename: devMode ? '[name].js' : '[name].[hash].js'
+        filename: devMode ? '[name].js' : '[name].[hash].js',
     },
     module: {
         rules: [
@@ -18,7 +18,7 @@ module.exports = {
                     options: {
                         presets: ['env']
                     }
-                }
+                },
             },
             {
                 test: /\.s?[ac]ss$/,
@@ -26,17 +26,20 @@ module.exports = {
                     devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
                     'css-loader',
                     'sass-loader',
-                ]
-            }
+                ],
+            },
         ]
     },
     plugins: [
         new CopyWebpackPlugin([
-            {from: 'favicon.png', to: '.' }
+            { from: 'favicon.png', to: '.' }
         ], {}),
         new MiniCssExtractPlugin({
             filename: devMode ? '[name].css' : '[name].[hash].css',
             chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
         })
-    ]
+    ],
+    performance : {
+        hints : false
+    },
 }
