@@ -1,8 +1,12 @@
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const devMode = process.env.NODE_ENV !== 'production';
 
 module.exports = {
+    entry: './js/app.js',
     output: {
-        filename: 'bundle.js'
+        path: __dirname + '/dist',
+        filename: devMode ? '[name].js' : '[name].[hash].js'
     },
     module: {
       rules: [
@@ -15,22 +19,24 @@ module.exports = {
               presets: ['env']
             }
           }
-        }, {
-            test: /\.scss$/,
-            use: ExtractTextPlugin.extract({
-                use: [{
-                    loader: "css-loader"
-                }, {
-                    loader: "sass-loader"
-                }],
-                fallback: "style-loader"
-            })
+        },
+        {
+            test: /\.s?[ac]ss$/,
+            use: [
+              devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+              'css-loader',
+              'sass-loader',
+            ]
         }
       ]
     },
     plugins: [
-        new ExtractTextPlugin({
-            filename: 'bundle.css',
+        new CopyWebpackPlugin([
+          {from: 'favicon.png', to: '.' }
+        ], {}),
+        new MiniCssExtractPlugin({
+          filename: devMode ? '[name].css' : '[name].[hash].css',
+          chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
         })
     ]
 }

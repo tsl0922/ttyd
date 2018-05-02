@@ -1,3 +1,5 @@
+require('../sass/app.scss');
+
 // polyfills for ie11
 require('core-js/fn/array');
 require('core-js/fn/object');
