@@ -19,6 +19,10 @@ module.exports = merge(config, {
     },
     plugins: [
         new HtmlWebpackPlugin({
+            minify: {
+                removeComments: true,
+                collapseWhitespace: true,
+            },
             inlineSource: '.(js|css)$',
             template: 'index.html',
         }),
