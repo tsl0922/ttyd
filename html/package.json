@@ -10,9 +10,8 @@
     "author": "Shuanglei Tao <tsl0922@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "build": "webpack --config webpack.prod.js && gulp",
-        "clean": "gulp clean",
-        "start": "webpack-serve webpack.dev.js"
+        "build": "NODE_ENV=production webpack --config webpack.prod.js && gulp",
+        "start": "gulp clean && webpack-serve webpack.dev.js"
     },
     "dependencies": {
         "bulma": "^0.6.1",
@@ -36,8 +35,10 @@
         "koa-connect": "^2.0.1",
         "mini-css-extract-plugin": "^0.4.0",
         "node-sass": "^4.7.2",
+        "optimize-css-assets-webpack-plugin": "^4.0.1",
         "sass-loader": "^6.0.6",
         "style-loader": "^0.19.1",
+        "uglifyjs-webpack-plugin": "^1.2.5",
         "webpack": "^4.6.0",
         "webpack-cli": "^2.1.2",
         "webpack-merge": "^4.1.2",

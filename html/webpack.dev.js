@@ -6,7 +6,6 @@ const config = require('./webpack.config.js');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = merge(config, {
-    devtool: 'source-map',
     mode: 'development',
     plugins: [
         new HtmlWebpackPlugin({
