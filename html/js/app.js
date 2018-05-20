@@ -243,7 +243,7 @@ var openWs = function() {
         sendMessage(JSON.stringify({AuthToken: authToken}));
 
         if (typeof term !== 'undefined') {
-            term.destroy();
+            term.dispose();
         }
 
         term = new Terminal({
