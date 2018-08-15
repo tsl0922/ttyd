@@ -10,8 +10,8 @@ require('fast-text-encoding');
 var Zmodem = require('zmodem.js/src/zmodem_browser');
 var Terminal = require('xterm').Terminal;
 
-Terminal.applyAddon(require('xterm/lib/addons/fit'));
-Terminal.applyAddon(require('xterm/lib/addons/winptyCompat'));
+Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
+Terminal.applyAddon(require('xterm/lib/addons/winptyCompat/winptyCompat'));
 Terminal.applyAddon(require('./overlay'));
 
 var modal = {

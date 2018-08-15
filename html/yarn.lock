@@ -7733,9 +7733,9 @@ xdg-basedir@^3.0.0:
   version "4.0.1"
   resolved "http://registry.npm.taobao.org/xtend/download/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-xterm@^3.4.0:
-  version "3.4.0"
-  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.4.0.tgz#fbb0731b293635b8fa9ea627b16a43bbb7511048"
+xterm@^3.6.0:
+  version "3.6.0"
+  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.6.0.tgz#9b95cd23a338e5842343aec1a104f094c5153e7c"
 
 y18n@^3.2.1:
   version "3.2.1"
@@ -7854,7 +7854,7 @@ yeoman-generator@^2.0.4:
     through2 "^2.0.0"
     yeoman-environment "^2.0.5"
 
-zmodem.js@^0.1.5:
+zmodem.js@^0.1.7:
   version "0.1.7"
   resolved "http://registry.npm.taobao.org/zmodem.js/download/zmodem.js-0.1.7.tgz#247affb76d2b1e3042b3fc8b4a087b9d5db8d1ed"
   dependencies:
