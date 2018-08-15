@@ -1,7 +1,7 @@
 # Maintainer: Shuanglei Tao <tsl0922@gmail.com>
 
 pkgname=json-c
-pkgver=0.12.1
+pkgver=0.13.1
 pkgrel=1
 pkgdesc="A JSON implementation in C"
 arch=('i686' 'x86_64')
@@ -9,7 +9,7 @@ url="https://github.com/json-c/json-c"
 license=('MIT')
 makedepends=('gcc' 'make' 'autoconf')
 source=("https://s3.amazonaws.com/json-c_releases/releases/${pkgname}-${pkgver}.tar.gz")
-sha256sums=('2a136451a7932d80b7d197b10441e26e39428d67b1443ec43bbba824705e1123')
+sha256sums=('b87e608d4d3f7bfdd36ef78d56d53c74e66ab278d318b71e6002a369d36f4873')
 
 build() {
   cd ${srcdir}/${pkgname}-${pkgver}

@@ -9,7 +9,7 @@ url="https://github.com/tsl0922/ttyd"
 license=('MIT')
 makedepends=('gcc' 'cmake' 'json-c' 'libwebsockets' 'vim')
 source=(${pkgname}-${pkgver}.tar.gz::"https://github.com/tsl0922/${pkgname}/archive/${pkgver}.tar.gz")
-sha256sums=('6e85335c11df68e6401178269920a586bce7e66045bd0b225f6d2bc58356d105')
+sha256sums=('757a9b5b5dd3de801d7db8fab6035d97ea144b02a51c78bdab28a8e07bcf05d6')
 
 prepare() {
   cd "${srcdir}/${pkgname}-${pkgver}"

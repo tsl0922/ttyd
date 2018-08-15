@@ -1,7 +1,7 @@
 # Maintainer: Shuanglei Tao <tsl0922@gmail.com>
 
 pkgname="libwebsockets"
-pkgver=2.1.0
+pkgver=2.4.2
 pkgrel=1
 pkgdesc="A lightweight pure C library for websockets (msys)"
 arch=('i686' 'x86_64')
@@ -9,7 +9,7 @@ url="http://libwebsockets.org"
 license=('LGPL 2.1')
 makedepends=('gcc' 'cmake' 'zlib-devel' 'openssl-devel')
 source=(${pkgname}-${pkgver}.tar.gz::"https://github.com/warmcat/${pkgname}/archive/v${pkgver}.tar.gz")
-sha256sums=('bcc96aaa609daae4d3f7ab1ee480126709ef4f6a8bf9c85de40aae48e38cce66')
+sha256sums=('73012d7fcf428dedccc816e83a63a01462e27819d5537b8e0d0c7264bfacfad6')
 
 prepare() {
   cd "${srcdir}/${pkgname}-${pkgver}"
