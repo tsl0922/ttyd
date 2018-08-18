@@ -29,6 +29,7 @@ enum pty_state {
 struct tty_client {
     bool running;
     bool initialized;
+    int initial_cmd_index;
     bool authenticated;
     char hostname[100];
     char address[50];
@@ -47,6 +48,12 @@ struct tty_client {
     pthread_mutex_t mutex;
 
     LIST_ENTRY(tty_client) list;
+};
+
+struct pss_http {
+    char path[128];
+    char *buffer;
+    size_t len;
 };
 
 struct tty_server {

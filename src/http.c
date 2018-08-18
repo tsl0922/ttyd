@@ -52,6 +52,7 @@ check_auth(struct lws *wsi) {
 
 int
 callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
+    struct pss_http *pss = (struct pss_http *) user;
     unsigned char buffer[4096 + LWS_PRE], *p, *end;
     char buf[256], name[100], rip[50];
 
@@ -60,9 +61,10 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             // only GET method is allowed
             if (!lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI) || len < 1) {
                 lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
-                goto try_to_reuse;
+                return 0;
             }
 
+            lws_snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
             lwsl_notice("HTTP %s - %s (%s)\n", (char *) in, rip, name);
 
@@ -70,7 +72,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 case 0:
                     break;
                 case -1:
-                    goto try_to_reuse;
+                    return 0;
                 case 1:
                 default:
                     return 1;
@@ -79,7 +81,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             p = buffer + LWS_PRE;
             end = p + sizeof(buffer) - LWS_PRE;
 
-            if (!strncmp((const char *) in, "/auth_token.js", 14)) {
+            if (strncmp(pss->path, "/auth_token.js", 14) == 0) {
                 size_t n = server->credential != NULL ? sprintf(buf, "var tty_auth_token = '%s';", server->credential) : 0;
 
                 if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
@@ -95,15 +97,17 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
                 if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
                     return 1;
-                if (n > 0 && lws_write_http(wsi, buf, n) < 0) {
-                    return 1;
+                if (n > 0) {
+                    pss->buffer = strdup(buf);
+                    pss->len = n;
+                    lws_callback_on_writable(wsi);
                 }
-                goto try_to_reuse;
+                return 0;
             }
 
-            if (strncmp((const char *) in, "/", 1) != 0) {
+            if (strcmp(pss->path, "/") != 0) {
                 lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
-                goto try_to_reuse;
+                return 0;
             }
 
             const char* content_type = "text/html";
@@ -123,10 +127,22 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
                     return 1;
 
-                if (lws_write_http(wsi, index_html, index_html_len) < 0)
-                    return 1;
-                goto try_to_reuse;
+                pss->buffer = (char *) index_html;
+                pss->len = index_html_len;
+                lws_callback_on_writable(wsi);
+                return 0;
             }
+            break;
+        case LWS_CALLBACK_HTTP_WRITEABLE:
+            if (pss->len > 0) {
+                int n = lws_write_http(wsi, pss->buffer, pss->len);
+                if (strncmp(pss->path, "/", 1) != 0)
+                    free(pss->buffer);
+                if (n < pss->len)
+                    return 1;
+            }
+            if (lws_http_transaction_completed(wsi))
+                return -1;
             break;
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
@@ -140,13 +156,6 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
         default:
             break;
     }
-
-    return 0;
-
-    /* if we're on HTTP1.1 or 2.0, will keep the idle connection alive */
-    try_to_reuse:
-    if (lws_http_transaction_completed(wsi))
-        return -1;
 
     return 0;
 }

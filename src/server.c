@@ -27,7 +27,7 @@ struct tty_server *server;
 
 // websocket protocols
 static const struct lws_protocols protocols[] = {
-        {"http-only", callback_http, 0,                         0},
+        {"http-only", callback_http, sizeof(struct pss_http),   0},
         {"tty",       callback_tty,  sizeof(struct tty_client), 0},
         {NULL, NULL,                 0,                         0}
 };

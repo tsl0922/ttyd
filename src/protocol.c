@@ -26,31 +26,37 @@
 #include "server.h"
 #include "utils.h"
 
+// initial message list
+char initial_cmds[] = {
+        SET_WINDOW_TITLE,
+        SET_RECONNECT,
+        SET_PREFERENCES
+};
+
 int
-send_initial_message(struct lws *wsi) {
-    unsigned char message[LWS_PRE + 256];
+send_initial_message(struct lws *wsi, int index) {
+    unsigned char message[LWS_PRE + 1 + 4096];
     unsigned char *p = &message[LWS_PRE];
-    int n;
+    char buffer[128];
+    int n = 0;
 
-    char hostname[128];
-    gethostname(hostname, sizeof(hostname) - 1);
+    char cmd = initial_cmds[index];
+    switch(cmd) {
+        case SET_WINDOW_TITLE:
+            gethostname(buffer, sizeof(buffer) - 1);
+            n = sprintf((char *) p, "%c%s (%s)", cmd, server->command, buffer);
+            break;
+        case SET_RECONNECT:
+            n = sprintf((char *) p, "%c%d", cmd, server->reconnect);
+            break;
+        case SET_PREFERENCES:
+            n = sprintf((char *) p, "%c%s", cmd, server->prefs_json);
+            break;
+        default:
+            break;
+    }
 
-    // window title
-    n = sprintf((char *) p, "%c%s (%s)", SET_WINDOW_TITLE, server->command, hostname);
-    if (lws_write(wsi, p, (size_t) n, LWS_WRITE_BINARY) < n) {
-        return -1;
-    }
-    // reconnect time
-    n = sprintf((char *) p, "%c%d", SET_RECONNECT, server->reconnect);
-    if (lws_write(wsi, p, (size_t) n, LWS_WRITE_BINARY) < n) {
-        return -1;
-    }
-    // client preferences
-    n = sprintf((char *) p, "%c%s", SET_PREFERENCES, server->prefs_json);
-    if (lws_write(wsi, p, (size_t) n, LWS_WRITE_BINARY) < n) {
-        return -1;
-    }
-    return 0;
+    return lws_write(wsi, p, (size_t) n, LWS_WRITE_BINARY);
 }
 
 bool
@@ -228,7 +234,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
                 return 1;
             }
-            if (lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI) <= 0 || strcmp(buf, WS_PATH)) {
+            if (lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI) <= 0 || strcmp(buf, WS_PATH) != 0) {
                 lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", buf);
                 return 1;
             }
@@ -242,6 +248,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_ESTABLISHED:
             client->running = false;
             client->initialized = false;
+            client->initial_cmd_index = 0;
             client->authenticated = false;
             client->wsi = wsi;
             client->buffer = NULL;
@@ -263,13 +270,18 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_SERVER_WRITEABLE:
             if (!client->initialized) {
-                if (send_initial_message(wsi) < 0) {
+                if (client->initial_cmd_index == sizeof(initial_cmds)) {
+                    client->initialized = true;
+                    break;
+                }
+                if (send_initial_message(wsi, client->initial_cmd_index) < 0) {
                     tty_client_remove(client);
                     lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                     return -1;
                 }
-                client->initialized = true;
-                break;
+                client->initial_cmd_index++;
+                lws_callback_on_writable(wsi);
+                return 0;
             }
             if (client->state != STATE_READY)
                 break;
