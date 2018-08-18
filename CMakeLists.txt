@@ -3,6 +3,7 @@ cmake_policy(SET CMP0048 NEW)
 
 project(ttyd VERSION "1.4.0")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
 if(CMAKE_VERSION VERSION_LESS "3.1")
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")

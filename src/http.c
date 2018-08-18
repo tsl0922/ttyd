@@ -1,3 +1,6 @@
+#include <string.h>
+#include <libwebsockets.h>
+
 #include "server.h"
 #include "html.h"
 
@@ -98,7 +101,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 goto try_to_reuse;
             }
 
-            if (strncmp((const char *) in, "/", 1)) {
+            if (strncmp((const char *) in, "/", 1) != 0) {
                 lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
                 goto try_to_reuse;
             }

@@ -1,4 +1,25 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <getopt.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/stat.h>
+
+#ifdef HAVE_LWS_CONFIG_H
+#include "lws_config.h"
+#endif
+#include <libwebsockets.h>
+#include <json.h>
+
 #include "server.h"
+#include "utils.h"
+
+#ifndef TTYD_VERSION
+#define TTYD_VERSION "unknown"
+#endif
 
 volatile bool force_exit = false;
 struct lws_context *context;

@@ -1,4 +1,30 @@
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/queue.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <pthread.h>
+
+#if defined(__OpenBSD__) || defined(__APPLE__)
+#include <util.h>
+#elif defined(__FreeBSD__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#endif
+
+#include <libwebsockets.h>
+#include <json.h>
+
 #include "server.h"
+#include "utils.h"
 
 int
 send_initial_message(struct lws *wsi) {

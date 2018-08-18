@@ -1,54 +1,6 @@
-#ifdef HAVE_LWS_CONFIG_H
-#include "lws_config.h"
-#endif
-
-#ifndef TTYD_VERSION
-#define TTYD_VERSION "unknown"
-#endif
-
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <getopt.h>
-#include <pthread.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
-#include <sys/stat.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <assert.h>
-
-#ifdef __OpenBSD__
-#define STAILQ_HEAD            SIMPLEQ_HEAD
-#define STAILQ_ENTRY           SIMPLEQ_ENTRY
-#define STAILQ_INIT            SIMPLEQ_INIT
-#define STAILQ_INSERT_TAIL     SIMPLEQ_INSERT_TAIL
-#define STAILQ_EMPTY           SIMPLEQ_EMPTY
-#define STAILQ_FIRST           SIMPLEQ_FIRST
-#define STAILQ_REMOVE_HEAD     SIMPLEQ_REMOVE_HEAD
-#define STAILQ_FOREACH         SIMPLEQ_FOREACH
-#endif
-
-#if defined(__OpenBSD__) || defined(__APPLE__)
-#include <util.h>
-#elif defined(__FreeBSD__)
-#include <libutil.h>
-#else
-#include <pty.h>
-#endif
-
-#include <libwebsockets.h>
-#include <json.h>
-
-#include "utils.h"
 
 // client message
 #define INPUT '0'
