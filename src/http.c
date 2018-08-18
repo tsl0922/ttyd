@@ -64,7 +64,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 return 0;
             }
 
-            lws_snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
+            snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
             lwsl_notice("HTTP %s - %s (%s)\n", (char *) in, rip, name);
 
