@@ -18,7 +18,7 @@ RUN apt-get update \
       vim-common \
     && git clone --depth=1 https://github.com/tsl0922/ttyd.git /tmp/ttyd \
     && cd /tmp/ttyd && mkdir build && cd build \
-    && cmake .. \
+    && cmake -DCMAKE_BUILD_TYPE=RELEASE .. \
     && make \
     && make install \
     && apt-get remove -y --purge \

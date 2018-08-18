@@ -18,4 +18,4 @@ RUN curl -sLo- https://s3.amazonaws.com/json-c_releases/releases/json-c-0.12.1.t
 
 RUN git clone --depth=1 https://github.com/tsl0922/ttyd.git \
  && cd ttyd && sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt \
- && cmake . && make install && cd .. && rm -rf ttyd
+ && cmake -DCMAKE_BUILD_TYPE=RELEASE . && make install && cd .. && rm -rf ttyd
