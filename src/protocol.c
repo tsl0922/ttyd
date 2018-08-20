@@ -199,9 +199,7 @@ thread_run_command(void *args) {
                     while (client->running) {
                         pthread_mutex_lock(&client->mutex);
                         if (client->state == STATE_READY) {
-                            pthread_mutex_unlock(&client->mutex);
-                            usleep(5);
-                            continue;
+                            pthread_cond_wait(&client->cond, &client->mutex);
                         }
                         memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
                         client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
@@ -255,6 +253,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->state = STATE_INIT;
             client->pty_len = 0;
             pthread_mutex_init(&client->mutex, NULL);
+            pthread_cond_init(&client->cond, NULL);
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
                                    client->hostname, sizeof(client->hostname),
                                    client->address, sizeof(client->address));

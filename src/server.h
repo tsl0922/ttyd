@@ -46,6 +46,7 @@ struct tty_client {
     ssize_t pty_len;
     pthread_t thread;
     pthread_mutex_t mutex;
+    pthread_cond_t cond;
 
     LIST_ENTRY(tty_client) list;
 };

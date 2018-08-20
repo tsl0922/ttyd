@@ -475,6 +475,8 @@ main(int argc, char **argv) {
                     pthread_mutex_lock(&client->mutex);
                     if (client->state != STATE_DONE)
                         lws_callback_on_writable(client->wsi);
+                    else
+                        pthread_cond_signal(&client->cond);
                     pthread_mutex_unlock(&client->mutex);
                 }
             }
