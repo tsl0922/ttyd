@@ -10,7 +10,6 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <pthread.h>
 
 #if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
@@ -116,7 +115,7 @@ check_host_origin(struct lws *wsi) {
 
 void
 tty_client_remove(struct tty_client *client) {
-    pthread_mutex_lock(&server->mutex);
+    uv_mutex_lock(&server->mutex);
     struct tty_client *iterator;
     LIST_FOREACH(iterator, &server->clients, list) {
         if (iterator == client) {
@@ -125,20 +124,13 @@ tty_client_remove(struct tty_client *client) {
             break;
         }
     }
-    pthread_mutex_unlock(&server->mutex);
+    uv_mutex_unlock(&server->mutex);
 }
 
 void
 tty_client_destroy(struct tty_client *client) {
-    if (!client->running || client->pid <= 0)
+    if (client->pid <= 0)
         goto cleanup;
-
-    client->running = false;
-
-    pthread_mutex_lock(&client->mutex);
-    client->state = STATE_DONE;
-    pthread_cond_signal(&client->cond);
-    pthread_mutex_unlock(&client->mutex);
 
     // kill process (group) and free resource
     int pgid = getpgid(client->pid);
@@ -157,72 +149,106 @@ cleanup:
     // free the buffer
     if (client->buffer != NULL)
         free(client->buffer);
+    if (client->pty_buffer != NULL)
+        free(client->pty_buffer);
 
-    pthread_mutex_destroy(&client->mutex);
+    uv_stop(client->loop);
+
+    uv_mutex_destroy(&client->mutex);
+    uv_cond_destroy(&client->cond);
+#if UV_VERSION_MAJOR == 0
+    uv_loop_delete(client->loop);
+#else
+    uv_loop_close(client->loop);
+    free(client->loop);
+#endif
 
     // remove from client list
     tty_client_remove(client);
 }
 
-void *
-thread_run_command(void *args) {
-    struct tty_client *client;
+#if UV_VERSION_MAJOR == 0
+uv_buf_t
+alloc_cb(uv_handle_t* handle, size_t suggested_size) {
+    return uv_buf_init(malloc(suggested_size), suggested_size);
+}
+#else
+void
+alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    buf->base = xmalloc(suggested_size);
+    buf->len = suggested_size;
+}
+#endif
+
+void
+#if UV_VERSION_MAJOR == 0
+read_cb(uv_stream_t* stream, ssize_t nread, uv_buf_t buf) {
+#else
+read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+#endif
+    struct tty_client *client = (struct tty_client *) stream->data;
+    uv_mutex_lock(&client->mutex);
+    while (client->state == STATE_READY) {
+        uv_cond_wait(&client->cond, &client->mutex);
+    }
+    if (nread <= 0) {
+        if (nread == UV_ENOBUFS || nread == 0)
+            return;
+        client->pty_len = 0;
+        client->pty_buffer = NULL;
+        if (nread != UV_EOF) {
+#if UV_VERSION_MAJOR == 0
+            uv_err_t err = uv_last_error(client->loop);
+            lwsl_err("[%s] closing stream: %s (%s)\n", client->hostname, uv_err_name(err), strerror((int)nread));
+#else
+            lwsl_err("[%s] closing stream: %s (%s)\n", client->hostname, uv_err_name((int)nread), strerror((int)nread));
+#endif
+            uv_read_stop(stream);
+        }
+    } else {
+        client->pty_len = nread;
+        client->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t ) nread);
+#if UV_VERSION_MAJOR == 0
+        memcpy(client->pty_buffer + LWS_PRE + 1, buf.base, nread);
+    }
+    free(buf.base);
+#else
+        memcpy(client->pty_buffer + LWS_PRE + 1, buf->base, nread);
+    }
+    free(buf->base);
+#endif
+    client->state = STATE_READY;
+    uv_mutex_unlock(&client->mutex);
+}
+
+void
+thread_cb(void *args) {
     int pty;
-    fd_set des_set;
-
-    client = (struct tty_client *) args;
+    struct tty_client *client = (struct tty_client *) args;
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
-
-    switch (pid) {
-        case -1: /* error */
-            lwsl_err("forkpty, error: %d (%s)\n", errno, strerror(errno));
-            break;
-        case 0: /* child */
-            if (setenv("TERM", server->terminal_type, true) < 0) {
-                perror("setenv");
-                pthread_exit((void *) 1);
-            }
-            // Don't pass the web socket onto child processes
-            close(lws_get_socket_fd(client->wsi));
-            if (execvp(server->argv[0], server->argv) < 0) {
-                perror("execvp");
-                pthread_exit((void *) 1);
-            }
-            break;
-        default: /* parent */
-            lwsl_notice("started process, pid: %d\n", pid);
-            client->pid = pid;
-            client->pty = pty;
-            client->running = true;
-            if (client->size.ws_row > 0 && client->size.ws_col > 0)
-                ioctl(client->pty, TIOCSWINSZ, &client->size);
-
-            while (client->running) {
-                FD_ZERO (&des_set);
-                FD_SET (pty, &des_set);
-                struct timeval tv = { 1, 0 };
-                int ret = select(pty + 1, &des_set, NULL, NULL, &tv);
-                if (ret == 0) continue;
-                if (ret < 0) break;
-
-                if (FD_ISSET (pty, &des_set)) {
-                    while (client->running) {
-                        pthread_mutex_lock(&client->mutex);
-                        while (client->state == STATE_READY) {
-                            pthread_cond_wait(&client->cond, &client->mutex);
-                        }
-                        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
-                        client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
-                        client->state = STATE_READY;
-                        pthread_mutex_unlock(&client->mutex);
-                        break;
-                    }
-                }
-            }
-            break;
+    if (pid == -1) {
+        lwsl_err("forkpty, error: %d (%s)\n", errno, strerror(errno));
+        return;
+    } else if (pid == 0) {
+        setsid();
+        setenv("TERM", server->terminal_type, true);
+        if (execvp(server->argv[0], server->argv) < 0) {
+            fprintf(stderr, "execvp error: %s", strerror(errno));
+        }
     }
 
-    pthread_exit((void *) 0);
+    lwsl_notice("started process, pid: %d\n", pid);
+    client->pid = pid;
+    client->pty = pty;
+    if (client->size.ws_row > 0 && client->size.ws_col > 0)
+        ioctl(client->pty, TIOCSWINSZ, &client->size);
+
+    uv_pipe_init(client->loop, &client->pipe, 0);
+    client->pipe.data = client;
+    uv_pipe_open(&client->pipe, pty);
+    uv_read_start((uv_stream_t *)& client->pipe, alloc_cb, read_cb);
+
+    uv_run(client->loop, 0);
 }
 
 int
@@ -254,7 +280,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_ESTABLISHED:
-            client->running = false;
             client->initialized = false;
             client->initial_cmd_index = 0;
             client->authenticated = false;
@@ -262,16 +287,22 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->buffer = NULL;
             client->state = STATE_INIT;
             client->pty_len = 0;
-            pthread_mutex_init(&client->mutex, NULL);
-            pthread_cond_init(&client->cond, NULL);
+            uv_mutex_init(&client->mutex);
+            uv_cond_init(&client->cond);
+#if UV_VERSION_MAJOR == 0
+            client->loop = uv_loop_new();
+#else
+            client->loop = xmalloc(sizeof *client->loop);
+            uv_loop_init(client->loop);
+#endif
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
                                    client->hostname, sizeof(client->hostname),
                                    client->address, sizeof(client->address));
 
-            pthread_mutex_lock(&server->mutex);
+            uv_mutex_lock(&server->mutex);
             LIST_INSERT_HEAD(&server->clients, client, list);
             server->client_count++;
-            pthread_mutex_unlock(&server->mutex);
+            uv_mutex_unlock(&server->mutex);
             lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
 
             lwsl_notice("WS   %s - %s (%s), clients: %d\n", buf, client->address, client->hostname, server->client_count);
@@ -308,6 +339,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             if (lws_write(wsi, (unsigned char *) client->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
                 lwsl_err("write data to WS\n");
             }
+            free(client->pty_buffer);
+            client->pty_buffer = NULL;
             client->state = STATE_DONE;
             break;
 
@@ -372,9 +405,9 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                             return -1;
                         }
                     }
-                    int err = pthread_create(&client->thread, NULL, thread_run_command, client);
+                    int err = uv_thread_create(&client->thread, thread_cb, client);
                     if (err != 0) {
-                        lwsl_err("pthread_create return: %d\n", err);
+                        lwsl_err("uv_thread_create return: %d\n", err);
                         return 1;
                     }
                     break;
@@ -395,7 +428,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;
-                lws_cancel_service(context);
+                lws_cancel_service(lws_get_context(wsi));
                 exit(0);
             }
             break;

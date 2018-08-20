@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#include <pthread.h>
 #include <signal.h>
 #include <sys/stat.h>
 
@@ -107,6 +106,11 @@ tty_server_new(int argc, char **argv, int start) {
     ts = xmalloc(sizeof(struct tty_server));
 
     memset(ts, 0, sizeof(struct tty_server));
+#if UV_VERSION_MAJOR == 0
+    ts->loop = uv_loop_new();
+#else
+    ts->loop = xmalloc(sizeof *ts->loop);
+#endif
     LIST_INIT(&ts->clients);
     ts->client_count = 0;
     ts->reconnect = 10;
@@ -162,21 +166,60 @@ tty_server_free(struct tty_server *ts) {
             unlink(ts->socket_path);
         }
     }
-    pthread_mutex_destroy(&ts->mutex);
+    uv_mutex_destroy(&ts->mutex);
+#if UV_VERSION_MAJOR == 0
+    uv_loop_delete(ts->loop);
+#else
+    uv_loop_close(ts->loop);
+    free(ts->loop);
+#endif
     free(ts);
 }
 
 void
-sig_handler(int sig) {
+signal_cb(uv_signal_t *watcher, int signum) {
+    char sig_name[20];
+    get_sig_name(watcher->signum, sig_name, sizeof(sig_name));
+    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
+
+    switch (watcher->signum) {
+        case SIGINT:
+        case SIGTERM:
+            break;
+        default:
+            signal(SIGABRT, SIG_DFL);
+            abort();
+    }
     if (force_exit)
         exit(EXIT_FAILURE);
-
-    char sig_name[20];
-    get_sig_name(sig, sig_name, sizeof(sig_name));
-    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
     force_exit = true;
-    lws_cancel_service(context);
+#if LWS_LIBRARY_VERSION_MAJOR < 3
+    lws_libuv_stop(context);
+#else
+    uv_stop(server->loop);
+#endif
     lwsl_notice("send ^C to force exit.\n");
+}
+
+void
+#if UV_VERSION_MAJOR == 0
+timer_cb(uv_timer_t *handle, int status) {
+#else
+timer_cb(uv_timer_t *handle) {
+#endif
+    uv_mutex_lock(&server->mutex);
+    if (!LIST_EMPTY(&server->clients)) {
+        struct tty_client *client;
+        LIST_FOREACH(client, &server->clients, list) {
+            uv_mutex_lock(&client->mutex);
+            if (client->state != STATE_DONE)
+                lws_callback_on_writable(client->wsi);
+            else
+                uv_cond_signal(&client->cond);
+            uv_mutex_unlock(&client->mutex);
+        }
+    }
+    uv_mutex_unlock(&server->mutex);
 }
 
 int
@@ -226,7 +269,7 @@ main(int argc, char **argv) {
 
     int start = calc_command_start(argc, argv);
     server = tty_server_new(argc, argv, start);
-    pthread_mutex_init(&server->mutex, NULL);
+    uv_mutex_init(&server->mutex);
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -238,7 +281,7 @@ main(int argc, char **argv) {
     info.gid = -1;
     info.uid = -1;
     info.max_http_header_pool = 16;
-    info.options = LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
+    info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
     info.extensions = extensions;
 
     int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
@@ -459,9 +502,15 @@ main(int argc, char **argv) {
         lwsl_notice("  custom index.html: %s\n", server->index);
     }
 
-    signal(SIGINT, sig_handler);  // ^C
-    signal(SIGTERM, sig_handler); // kill
+#if UV_VERSION_MAJOR > 0
+    uv_loop_init(server->loop);
+#endif
 
+#if LWS_LIBRARY_VERSION_MAJOR >= 3
+    void *foreign_loops[1];
+    foreign_loops[0] = server->loop;
+    info.foreign_loops = foreign_loops;
+#endif
     context = lws_create_context(&info);
     if (context == NULL) {
         lwsl_err("libwebsockets init failed\n");
@@ -474,25 +523,35 @@ main(int argc, char **argv) {
         open_uri(url);
     }
 
-    // libwebsockets main loop
-    while (!force_exit) {
-        pthread_mutex_lock(&server->mutex);
-        if (!LIST_EMPTY(&server->clients)) {
-            struct tty_client *client;
-            LIST_FOREACH(client, &server->clients, list) {
-                if (client->running) {
-                    pthread_mutex_lock(&client->mutex);
-                    if (client->state != STATE_DONE)
-                        lws_callback_on_writable(client->wsi);
-                    else
-                        pthread_cond_signal(&client->cond);
-                    pthread_mutex_unlock(&client->mutex);
-                }
-            }
-        }
-        pthread_mutex_unlock(&server->mutex);
-        lws_service(context, 10);
+    uv_timer_t timer;
+    uv_timer_init(server->loop, &timer);
+    uv_timer_start(&timer, timer_cb, 0, 5);
+
+#if LWS_LIBRARY_VERSION_MAJOR < 3
+#if LWS_LIBRARY_VERSION_MAJOR < 2
+    lws_uv_initloop(context, server->loop, signal_cb, 0);
+#else
+    lws_uv_sigint_cfg(context, 1, signal_cb);
+    lws_uv_initloop(context, server->loop, 0);
+#endif
+    lws_libuv_run(context, 0);
+#else
+    int signums[] = {SIGINT, SIGTERM};
+    int ns = sizeof(signums)/sizeof(signums[0]);
+    uv_signal_t signals[ns];
+    for (int i = 0; i < ns; i++) {
+        uv_signal_init(server->loop, &signals[i]);
+        uv_signal_start(&signals[i], signal_cb, signums[i]);
     }
+
+    lws_service(context, 0);
+
+    for (int i = 0; i < ns; i++) {
+        uv_signal_stop(&signals[i]);
+    }
+#endif
+
+    uv_timer_stop(&timer);
 
     lws_context_destroy(context);
 

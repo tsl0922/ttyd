@@ -1,8 +1,7 @@
 language: c
-os:
-  - linux
+dist: xenial
 env:
-  - LIBWEBSOCKETS_VERSION=1.7.9
+  - LIBWEBSOCKETS_VERSION=system
   - LIBWEBSOCKETS_VERSION=2.0.3
   - LIBWEBSOCKETS_VERSION=2.1.1
   - LIBWEBSOCKETS_VERSION=2.2.2
@@ -18,16 +17,20 @@ addons:
       - cmake
       - libjson-c-dev
       - libssl-dev
+      - libuv-dev
 install: |
-  echo "Compiling libwebsockets-$LIBWEBSOCKETS_VERSION from source..."
-  pushd /tmp
-    curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz
-    cd libwebsockets-$LIBWEBSOCKETS_VERSION
-    cmake $CMAKE_OPTIONS .
-    make && sudo make install
-  popd
+  if [ "$LIBWEBSOCKETS_VERSION" == "system" ]; then
+    sudo apt-get install -y libwebsockets-dev
+  else
+    echo "Compiling libwebsockets-$LIBWEBSOCKETS_VERSION from source..."
+    pushd /tmp
+      curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz
+      cd libwebsockets-$LIBWEBSOCKETS_VERSION
+      cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr -DLWS_WITHOUT_TESTAPPS=ON -DLWS_UNIX_SOCK=ON -DLWS_WITH_LIBUV=ON .
+      make && sudo make install
+    popd
+  fi
 script:
-  - mkdir build && cd build
-  - cmake $CMAKE_OPTIONS ..
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE .
   - make && sudo make install
   - ttyd -v
