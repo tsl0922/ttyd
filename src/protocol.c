@@ -205,6 +205,10 @@ thread_run_command(void *args) {
                         client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
                         client->state = STATE_READY;
                         pthread_mutex_unlock(&client->mutex);
+                        if (client->pty_len <= 0) {
+                            tty_client_destroy(client);
+                            lws_callback_on_writable(client->wsi);
+                        }
                         break;
                     }
                 }
@@ -287,7 +291,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             // read error or client exited, close connection
             if (client->pty_len <= 0) {
-                tty_client_remove(client);
                 lws_close_reason(wsi,
                                  client->pty_len == 0 ? LWS_CLOSE_STATUS_NORMAL
                                                        : LWS_CLOSE_STATUS_UNEXPECTED_CONDITION,
