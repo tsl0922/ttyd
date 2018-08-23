@@ -208,6 +208,9 @@ thread_run_command(void *args) {
                         break;
                     }
                 }
+                if (client->pty_len <= 0) {
+                    break;
+                }
             }
             break;
     }
@@ -287,7 +290,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             // read error or client exited, close connection
             if (client->pty_len <= 0) {
-                tty_client_remove(client);
                 lws_close_reason(wsi,
                                  client->pty_len == 0 ? LWS_CLOSE_STATUS_NORMAL
                                                        : LWS_CLOSE_STATUS_UNEXPECTED_CONDITION,
