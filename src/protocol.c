@@ -218,6 +218,8 @@ thread_run_command(void *args) {
                         break;
                     }
                 }
+
+                if (client->pty_len <= 0) break;
             }
             break;
     }
