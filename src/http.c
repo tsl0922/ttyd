@@ -103,7 +103,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 goto try_to_reuse;
 #else
                 if (n > 0) {
-                    pss->buffer = strdup(buf);
+                    pss->buffer = pss->ptr = strdup(buf);
                     pss->len = n;
                     lws_callback_on_writable(wsi);
                 }
@@ -137,7 +137,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
                 goto try_to_reuse;
 #else
-                pss->buffer = (char *) index_html;
+                pss->buffer = pss->ptr = (char *) index_html;
                 pss->len = index_html_len;
                 lws_callback_on_writable(wsi);
                 return 0;
@@ -149,15 +149,23 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             if (pss->len <= 0)
                 goto try_to_reuse;
 
-            int n = lws_write_http(wsi, pss->buffer, pss->len);
-            if (strncmp(pss->path, "/", 1) != 0)
-                free(pss->buffer);
-            if (n < pss->len) {
-                return 1;
+            if (pss ->ptr - pss->buffer == pss->len) {
+                if (pss->buffer != (char *) index_html) free(pss->buffer);
+                goto try_to_reuse;
             }
-            pss->len = 0;
 
-            goto try_to_reuse;
+            int n = sizeof(buffer) - LWS_PRE;
+            if (pss->ptr - pss->buffer + n > pss->len)
+                n = (int) (pss->len - (pss->ptr - pss->buffer));
+            memcpy(buffer + LWS_PRE, pss->ptr, n);
+            pss->ptr += n;
+            if (lws_write_http(wsi, buffer + LWS_PRE, (size_t) n) < n) {
+                if (pss->buffer != (char *) index_html) free(pss->buffer);
+                return -1;
+            }
+
+            lws_callback_on_writable(wsi);
+            break;
 
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {

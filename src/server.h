@@ -54,6 +54,7 @@ struct tty_client {
 struct pss_http {
     char path[128];
     char *buffer;
+    char *ptr;
     size_t len;
 };
 
