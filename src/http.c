@@ -61,7 +61,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             // only GET method is allowed
             if (!lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI) || len < 1) {
                 lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
-                return 0;
+                goto try_to_reuse;
             }
 
             snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
@@ -72,7 +72,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 case 0:
                     break;
                 case -1:
-                    return 0;
+                    goto try_to_reuse;
                 case 1:
                 default:
                     return 1;
@@ -97,17 +97,23 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
                 if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
                     return 1;
+#if LWS_LIBRARY_VERSION_MAJOR < 3
+                if (n > 0 && lws_write_http(wsi, buf, n) < 0)
+                    return 1;
+                goto try_to_reuse;
+#else
                 if (n > 0) {
                     pss->buffer = strdup(buf);
                     pss->len = n;
                     lws_callback_on_writable(wsi);
                 }
                 return 0;
+#endif
             }
 
             if (strcmp(pss->path, "/") != 0) {
                 lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
-                return 0;
+                goto try_to_reuse;
             }
 
             const char* content_type = "text/html";
@@ -126,24 +132,33 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
                 if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
                     return 1;
-
+#if LWS_LIBRARY_VERSION_MAJOR < 3
+                if (lws_write_http(wsi, index_html, index_html_len) < 0)
+                    return 1;
+                goto try_to_reuse;
+#else
                 pss->buffer = (char *) index_html;
                 pss->len = index_html_len;
                 lws_callback_on_writable(wsi);
                 return 0;
+#endif
             }
             break;
+
         case LWS_CALLBACK_HTTP_WRITEABLE:
-            if (pss->len > 0) {
-                int n = lws_write_http(wsi, pss->buffer, pss->len);
-                if (strncmp(pss->path, "/", 1) != 0)
-                    free(pss->buffer);
-                if (n < pss->len)
-                    return 1;
+            if (pss->len <= 0)
+                goto try_to_reuse;
+
+            int n = lws_write_http(wsi, pss->buffer, pss->len);
+            if (strncmp(pss->path, "/", 1) != 0)
+                free(pss->buffer);
+            if (n < pss->len) {
+                return 1;
             }
-            if (lws_http_transaction_completed(wsi))
-                return -1;
-            break;
+            pss->len = 0;
+
+            goto try_to_reuse;
+
         case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
             if (!len || (SSL_get_verify_result((SSL *) in) != X509_V_OK)) {
                 int err = X509_STORE_CTX_get_error((X509_STORE_CTX *) user);
@@ -156,6 +171,13 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
         default:
             break;
     }
+
+    return 0;
+
+    /* if we're on HTTP1.1 or 2.0, will keep the idle connection alive */
+try_to_reuse:
+    if (lws_http_transaction_completed(wsi))
+        return -1;
 
     return 0;
 }
