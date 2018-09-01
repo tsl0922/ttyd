@@ -46,6 +46,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -t, --client-option <key=value>
       Send option to client (format: key=value), repeat to add more options
 
+  -T, --terminal-type
+      Terminal type to report, default: xterm-256color
+
   -O, --check-origin
       Do not allow websocket connection from different origin
 

@@ -171,7 +171,7 @@ thread_run_command(void *args) {
             lwsl_err("forkpty, error: %d (%s)\n", errno, strerror(errno));
             break;
         case 0: /* child */
-            if (setenv("TERM", "xterm-256color", true) < 0) {
+            if (setenv("TERM", server->terminal_type, true) < 0) {
                 perror("setenv");
                 pthread_exit((void *) 1);
             }

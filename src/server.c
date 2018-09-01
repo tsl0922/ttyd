@@ -64,7 +64,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:Om:oBd:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:I:aSC:K:A:Rt:T:Om:oBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -82,6 +82,7 @@ void print_help() {
                     "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
                     "    -R, --readonly          Do not allow clients to write to the TTY\n"
                     "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
+                    "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
                     "    -O, --check-origin      Do not allow websocket connection from different origin\n"
                     "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
                     "    -o, --once              Accept only one client and exit on disconnection\n"
@@ -111,6 +112,7 @@ tty_server_new(int argc, char **argv, int start) {
     ts->client_count = 0;
     ts->reconnect = 10;
     ts->sig_code = SIGHUP;
+    sprintf(ts->terminal_type, "%s", "xterm-256color");
     get_sig_name(ts->sig_code, ts->sig_name, sizeof(ts->sig_name));
     if (start == argc)
         return ts;
@@ -353,6 +355,10 @@ main(int argc, char **argv) {
                 strncpy(ca_path, optarg, sizeof(ca_path) - 1);
                 ca_path[sizeof(ca_path) - 1] = '\0';
                 break;
+            case 'T':
+                strncpy(server->terminal_type, optarg, sizeof(server->terminal_type) - 1);
+                server->terminal_type[sizeof(server->terminal_type) - 1] = '\0';
+                break;
             case '?':
                 break;
             case 't':
@@ -436,8 +442,9 @@ main(int argc, char **argv) {
     if (server->credential != NULL)
         lwsl_notice("  credential: %s\n", server->credential);
     lwsl_notice("  start command: %s\n", server->command);
-    lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+    lwsl_notice("  terminal type: %s\n", server->terminal_type);
+    lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     if (server->check_origin)
         lwsl_notice("  check origin: true\n");
     if (server->readonly)
