@@ -5,42 +5,46 @@
 
 set -eo pipefail
 
-export PATH="$PATH:/opt/cross/bin"
-
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
+
+ZLIB_VERSION="1.2.11"
+JSON_C_VERSION="0.13.1"
+OPENSSL_VERSION="1.0.2l"
+LIBWEBSOCKETS_VERSION="2.4.2"
+TTYD_VERSION="1.4.0"
 
 download_sources() {
 	rm -rf sources && mkdir sources
 	pushd sources
-		curl -L -O https://zlib.net/zlib-1.2.11.tar.gz
-		curl -L -O https://s3.amazonaws.com/json-c_releases/releases/json-c-0.13.1.tar.gz
-		curl -L -O https://www.openssl.org/source/openssl-1.0.2l.tar.gz
-		curl -L -O https://github.com/warmcat/libwebsockets/archive/v2.4.2.tar.gz
-		curl -L -O https://github.com/tsl0922/ttyd/archive/1.4.0.tar.gz
+		curl -L -O https://zlib.net/zlib-$ZLIB_VERSION.tar.gz
+		curl -L -O https://s3.amazonaws.com/json-c_releases/releases/json-c-$JSON_C_VERSION.tar.gz
+		curl -L -O https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
+		curl -L -O https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz
+		curl -L -O https://github.com/tsl0922/ttyd/archive/$TTYD_VERSION.tar.gz
 		curl -L -o queue.h "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=misc/sys/queue.h;hb=HEAD"
 	popd
 }
 
 build_zlib() {
-	tar zxf sources/zlib-1.2.11.tar.gz -C $BUILD_DIR
-	pushd $BUILD_DIR/zlib-1.2.11
+	tar zxf sources/zlib-$ZLIB_VERSION.tar.gz -C $BUILD_DIR
+	pushd $BUILD_DIR/zlib-$ZLIB_VERSION
 		env CHOST=$TARGET ./configure --static --archs="-fPIC" --prefix=$STAGE_DIR
 		make install
 	popd
 }
 
 build_json-c() {
-	tar zxf sources/json-c-0.13.1.tar.gz -C $BUILD_DIR
-	pushd $BUILD_DIR/json-c-0.13.1
+	tar zxf sources/json-c-$JSON_C_VERSION.tar.gz -C $BUILD_DIR
+	pushd $BUILD_DIR/json-c-$JSON_C_VERSION
 		env CFLAGS=-fPIC ./configure --prefix=$STAGE_DIR --host $TARGET
 		make install
 	popd
 }
 
 build_openssl() {
-	tar zxf sources/openssl-1.0.2l.tar.gz -C $BUILD_DIR
-	pushd $BUILD_DIR/openssl-1.0.2l
+	tar zxf sources/openssl-$OPENSSL_VERSION.tar.gz -C $BUILD_DIR
+	pushd $BUILD_DIR/openssl-$OPENSSL_VERSION
 		env CC=$TARGET-gcc AR=$TARGET-ar RANLIB=$TARGET-ranlib C_INCLUDE_PATH=$STAGE_DIR/include \
 			./Configure dist -fPIC --prefix=/ --install_prefix=$STAGE_DIR
 		make && make install_sw
@@ -66,8 +70,8 @@ EOF
 }
 
 build_libwebsockets() {
-	tar zxf sources/v2.4.2.tar.gz -C $BUILD_DIR
-	pushd $BUILD_DIR/libwebsockets-2.4.2
+	tar zxf sources/v$LIBWEBSOCKETS_VERSION.tar.gz -C $BUILD_DIR
+	pushd $BUILD_DIR/libwebsockets-$LIBWEBSOCKETS_VERSION
 		sed -i '13s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt
 		sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
 		mkdir build && cd build
@@ -83,8 +87,8 @@ build_libwebsockets() {
 }
 
 build_ttyd() {
-	tar zxf sources/1.4.0.tar.gz -C $BUILD_DIR
-	pushd $BUILD_DIR/ttyd-1.4.0
+	tar zxf sources/$TTYD_VERSION.tar.gz -C $BUILD_DIR
+	pushd $BUILD_DIR/ttyd-$TTYD_VERSION
 		sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static -no-pie -s")\n;' CMakeLists.txt
 		mkdir build && cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=../../cross-$TARGET.cmake \
@@ -92,7 +96,7 @@ build_ttyd() {
 		    ..
 		make
 	popd
-	cp $BUILD_DIR/ttyd-1.4.0/build/ttyd bin/ttyd.$ALIAS
+	cp $BUILD_DIR/ttyd-$TTYD_VERSION/build/ttyd bin/ttyd_linux.$ALIAS
 }
 
 build() {
@@ -128,6 +132,8 @@ echo "=== Downloading sources..."
 download_sources
 
 rm -rf bin && mkdir bin
+rm -rf $STAGE_ROOT $BUILD_ROOT
+
 for ((i=0; i<${#TARGETS[@]}; i+=2)); do
 	alias="${TARGETS[$i]}"
 	target="${TARGETS[$i+1]}"
@@ -137,5 +143,5 @@ done
 
 echo "=== Archiving bin to a tarball..."
 pushd bin
-	tar czvf ../ttyd-musl-static.tar.gz ttyd.*
+	tar czvf ../ttyd_$TTYD_VERSION_linux.tar.gz ttyd_linux.*
 popd
