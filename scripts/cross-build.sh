@@ -143,5 +143,6 @@ done
 
 echo "=== Archiving bin to a tarball..."
 pushd bin
-	tar czvf ../ttyd_$TTYD_VERSION_linux.tar.gz ttyd_linux.*
+	sha256sum ttyd_linux.* > SHA256SUMS
+	tar czvf ../ttyd_${TTYD_VERSION}_linux.tar.gz ttyd_linux.* SHA256SUMS
 popd
