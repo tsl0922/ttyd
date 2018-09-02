@@ -14,20 +14,8 @@ OPENSSL_VERSION="1.0.2l"
 LIBWEBSOCKETS_VERSION="2.4.2"
 TTYD_VERSION="1.4.0"
 
-download_sources() {
-	rm -rf sources && mkdir sources
-	pushd sources
-		curl -L -O https://zlib.net/zlib-$ZLIB_VERSION.tar.gz
-		curl -L -O https://s3.amazonaws.com/json-c_releases/releases/json-c-$JSON_C_VERSION.tar.gz
-		curl -L -O https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
-		curl -L -O https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz
-		curl -L -O https://github.com/tsl0922/ttyd/archive/$TTYD_VERSION.tar.gz
-		curl -L -o queue.h "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=misc/sys/queue.h;hb=HEAD"
-	popd
-}
-
 build_zlib() {
-	tar zxf sources/zlib-$ZLIB_VERSION.tar.gz -C $BUILD_DIR
+	curl -sLo- https://zlib.net/zlib-$ZLIB_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/zlib-$ZLIB_VERSION
 		env CHOST=$TARGET ./configure --static --archs="-fPIC" --prefix=$STAGE_DIR
 		make install
@@ -35,7 +23,7 @@ build_zlib() {
 }
 
 build_json-c() {
-	tar zxf sources/json-c-$JSON_C_VERSION.tar.gz -C $BUILD_DIR
+	curl -sLo- https://s3.amazonaws.com/json-c_releases/releases/json-c-$JSON_C_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/json-c-$JSON_C_VERSION
 		env CFLAGS=-fPIC ./configure --prefix=$STAGE_DIR --host $TARGET
 		make install
@@ -43,7 +31,7 @@ build_json-c() {
 }
 
 build_openssl() {
-	tar zxf sources/openssl-$OPENSSL_VERSION.tar.gz -C $BUILD_DIR
+	curl -sLo- https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/openssl-$OPENSSL_VERSION
 		env CC=$TARGET-gcc AR=$TARGET-ar RANLIB=$TARGET-ranlib C_INCLUDE_PATH=$STAGE_DIR/include \
 			./Configure dist -fPIC --prefix=/ --install_prefix=$STAGE_DIR
@@ -52,7 +40,7 @@ build_openssl() {
 }
 
 install_sys_queue_h() {
-	cp sources/queue.h /opt/cross/$TARGET/include/sys
+	curl -sLo /opt/cross/$TARGET/include/sys/queue.h "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=misc/sys/queue.h;hb=HEAD"
 }
 
 install_cmake_cross_file() {
@@ -70,7 +58,7 @@ EOF
 }
 
 build_libwebsockets() {
-	tar zxf sources/v$LIBWEBSOCKETS_VERSION.tar.gz -C $BUILD_DIR
+	curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/libwebsockets-$LIBWEBSOCKETS_VERSION
 		sed -i '13s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt
 		sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
@@ -87,7 +75,7 @@ build_libwebsockets() {
 }
 
 build_ttyd() {
-	tar zxf sources/$TTYD_VERSION.tar.gz -C $BUILD_DIR
+	curl -sLo- https://github.com/tsl0922/ttyd/archive/$TTYD_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/ttyd-$TTYD_VERSION
 		sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static -no-pie -s")\n;' CMakeLists.txt
 		mkdir build && cd build
@@ -127,9 +115,6 @@ TARGETS=(
 	mips    mips-linux-musl
 	mipsel  mipsel-linux-musl
 )
-
-echo "=== Downloading sources..."
-download_sources
 
 rm -rf bin && mkdir bin
 rm -rf $STAGE_ROOT $BUILD_ROOT
