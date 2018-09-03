@@ -2,9 +2,9 @@
 #
 # This script should be run inside the tsl0922/musl-cross docker image
 #
-
 set -eo pipefail
 
+CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 
@@ -40,7 +40,7 @@ build_openssl() {
 }
 
 install_sys_queue_h() {
-	curl -sLo /opt/cross/$TARGET/include/sys/queue.h "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=misc/sys/queue.h;hb=HEAD"
+	curl -sLo $CROSS_ROOT/$TARGET/include/sys/queue.h "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=misc/sys/queue.h;hb=HEAD"
 }
 
 install_cmake_cross_file() {
@@ -107,7 +107,7 @@ build() {
 }
 
 TARGETS=(
-	i686    i686-linux-musl
+	i386    i386-linux-musl
 	x86_64  x86_64-linux-musl
 	arm     arm-linux-musleabi
 	armhf   arm-linux-musleabihf
