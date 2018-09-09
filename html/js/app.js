@@ -5,6 +5,7 @@ require('core-js/fn/array');
 require('core-js/fn/object');
 require('core-js/fn/promise');
 require('core-js/fn/typed');
+require('core-js/fn/string/ends-with');
 require('fast-text-encoding');
 
 var Zmodem = require('zmodem.js/src/zmodem_browser');
