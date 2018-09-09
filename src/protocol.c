@@ -198,7 +198,7 @@ thread_run_command(void *args) {
                 if (FD_ISSET (pty, &des_set)) {
                     while (client->running) {
                         pthread_mutex_lock(&client->mutex);
-                        if (client->state == STATE_READY) {
+                        while (client->state == STATE_READY) {
                             pthread_cond_wait(&client->cond, &client->mutex);
                         }
                         memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
