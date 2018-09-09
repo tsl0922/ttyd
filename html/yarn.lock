@@ -7733,9 +7733,9 @@ xdg-basedir@^3.0.0:
   version "4.0.1"
   resolved "http://registry.npm.taobao.org/xtend/download/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
 
-xterm@^3.6.0:
-  version "3.6.0"
-  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.6.0.tgz#9b95cd23a338e5842343aec1a104f094c5153e7c"
+xterm@^3.7.0:
+  version "3.7.0"
+  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.7.0.tgz#b3eb1335dc04b92abe361711731d3b661e13db17"
 
 y18n@^3.2.1:
   version "3.2.1"
