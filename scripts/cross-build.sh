@@ -12,7 +12,7 @@ ZLIB_VERSION="1.2.11"
 JSON_C_VERSION="0.13.1"
 OPENSSL_VERSION="1.0.2p"
 LIBWEBSOCKETS_VERSION="2.4.2"
-TTYD_VERSION="1.4.1"
+TTYD_VERSION="1.4.2"
 
 build_zlib() {
 	curl -sLo- https://zlib.net/zlib-$ZLIB_VERSION.tar.gz | tar xz -C $BUILD_DIR
