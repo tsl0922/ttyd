@@ -118,6 +118,7 @@ Then open <http://localhost:8080> with a browser, you will get a bash shell with
 - If you want to login with your system accounts on the web browser, run `ttyd login`.
 - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
+- You can access underlying XTerm instance by calling `window.term` in browser, which allows you to interact with the term such as getting a snapshot of terminal content by `term.selectAll(); var terminalContent = term.getSelection().trim();`.
 
 ## Browser Support
 
