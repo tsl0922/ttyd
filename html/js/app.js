@@ -247,7 +247,9 @@ var openWs = function() {
             term.destroy();
         }
 
-        term = new Terminal({
+        // expose term handle for some programatic cases
+        // which need to get the content of the terminal
+        term = window.term = new Terminal({
             fontSize: 13,
             fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
             theme: {
