@@ -26,15 +26,7 @@ brew install ttyd
 
 ## Install on Linux
 
-- Install from ppa (ubuntu 16.04 and later):
-
-    ```bash
-    sudo apt-get install -y software-properties-common
-    sudo add-apt-repository ppa:tsl0922/ttyd-dev
-    sudo apt-get update
-    sudo apt-get install ttyd
-    ```
-
+- Binary version: download from the [releases](https://github.com/tsl0922/ttyd/releases) page.
 - Build from source (debian/ubuntu):
 
     ```bash
@@ -62,7 +54,7 @@ ttyd can be built with [MSYS2][10] on windows, The build instructions is [here][
 opkg install ttyd
 ```
 
-If the install command fails, you can [compile it yourself][14].
+You may want to [compile it manually][14].
 
 # Usage
 
@@ -118,7 +110,6 @@ Then open <http://localhost:8080> with a browser, you will get a bash shell with
 - If you want to login with your system accounts on the web browser, run `ttyd login`.
 - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
-- You can access underlying XTerm instance by calling `window.term` in browser, which allows you to interact with the term such as getting a snapshot of terminal content by `term.selectAll(); var terminalContent = term.getSelection().trim();`.
 
 ## Browser Support
 
