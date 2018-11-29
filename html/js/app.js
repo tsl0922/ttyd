@@ -244,7 +244,7 @@ var openWs = function() {
         sendMessage(JSON.stringify({AuthToken: authToken}));
 
         if (typeof term !== 'undefined') {
-            term.destroy();
+            term.dispose();
         }
 
         // expose term handle for some programatic cases
