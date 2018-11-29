@@ -50,9 +50,6 @@ else() # try to find libwebsockets with pkg-config
     mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIR LIBWEBSOCKETS_LIBRARIES)
 endif()
 
-include(CheckIncludeFile)
-check_include_file(lws_config.h HAVE_LWS_CONFIG_H)
-
 pkg_check_modules(PC_JSON-C REQUIRED json-c)
 find_path(JSON-C_INCLUDE_DIR json.h
         HINTS ${PC_JSON-C_INCLUDEDIR} ${PC_JSON-C_INCLUDE_DIRS} PATH_SUFFIXES json-c json)

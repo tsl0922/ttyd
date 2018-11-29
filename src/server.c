@@ -8,9 +8,6 @@
 #include <signal.h>
 #include <sys/stat.h>
 
-#ifdef HAVE_LWS_CONFIG_H
-#include "lws_config.h"
-#endif
 #include <libwebsockets.h>
 #include <json.h>
 
