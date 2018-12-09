@@ -64,6 +64,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -I, --index <index file>
       Custom index.html path
 
+  -6, --ipv6
+      Enable IPv6 support
+
   -S, --ssl
       Enable SSL
 

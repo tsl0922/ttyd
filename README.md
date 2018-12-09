@@ -85,6 +85,7 @@ OPTIONS:
     -o, --once              Accept only one client and exit on disconnection
     -B, --browser           Open terminal with the default system browser
     -I, --index             Custom index.html path
+    -6, --ipv6              Enable IPv6 support
     -S, --ssl               Enable SSL
     -C, --ssl-cert          SSL certificate file path
     -K, --ssl-key           SSL key file path
