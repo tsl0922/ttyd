@@ -8937,9 +8937,9 @@ xdg-basedir@^3.0.0:
   integrity sha1-pcbVMr5lbiPbgg77lDofBJmNY68=
 
 xterm@^3.8.0:
-  version "3.8.0"
-  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.8.0.tgz#55d1de518bdc9c9793823f5e4e97d6898972938d"
-  integrity sha1-VdHeUYvcnJeTgj9eTpfWiYlyk40=
+  version "3.10.0"
+  resolved "http://registry.npm.taobao.org/xterm/download/xterm-3.10.0.tgz#2c3108d886b9cb4e2d7d4f1a05ce5be6758552de"
+  integrity sha1-LDEI2Ia5y04tfU8aBc5b5nWFUt4=
 
 y18n@^3.2.1:
   version "3.2.1"
