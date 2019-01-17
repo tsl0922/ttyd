@@ -135,6 +135,11 @@ tty_client_destroy(struct tty_client *client) {
 
     client->running = false;
 
+    pthread_mutex_lock(&client->mutex);
+    client->state = STATE_DONE;
+    pthread_cond_signal(&client->cond);
+    pthread_mutex_unlock(&client->mutex);
+
     // kill process and free resource
     lwsl_notice("sending %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
     if (kill(client->pid, server->sig_code) != 0) {
@@ -191,9 +196,10 @@ thread_run_command(void *args) {
             while (client->running) {
                 FD_ZERO (&des_set);
                 FD_SET (pty, &des_set);
-
-                if (select(pty + 1, &des_set, NULL, NULL, NULL) < 0)
-                    break;
+                struct timeval tv = { 1, 0 };
+                int ret = select(pty + 1, &des_set, NULL, NULL, &tv);
+                if (ret == 0) continue;
+                if (ret < 0) break;
 
                 if (FD_ISSET (pty, &des_set)) {
                     while (client->running) {
@@ -274,7 +280,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     break;
                 }
                 if (send_initial_message(wsi, client->initial_cmd_index) < 0) {
-                    tty_client_remove(client);
                     lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                     return -1;
                 }
@@ -287,7 +292,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             // read error or client exited, close connection
             if (client->pty_len <= 0) {
-                tty_client_remove(client);
                 lws_close_reason(wsi,
                                  client->pty_len == 0 ? LWS_CLOSE_STATUS_NORMAL
                                                        : LWS_CLOSE_STATUS_UNEXPECTED_CONDITION,
@@ -335,7 +339,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         return 0;
                     if (write(client->pty, client->buffer + 1, client->len - 1) == -1) {
                         lwsl_err("write INPUT to pty: %d (%s)\n", errno, strerror(errno));
-                        tty_client_remove(client);
                         lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                         return -1;
                     }
@@ -361,7 +364,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                                 lwsl_warn("WS authentication failed with token: %s\n", token);
                         }
                         if (!client->authenticated) {
-                            tty_client_remove(client);
                             lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
                             return -1;
                         }
