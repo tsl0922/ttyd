@@ -80,6 +80,7 @@ OPTIONS:
     -R, --readonly          Do not allow clients to write to the TTY
     -t, --client-option     Send option to client (format: key=value), repeat to add more options
     -T, --terminal-type     Terminal type to report, default: xterm-256color
+    -f, --title-fixed       fixed tab title(eg: demo)
     -O, --check-origin      Do not allow websocket connection from different origin
     -m, --max-clients       Maximum clients to support (default: 0, no limit)
     -o, --once              Accept only one client and exit on disconnection

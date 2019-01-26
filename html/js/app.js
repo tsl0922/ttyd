@@ -178,7 +178,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
     autoReconnect = -1,
-    reconnectTimer, term, title, wsError;
+    reconnectTimer, term, title, title_fixed, wsError;
 
 var openWs = function() {
     var ws = new WebSocket(url, ['tty']);
@@ -286,7 +286,11 @@ var openWs = function() {
 
         term.on('title', function (data) {
             if (data && data !== '') {
-                document.title = (data + ' | ' + title);
+                if (title_fixed){
+                    document.title = title;
+                }else{
+                    document.title = (data + ' | ' + title);
+                }
             }
         });
 
@@ -338,6 +342,10 @@ var openWs = function() {
             case '3':
                 autoReconnect = JSON.parse(textDecoder.decode(data));
                 console.log('Enabling reconnect: ' + autoReconnect + ' seconds');
+                break;
+            case '4':
+                title_fixed = JSON.parse(textDecoder.decode(data));
+                console.log('title fixed: ' + Boolean(title_fixed));
                 break;
             default:
                 console.log('Unknown command: ' + cmd);

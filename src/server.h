@@ -12,6 +12,7 @@
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
 #define SET_RECONNECT '3'
+#define SET_WINDOW_TITLE_ONLY '4'
 
 // websocket url path
 #define WS_PATH "/ws"
@@ -75,6 +76,7 @@ struct tty_server {
     bool once;                                // whether accept only one client and exit on disconnection
     char socket_path[255];                    // UNIX domain socket path
     char terminal_type[30];                   // terminal type to report
+    char title_fixed[1024];                  // title define
     pthread_mutex_t mutex;
 };
 

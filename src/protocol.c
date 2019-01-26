@@ -30,7 +30,8 @@
 char initial_cmds[] = {
         SET_WINDOW_TITLE,
         SET_RECONNECT,
-        SET_PREFERENCES
+        SET_PREFERENCES,
+        SET_WINDOW_TITLE_ONLY,
 };
 
 int
@@ -43,14 +44,25 @@ send_initial_message(struct lws *wsi, int index) {
     char cmd = initial_cmds[index];
     switch(cmd) {
         case SET_WINDOW_TITLE:
-            gethostname(buffer, sizeof(buffer) - 1);
-            n = sprintf((char *) p, "%c%s (%s)", cmd, server->command, buffer);
+            if (server->title_fixed != NULL){
+                n = sprintf((char *) p, "%c%s", cmd, server->title_fixed);
+            } else {
+                gethostname(buffer, sizeof(buffer) - 1);
+                n = sprintf((char *) p, "%c%s (%s)", cmd, server->command, buffer);
+            }
             break;
         case SET_RECONNECT:
             n = sprintf((char *) p, "%c%d", cmd, server->reconnect);
             break;
         case SET_PREFERENCES:
             n = sprintf((char *) p, "%c%s", cmd, server->prefs_json);
+            break;
+        case SET_WINDOW_TITLE_ONLY:
+            if (server->title_fixed != NULL){
+                n = sprintf((char *) p, "%c%d", cmd, 1);
+            } else {
+                n = sprintf((char *) p, "%c%d", cmd, 0);
+            }
             break;
         default:
             break;

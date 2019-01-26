@@ -47,6 +47,7 @@ static const struct option options[] = {
         {"signal-list",  no_argument,       NULL,  1},
         {"reconnect",    required_argument, NULL, 'r'},
         {"index",        required_argument, NULL, 'I'},
+        {"title-fixed", required_argument, NULL, 'f'},
         {"ipv6",         no_argument, NULL, '6'},
         {"ssl",          no_argument,       NULL, 'S'},
         {"ssl-cert",     required_argument, NULL, 'C'},
@@ -62,7 +63,7 @@ static const struct option options[] = {
         {"help",         no_argument,       NULL, 'h'},
         {NULL,           0,                 0,     0}
 };
-static const char *opt_string = "p:i:c:u:g:s:r:I:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:u:g:s:r:f:I:6aSC:K:A:Rt:T:Om:oBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -81,6 +82,7 @@ void print_help() {
                     "    -R, --readonly          Do not allow clients to write to the TTY\n"
                     "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
                     "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
+                    "    -f, --title-fixed       Fix the tab title(eg: demo)\n"
                     "    -O, --check-origin      Do not allow websocket connection from different origin\n"
                     "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
                     "    -o, --once              Accept only one client and exit on disconnection\n"
@@ -289,6 +291,9 @@ main(int argc, char **argv) {
             case 'i':
                 strncpy(iface, optarg, sizeof(iface) - 1);
                 iface[sizeof(iface) - 1] = '\0';
+                break;
+            case 'f':
+                strncpy(server->title_fixed, optarg, sizeof(server->title_fixed) - 1);
                 break;
             case 'c':
                 if (strchr(optarg, ':') == NULL) {
