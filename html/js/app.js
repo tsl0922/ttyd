@@ -52,7 +52,7 @@ function showReceiveModal(xfer) {
     resetModal('Receiving files');
     updateFileInfo(xfer.get_details());
     modal.progress.skip.disabled = false;
-    modal.progress.skip.onclick = function () {
+    modal.progress.skip.onclick = function() {
         this.disabled = true;
         xfer.skip();
     };
@@ -66,7 +66,7 @@ function showSendModal(callback) {
     modal.choose.files.disabled = false;
     modal.choose.files.value = '';
     modal.choose.filesNames.textContent = '';
-    modal.choose.files.onchange = function () {
+    modal.choose.files.onchange = function() {
         this.disabled = true;
         var files = this.files;
         var fileNames = '';
@@ -112,22 +112,21 @@ function updateProgress(xfer) {
     modal.progress.progressBar.setAttribute('value', percentReceived);
 }
 
-function bytesHuman (bytes, precision) {
+function bytesHuman(bytes, precision) {
     if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
     if (bytes === 0) return 0;
     if (typeof precision === 'undefined') precision = 1;
     var units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'],
         number = Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+    return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) + ' ' + units[number];
 }
 
 function handleSend(zsession) {
-    return new Promise(function (res) {
-        showSendModal(function (files) {
+    return new Promise(function(res) {
+        showSendModal(function(files) {
             Zmodem.Browser.send_files(
                 zsession,
-                files,
-                {
+                files, {
                     on_progress: function(obj, xfer) {
                         updateFileInfo(xfer.get_details());
                         updateProgress(xfer);
@@ -139,7 +138,7 @@ function handleSend(zsession) {
             ).then(
                 zsession.close.bind(zsession),
                 console.error.bind(console)
-            ).then(function () {
+            ).then(function() {
                 res();
             });
         });
@@ -147,22 +146,22 @@ function handleSend(zsession) {
 }
 
 function handleReceive(zsession) {
-    zsession.on('offer', function (xfer) {
+    zsession.on('offer', function(xfer) {
         showReceiveModal(xfer);
         var fileBuffer = [];
-        xfer.on('input', function (payload) {
+        xfer.on('input', function(payload) {
             updateProgress(xfer);
             fileBuffer.push(new Uint8Array(payload));
         });
-        xfer.accept().then(function () {
+        xfer.accept().then(function() {
             Zmodem.Browser.save_to_disk(
                 fileBuffer,
                 xfer.get_details().name
             );
         }, console.error.bind(console));
     });
-    var promise = new Promise(function (res) {
-        zsession.on('session_end', function () {
+    var promise = new Promise(function(res) {
+        zsession.on('session_end', function() {
             res();
         });
     });
@@ -172,8 +171,8 @@ function handleReceive(zsession) {
 
 var terminalContainer = document.getElementById('terminal-container'),
     httpsEnabled = window.location.protocol === 'https:',
-    url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname
-        + (window.location.pathname.endsWith('/') ? '' : '/') + 'ws',
+    url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname +
+    (window.location.pathname.endsWith('/') ? '' : '/') + 'ws',
     textDecoder = new TextDecoder(),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
@@ -182,15 +181,15 @@ var terminalContainer = document.getElementById('terminal-container'),
 
 var openWs = function() {
     var ws = new WebSocket(url, ['tty']);
-    var sendMessage = function (message) {
+    var sendMessage = function(message) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(textEncoder.encode(message));
         }
     };
-    var sendData = function (data) {
+    var sendData = function(data) {
         sendMessage('0' + data);
     };
-    var unloadCallback = function (event) {
+    var unloadCallback = function(event) {
         var message = 'Close terminal? this will also terminate the command.';
         (event || window.event).returnValue = message;
         return message;
@@ -215,7 +214,7 @@ var openWs = function() {
             while (octets.length) {
                 var chunk = octets.splice(0, 4095);
                 var buffer = new Uint8Array(chunk.length + 1);
-                buffer[0]= '0'.charCodeAt(0);
+                buffer[0] = '0'.charCodeAt(0);
                 buffer.set(chunk, 1);
                 ws.send(buffer);
             }
@@ -229,7 +228,7 @@ var openWs = function() {
             term.setOption('disableStdin', true);
             var zsession = detection.confirm();
             var promise = zsession.type === 'send' ? handleSend(zsession) : handleReceive(zsession);
-            promise.catch(console.error.bind(console)).then(function () {
+            promise.catch(console.error.bind(console)).then(function() {
                 hideModal();
                 term.setOption('disableStdin', false);
             });
@@ -241,7 +240,9 @@ var openWs = function() {
     ws.onopen = function(event) {
         console.log('Websocket connection opened');
         wsError = false;
-        sendMessage(JSON.stringify({AuthToken: authToken}));
+        sendMessage(JSON.stringify({
+            AuthToken: authToken
+        }));
 
         if (typeof term !== 'undefined') {
             term.dispose();
@@ -250,7 +251,7 @@ var openWs = function() {
         // expose term handle for some programatic cases
         // which need to get the content of the terminal
         term = window.term = new Terminal({
-            fontSize: 13,
+            fontSize: 16,
             fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
             theme: {
                 foreground: '#d2d2d2',
@@ -277,18 +278,21 @@ var openWs = function() {
 
         term.on('resize', function(size) {
             if (ws.readyState === WebSocket.OPEN) {
-                sendMessage('1' + JSON.stringify({columns: size.cols, rows: size.rows}));
+                sendMessage('1' + JSON.stringify({
+                    columns: size.cols,
+                    rows: size.rows
+                }));
             }
             setTimeout(function() {
                 term.showOverlay(size.cols + 'x' + size.rows);
             }, 500);
         });
 
-        term.on('title', function (data) {
+        term.on('title', function(data) {
             if (data && data !== '') {
-                if (title_fixed){
+                if (title_fixed) {
                     document.title = title;
-                }else{
+                } else {
                     document.title = (data + ' | ' + title);
                 }
             }
@@ -303,7 +307,7 @@ var openWs = function() {
         // https://stackoverflow.com/a/27923937/1727928
         window.addEventListener('resize', function() {
             clearTimeout(window.resizedFinished);
-            window.resizedFinished = setTimeout(function () {
+            window.resizedFinished = setTimeout(function() {
                 term.fit();
             }, 250);
         });
@@ -319,7 +323,7 @@ var openWs = function() {
         var rawData = new Uint8Array(event.data),
             cmd = String.fromCharCode(rawData[0]),
             data = rawData.slice(1).buffer;
-        switch(cmd) {
+        switch (cmd) {
             case '0':
                 try {
                     zsentry.consume(data);
@@ -335,7 +339,7 @@ var openWs = function() {
             case '2':
                 var preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(function(key) {
-                    console.log('Setting ' + key + ': ' +  preferences[key]);
+                    console.log('Setting ' + key + ': ' + preferences[key]);
                     term.setOption(key, preferences[key]);
                 });
                 break;
