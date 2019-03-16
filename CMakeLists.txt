@@ -69,7 +69,12 @@ list(APPEND SOURCE_FILES html.h)
 set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR})
 set(LINK_LIBS pthread ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY})
 
-if(NOT APPLE)
+if(APPLE)
+    # required for the new homebrew version of libwebsockets
+    find_path(LIBUV_INCLUDE_DIR NAMES uv.h)
+    find_path(LIBEVENT_INCLUDE_DIR NAMES event2/event.h)
+    list(APPEND INCLUDE_DIRS ${LIBUV_INCLUDE_DIR} ${LIBEVENT_INCLUDE_DIR})
+else()
     list(APPEND LINK_LIBS util)
 endif()
 
