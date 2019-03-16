@@ -180,6 +180,8 @@ thread_run_command(void *args) {
                 perror("setenv");
                 pthread_exit((void *) 1);
             }
+            // Don't pass the web socket onto child processes
+            close(lws_get_socket_fd(client->wsi));
             if (execvp(server->argv[0], server->argv) < 0) {
                 perror("execvp");
                 pthread_exit((void *) 1);
