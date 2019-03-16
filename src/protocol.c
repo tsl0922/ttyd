@@ -140,10 +140,12 @@ tty_client_destroy(struct tty_client *client) {
     pthread_cond_signal(&client->cond);
     pthread_mutex_unlock(&client->mutex);
 
-    // kill process and free resource
-    lwsl_notice("sending %s (%d) to process %d\n", server->sig_name, server->sig_code, client->pid);
-    if (kill(client->pid, server->sig_code) != 0) {
-        lwsl_err("kill: %d, errno: %d (%s)\n", client->pid, errno, strerror(errno));
+    // kill process (group) and free resource
+    int pgid = getpgid(client->pid);
+    int pid = pgid > 0 ? -pgid : client->pid;
+    lwsl_notice("sending %s (%d) to process (group) %d\n", server->sig_name, server->sig_code, pid);
+    if (kill(pid, server->sig_code) != 0) {
+        lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
     int status;
     while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
