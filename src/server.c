@@ -240,6 +240,7 @@ main(int argc, char **argv) {
     info.max_http_header_pool = 16;
     info.options = LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
     info.extensions = extensions;
+    info.max_http_header_data = 20480;
 
     int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
