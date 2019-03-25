@@ -12,7 +12,6 @@ var Zmodem = require('zmodem.js/src/zmodem_browser');
 var Terminal = require('xterm').Terminal;
 
 Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
-Terminal.applyAddon(require('xterm/lib/addons/winptyCompat/winptyCompat'));
 Terminal.applyAddon(require('./overlay'));
 
 var modal = {
@@ -306,7 +305,6 @@ var openWs = function() {
         window.addEventListener('beforeunload', unloadCallback);
 
         term.open(terminalContainer, true);
-        term.winptyCompatInit();
         term.fit();
         term.focus();
     };
