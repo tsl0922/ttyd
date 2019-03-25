@@ -38,6 +38,10 @@ brew install ttyd
     ```
 
     You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
+    
+- Install on Gentoo:
+clone the repo at [https://bitbucket.org/mgpagano/ttyd/src/master/](https://bitbucket.org/mgpagano/ttyd/src/master/) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository) for creating a local repository.
+
 
 ## Install on Windows
 
