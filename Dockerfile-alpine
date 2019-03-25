@@ -1,11 +1,10 @@
-FROM alpine:3.6
+FROM alpine:3.9
 LABEL maintainer "Shuanglei Tao - tsl0922@gmail.com" \
     maintainer "Damien Duportal - damien.duportal@gmail.com"
 
-RUN apk add --update \
+RUN apk add --no-cache \
     bash \
-    ttyd \
-  && rm -rf /var/cache/apk/*
+    ttyd
 
 EXPOSE 7681
 
