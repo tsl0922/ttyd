@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <libwebsockets.h>
 #include <json.h>
@@ -177,6 +178,26 @@ sig_handler(int sig) {
     force_exit = true;
     lws_cancel_service(context);
     lwsl_notice("send ^C to force exit.\n");
+}
+
+void
+sig_child_handler(int sig) {
+    char sig_name[20];
+    get_sig_name(sig, sig_name, sizeof(sig_name));
+    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
+
+    int status, pid_result;
+    while (pid_result = waitpid(-1, &status, WNOHANG | WUNTRACED) == -1 && errno == EINTR)
+        ;
+    if (pid_result > 0) {
+        lwsl_notice("process exited with code %d, pid: %d\n", status, pid_result);
+        // We successfully cleaned up one child, we'll look for one more
+        while (pid_result = waitpid(-1, &status, WNOHANG | WUNTRACED) == -1 && errno == EINTR)
+            ;
+        if (pid_result > 0) {
+            lwsl_notice("process exited with code %d, pid: %d\n", status, pid_result);
+        }
+    }
 }
 
 int
@@ -462,6 +483,7 @@ main(int argc, char **argv) {
 
     signal(SIGINT, sig_handler);  // ^C
     signal(SIGTERM, sig_handler); // kill
+    signal(SIGCHLD, sig_child_handler); // child status update
 
     context = lws_create_context(&info);
     if (context == NULL) {

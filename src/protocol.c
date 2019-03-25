@@ -147,10 +147,13 @@ tty_client_destroy(struct tty_client *client) {
     if (kill(pid, server->sig_code) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
-    int status;
-    while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
+    int status, pid_result;
+    while (pid_result = waitpid(client->pid, &status, WNOHANG | WUNTRACED) == -1 && errno == EINTR)
         ;
-    lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
+    if (pid_result > 0) {
+        // Child exited rapidly
+        lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
+    }
     close(client->pty);
 
 cleanup:
