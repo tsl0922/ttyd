@@ -44,7 +44,6 @@ static const struct option options[] = {
         {"uid",          required_argument, NULL, 'u'},
         {"gid",          required_argument, NULL, 'g'},
         {"signal",       required_argument, NULL, 's'},
-        {"signal-list",  no_argument,       NULL,  1},
         {"reconnect",    required_argument, NULL, 'r'},
         {"index",        required_argument, NULL, 'I'},
         {"ipv6",         no_argument, NULL, '6'},
