@@ -46,11 +46,12 @@ static const struct option options[] = {
         {"signal",       required_argument, NULL, 's'},
         {"reconnect",    required_argument, NULL, 'r'},
         {"index",        required_argument, NULL, 'I'},
-        {"ipv6",         no_argument, NULL, '6'},
+        {"ipv6",         no_argument,       NULL, '6'},
         {"ssl",          no_argument,       NULL, 'S'},
         {"ssl-cert",     required_argument, NULL, 'C'},
         {"ssl-key",      required_argument, NULL, 'K'},
         {"ssl-ca",       required_argument, NULL, 'A'},
+        {"url-arg",      no_argument,       NULL, 'a'},
         {"readonly",     no_argument,       NULL, 'R'},
         {"check-origin", no_argument,       NULL, 'O'},
         {"max-clients",  required_argument, NULL, 'm'},
@@ -77,6 +78,7 @@ void print_help() {
                     "    -g, --gid               Group id to run with\n"
                     "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
                     "    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)\n"
+                    "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
                     "    -R, --readonly          Do not allow clients to write to the TTY\n"
                     "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
                     "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
@@ -126,6 +128,7 @@ tty_server_new(int argc, char **argv, int start) {
         }
     }
     ts->argv[cmd_argc] = NULL;
+    ts->argc = cmd_argc;
 
     ts->command = xmalloc(cmd_len + 1);
     char *ptr = ts->command;
@@ -263,6 +266,9 @@ main(int argc, char **argv) {
                 return 0;
             case 'd':
                 debug_level = atoi(optarg);
+                break;
+            case 'a':
+                server->url_arg = true;
                 break;
             case 'R':
                 server->readonly = true;
@@ -436,6 +442,8 @@ main(int argc, char **argv) {
     lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
     if (server->check_origin)
         lwsl_notice("  check origin: true\n");
+    if (server->url_arg)
+        lwsl_notice("  allow url arg: true\n");
     if (server->readonly)
         lwsl_notice("  readonly: true\n");
     if (server->max_clients > 0)

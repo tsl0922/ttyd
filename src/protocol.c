@@ -158,6 +158,10 @@ cleanup:
     if (client->buffer != NULL)
         free(client->buffer);
 
+    for (int i = 0; i < client->argc; i++) {
+        free(client->args[i]);
+    }
+
     pthread_mutex_destroy(&client->mutex);
 
     // remove from client list
@@ -166,11 +170,21 @@ cleanup:
 
 void *
 thread_run_command(void *args) {
-    struct tty_client *client;
+    struct tty_client *client = (struct tty_client *) args;
+
+    // append url args to arguments
+    char *argv[server->argc + client->argc + 1];
+    int i, n = 0;
+    for (i = 0; i < server->argc; i++) {
+        argv[n++] = server->argv[i];
+    }
+    for (i = 0; i < client->argc; i++) {
+        argv[n++] = client->args[i];
+    }
+    argv[n] = NULL;
+
     int pty;
     fd_set des_set;
-
-    client = (struct tty_client *) args;
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
 
     switch (pid) {
@@ -184,7 +198,7 @@ thread_run_command(void *args) {
             }
             // Don't pass the web socket onto child processes
             close(lws_get_socket_fd(client->wsi));
-            if (execvp(server->argv[0], server->argv) < 0) {
+            if (execvp(argv[0], argv) < 0) {
                 perror("execvp");
                 pthread_exit((void *) 1);
             }
@@ -264,6 +278,18 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->buffer = NULL;
             client->state = STATE_INIT;
             client->pty_len = 0;
+            client->argc = 0;
+
+            if (server->url_arg) {
+                while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
+                    if (strncmp(buf, "arg=", 4) == 0) {
+                        client->args = xrealloc(client->args, (client->argc + 1) * sizeof(char *));
+                        client->args[client->argc] = strdup(&buf[4]);
+                        client->argc++;
+                    }
+                }
+            }
+
             pthread_mutex_init(&client->mutex, NULL);
             pthread_cond_init(&client->cond, NULL);
             lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
@@ -274,8 +300,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             LIST_INSERT_HEAD(&server->clients, client, list);
             server->client_count++;
             pthread_mutex_unlock(&server->mutex);
-            lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
 
+            lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
             lwsl_notice("WS   %s - %s (%s), clients: %d\n", buf, client->address, client->hostname, server->client_count);
             break;
 

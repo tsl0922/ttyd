@@ -33,6 +33,8 @@ struct tty_client {
     bool authenticated;
     char hostname[100];
     char address[50];
+    char **args;
+    int argc;
 
     struct lws *wsi;
     struct winsize size;
@@ -67,8 +69,10 @@ struct tty_server {
     char *index;                              // custom index.html
     char *command;                            // full command line
     char **argv;                              // command with arguments
+    int argc;                                 // command + arguments count
     int sig_code;                             // close signal
     char sig_name[20];                        // human readable signal string
+    bool url_arg;                             // allow client to send cli arguments in URL
     bool readonly;                            // whether not allow clients to write to the TTY
     bool check_origin;                        // whether allow websocket connection from different origin
     int max_clients;                          // maximum clients to support

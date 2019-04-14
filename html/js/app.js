@@ -172,7 +172,7 @@ function handleReceive(zsession) {
 var terminalContainer = document.getElementById('terminal-container'),
     httpsEnabled = window.location.protocol === 'https:',
     url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname
-        + (window.location.pathname.endsWith('/') ? '' : '/') + 'ws',
+        + (window.location.pathname.endsWith('/') ? '' : '/') + 'ws' + window.location.search,
     textDecoder = new TextDecoder(),
     textEncoder = new TextEncoder(),
     authToken = (typeof tty_auth_token !== 'undefined') ? tty_auth_token : null,
