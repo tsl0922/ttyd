@@ -420,19 +420,6 @@ main(int argc, char **argv) {
         info.ssl_cert_filepath = cert_path;
         info.ssl_private_key_filepath = key_path;
         info.ssl_ca_filepath = ca_path;
-        info.ssl_cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:"
-                "ECDHE-RSA-AES256-GCM-SHA384:"
-                "DHE-RSA-AES256-GCM-SHA384:"
-                "ECDHE-RSA-AES256-SHA384:"
-                "HIGH:!aNULL:!eNULL:!EXPORT:"
-                "!DES:!MD5:!PSK:!RC4:!HMAC_SHA1:"
-                "!SHA1:!DHE-RSA-AES128-GCM-SHA256:"
-                "!DHE-RSA-AES128-SHA256:"
-                "!AES128-GCM-SHA256:"
-                "!AES128-SHA256:"
-                "!DHE-RSA-AES256-SHA256:"
-                "!AES256-GCM-SHA384:"
-                "!AES256-SHA256";
         if (strlen(info.ssl_ca_filepath) > 0)
             info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
 #if LWS_LIBRARY_VERSION_MAJOR >= 2
