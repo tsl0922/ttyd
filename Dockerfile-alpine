@@ -4,10 +4,10 @@ LABEL maintainer "Shuanglei Tao - tsl0922@gmail.com" \
 
 RUN apk add --no-cache \
     bash \
+    tini \
     ttyd
 
 EXPOSE 7681
 
-ENTRYPOINT ["ttyd"]
-
-CMD ["bash"]
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["ttyd", "bash"]

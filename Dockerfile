@@ -33,8 +33,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/ttyd
 
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
 EXPOSE 7681
 
-ENTRYPOINT ["ttyd"]
-
-CMD ["bash"]
+ENTRYPOINT ["/tini", "--"]
+CMD ["ttyd", "bash"]
