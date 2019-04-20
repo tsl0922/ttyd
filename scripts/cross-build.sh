@@ -8,13 +8,14 @@ CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 
-ZLIB_VERSION="1.2.11"
-JSON_C_VERSION="0.13.1"
-OPENSSL_VERSION="1.0.2p"
-LIBWEBSOCKETS_VERSION="2.4.2"
-TTYD_VERSION="1.4.2"
+ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
+JSON_C_VERSION="${JSON_C_VERSION:-0.13.1}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2p}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-2.4.2}"
+TTYD_VERSION="${TTYD_VERSION:-1.4.2}"
 
 build_zlib() {
+	echo "=== Building zlib ($TARGET)..."
 	curl -sLo- https://zlib.net/zlib-$ZLIB_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/zlib-$ZLIB_VERSION
 		env CHOST=$TARGET ./configure --static --archs="-fPIC" --prefix=$STAGE_DIR
@@ -23,6 +24,7 @@ build_zlib() {
 }
 
 build_json-c() {
+	echo "=== Building json-c ($TARGET)..."
 	curl -sLo- https://s3.amazonaws.com/json-c_releases/releases/json-c-$JSON_C_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/json-c-$JSON_C_VERSION
 		env CFLAGS=-fPIC ./configure --prefix=$STAGE_DIR --host $TARGET
@@ -31,11 +33,13 @@ build_json-c() {
 }
 
 build_openssl() {
+	echo "=== Building openssl ($TARGET)..."
 	curl -sLo- https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/openssl-$OPENSSL_VERSION
 		env CC=$TARGET-gcc AR=$TARGET-ar RANLIB=$TARGET-ranlib C_INCLUDE_PATH=$STAGE_DIR/include \
 			./Configure dist -fPIC --prefix=/ --install_prefix=$STAGE_DIR
-		make && make install_sw
+		make > /dev/null
+		make install_sw
 	popd
 }
 
@@ -58,6 +62,7 @@ EOF
 }
 
 build_libwebsockets() {
+	echo "=== Building libwebsockets ($TARGET)..."
 	curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/libwebsockets-$LIBWEBSOCKETS_VERSION
 		sed -i '13s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt
@@ -75,6 +80,7 @@ build_libwebsockets() {
 }
 
 build_ttyd() {
+	echo "=== Building ttyd ($TARGET)..."
 	curl -sLo- https://github.com/tsl0922/ttyd/archive/$TTYD_VERSION.tar.gz | tar xz -C $BUILD_DIR
 	pushd $BUILD_DIR/ttyd-$TTYD_VERSION
 		sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static -no-pie -s")\n;' CMakeLists.txt
@@ -92,6 +98,8 @@ build() {
 	ALIAS="$2"
 	STAGE_DIR="$STAGE_ROOT/$TARGET"
 	BUILD_DIR="$BUILD_ROOT/$TARGET"
+
+	echo "=== Building target $ALIAS ($TARGET)..."
 
 	mkdir -p $STAGE_DIR $BUILD_DIR
 	export PKG_CONFIG_PATH="$STAGE_DIR/lib/pkgconfig"
@@ -120,10 +128,7 @@ rm -rf bin && mkdir bin
 rm -rf $STAGE_ROOT $BUILD_ROOT
 
 for ((i=0; i<${#TARGETS[@]}; i+=2)); do
-	alias="${TARGETS[$i]}"
-	target="${TARGETS[$i+1]}"
-	echo "=== Building target $alias ($target)..."
-	build $target $alias
+	build "${TARGETS[$i+1]}" "${TARGETS[$i]}"
 done
 
 echo "=== Archiving bin to a tarball..."
