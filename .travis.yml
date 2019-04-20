@@ -1,18 +1,12 @@
 language: c
-os:
-  - linux
+os: linux
+services: docker
 env:
-  - LIBWEBSOCKETS_VERSION=1.7.9
-  - LIBWEBSOCKETS_VERSION=2.0.3
-  - LIBWEBSOCKETS_VERSION=2.1.1
-  - LIBWEBSOCKETS_VERSION=2.2.2
-  - LIBWEBSOCKETS_VERSION=2.3.0
-  - LIBWEBSOCKETS_VERSION=2.4.2
-  - LIBWEBSOCKETS_VERSION=3.0.1
   - LIBWEBSOCKETS_VERSION=3.1.0
-branches:
-  only:
-    - master
+  - LIBWEBSOCKETS_VERSION=2.4.2
+  - LIBWEBSOCKETS_VERSION=1.7.9
+matrix:
+  fast_finish: true
 addons:
   apt:
     packages:
@@ -27,8 +21,22 @@ install: |
     cmake $CMAKE_OPTIONS .
     make && sudo make install
   popd
-script:
-  - mkdir build && cd build
-  - cmake $CMAKE_OPTIONS ..
-  - make && sudo make install
-  - ttyd -v
+script: |
+  mkdir build && cd build
+  cmake $CMAKE_OPTIONS ..
+  make && sudo make install
+  ttyd -v
+jobs:
+  include:
+    - stage: GitHub Release
+      if: tag IS present
+      script: docker run --rm -v $(pwd):/ttyd -w /ttyd -e TTYD_VERSION=$TRAVIS_TAG tsl0922/musl-cross ./scripts/cross-build.sh
+      deploy:
+        provider: releases
+        api_key:
+          secure: QERuHbmEV/Rw4CloSiuK7UzngzmaeB90SGk0r0C7DhIBTYT/oUlAOXAsfNbv84lYBLKxVW7MYnp7Dp+rTi3asnS2wyu6+UmLW//zxqlYkFVEJ3eYyfkC1Bp06dLXkWKl9S5tcosjoowvmEvcrOSVhmzkucHK+9m7Fbd2mhX6vNC42JE9oUd+FrxsJD/TOmvSaAbUyI8+JXbJWyK+wp9rHo6E3YCt8IEenoTb0/TDomh/norFvLRNxsj0ds5XplOcQvUCznh+ZlGn8gLrskH/Byt0kCYx41XOTM7mHtYfvnzgpQZFKW0tpB4qMDFU+FxJMxMLn/kAdo1RjLsdp906jumLi83kWDmj4Jho28kXXY21kE6U/Ms15aJpAxxJVWiZXJoPpMVwHPzuiuNR0+tp/8JodvbDyiVL6TYEr8E6wRoBg0EDAfzcvVEiImkptCGYsY3kKj/dSqUqveqzOvGpQVtcTp7WeyBH5hWFIWz+JhY0IO1UYULqkhoV5rQpCXlTIFL1ul54CVz8uBHbBpnMUH4kS+8RdJPZFSKpJTfPZKe1y/JVSl+WuQBLJ0zyHXFdEmGGHJm7i8PdKXshC9RJ26gGc8pZ0jS1knPPwq6zGf9GsN+pGgAv/Gdi2OFFaxDQoIzNpFrErxAnUIbRCqTgh9ogTJDB8TCU6MrpGpV2DLQ=
+        file_glob: true
+        file: bin/*
+        skip_cleanup: true
+        on:
+          tags: true
