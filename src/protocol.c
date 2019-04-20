@@ -135,10 +135,11 @@ tty_client_destroy(struct tty_client *client) {
 
     client->running = false;
 
-    pthread_mutex_lock(&client->mutex);
-    client->state = STATE_DONE;
-    pthread_cond_signal(&client->cond);
-    pthread_mutex_unlock(&client->mutex);
+    if (pthread_mutex_trylock(&client->mutex)) {
+        client->state = STATE_DONE;
+        pthread_cond_signal(&client->cond);
+        pthread_mutex_unlock(&client->mutex);
+    }
 
     // kill process (group) and free resource
     int pgid = getpgid(client->pid);
