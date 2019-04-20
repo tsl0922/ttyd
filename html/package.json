@@ -14,7 +14,6 @@
         "start": "gulp clean && webpack-serve webpack.dev.js"
     },
     "dependencies": {
-        "bulma": "^0.6.1",
         "core-js": "^2.5.3",
         "fast-text-encoding": "^1.0.0",
         "xterm": "^3.12.2",
