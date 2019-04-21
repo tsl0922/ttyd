@@ -187,56 +187,55 @@ thread_run_command(void *args) {
     int pty;
     fd_set des_set;
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
+    if (pid < 0) { /* error */
+        lwsl_err("forkpty failed: %d (%s)\n", errno, strerror(errno));
+        pthread_exit((void *) 1);
+    } else if (pid == 0) { /* child */
+        setenv("TERM", server->terminal_type, true);
+        // Don't pass the web socket onto child processes
+        close(lws_get_socket_fd(client->wsi));
+        if (execvp(argv[0], argv) < 0) {
+            perror("execvp failed\n");
+            _exit(-errno);
+        }
+    }
 
-    switch (pid) {
-        case -1: /* error */
-            lwsl_err("forkpty, error: %d (%s)\n", errno, strerror(errno));
-            break;
-        case 0: /* child */
-            if (setenv("TERM", server->terminal_type, true) < 0) {
-                perror("setenv");
-                pthread_exit((void *) 1);
-            }
-            // Don't pass the web socket onto child processes
-            close(lws_get_socket_fd(client->wsi));
-            if (execvp(argv[0], argv) < 0) {
-                perror("execvp");
-                pthread_exit((void *) 1);
-            }
-            break;
-        default: /* parent */
-            lwsl_notice("started process, pid: %d\n", pid);
-            client->pid = pid;
-            client->pty = pty;
-            client->running = true;
-            if (client->size.ws_row > 0 && client->size.ws_col > 0)
-                ioctl(client->pty, TIOCSWINSZ, &client->size);
+    // set the pty file descriptor non blocking
+    int status_flags = fcntl(pty, F_GETFL);
+    if (status_flags != -1) {
+        fcntl(pty, F_SETFL, status_flags | O_NONBLOCK);
+    }
 
+    lwsl_notice("started process, pid: %d\n", pid);
+    client->pid = pid;
+    client->pty = pty;
+    client->running = true;
+    if (client->size.ws_row > 0 && client->size.ws_col > 0)
+        ioctl(client->pty, TIOCSWINSZ, &client->size);
+
+    while (client->running) {
+        FD_ZERO (&des_set);
+        FD_SET (pty, &des_set);
+        struct timeval tv = { 1, 0 };
+        int ret = select(pty + 1, &des_set, NULL, NULL, &tv);
+        if (ret == 0) continue;
+        if (ret < 0) break;
+
+        if (FD_ISSET (pty, &des_set)) {
             while (client->running) {
-                FD_ZERO (&des_set);
-                FD_SET (pty, &des_set);
-                struct timeval tv = { 1, 0 };
-                int ret = select(pty + 1, &des_set, NULL, NULL, &tv);
-                if (ret == 0) continue;
-                if (ret < 0) break;
-
-                if (FD_ISSET (pty, &des_set)) {
-                    while (client->running) {
-                        pthread_mutex_lock(&client->mutex);
-                        while (client->state == STATE_READY) {
-                            pthread_cond_wait(&client->cond, &client->mutex);
-                        }
-                        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
-                        client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
-                        client->state = STATE_READY;
-                        pthread_mutex_unlock(&client->mutex);
-                        break;
-                    }
+                pthread_mutex_lock(&client->mutex);
+                while (client->state == STATE_READY) {
+                    pthread_cond_wait(&client->cond, &client->mutex);
                 }
-
-                if (client->pty_len <= 0) break;
+                memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
+                client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
+                client->state = STATE_READY;
+                pthread_mutex_unlock(&client->mutex);
+                break;
             }
-            break;
+        }
+
+        if (client->pty_len <= 0) break;
     }
 
     pthread_exit((void *) 0);
