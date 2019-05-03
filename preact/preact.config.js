@@ -7,7 +7,7 @@
  * @param {WebpackConfigHelpers} helpers - object with useful helpers when working with config.
  **/
 export default function (config, env, helpers) {
-	const { devServer } = config;
+	const { devServer, plugins } = config;
 	if (devServer) {
 		devServer.proxy = {
 			'/ws': {

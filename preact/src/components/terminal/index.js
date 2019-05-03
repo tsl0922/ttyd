@@ -7,8 +7,7 @@ require('fast-text-encoding');
 
 export default class Terminal extends Component {
     componentDidMount() {
-        TERMINAL.applyAddon(require('xterm/dist/addons/fit'));
-        TERMINAL.applyAddon(require('xterm/dist/addons/winptyCompat'));
+        TERMINAL.applyAddon(require('xterm/lib/addons/fit/fit'));
         TERMINAL.applyAddon(require('./overlay'));
 
         this.url = (window.location.protocol === 'https:' ? 'wss://' : 'ws://')
@@ -93,7 +92,6 @@ export default class Terminal extends Component {
         terminal.on('resize', this.onTerminalResize);
 
         terminal.open(this.container, true);
-        terminal.winptyCompatInit();
         terminal.fit();
         terminal.focus();
     }

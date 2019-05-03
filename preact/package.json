@@ -10,15 +10,16 @@
   "author": "Shuanglei Tao <tsl0922@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "preact watch"
+    "start": "preact watch",
+    "build": "preact build --no-service-worker --no-prerender"
   },
   "devDependencies": {
-    "preact-cli": "^2.1.0"
+    "preact-cli": "^2.2.1"
   },
   "dependencies": {
     "decko": "^1.2.0",
     "fast-text-encoding": "^1.0.0",
-    "preact": "^8.2.7",
-    "xterm": "^3.3.0"
+    "preact": "^8.4.2",
+    "xterm": "^3.12.2"
   }
 }
