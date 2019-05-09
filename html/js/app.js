@@ -307,6 +307,23 @@ var openWs = function() {
         term.open(terminalContainer, true);
         term.fit();
         term.focus();
+        //>========= Customized ==========
+        window.$ttyd = {
+            ws:ws,
+            sendMessage:sendMessage,
+            sendData:sendData
+        }
+        window.addEventListener('message',function(e){
+            var data = e.data || {};
+            if(data.target && window[data.target]){
+                var command = data.command;
+                var args = data.args;
+                if(command){
+                    window[data.target][command].apply(null,args||[]);
+                }
+            }
+        },false)
+        //<========= Customized ==========
     };
 
     ws.onmessage = function(event) {
