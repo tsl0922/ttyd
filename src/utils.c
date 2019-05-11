@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/errno.h>
+#include <sys/wait.h>
 
 #ifdef __linux__
 // https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
@@ -81,6 +83,22 @@ get_sig(const char *sig_name) {
             return sig;
     }
     return atoi(sig_name);
+}
+
+int
+wait_proc(pid_t in, pid_t *out) {
+    int stat = 0, pid;
+    do {
+        pid = waitpid(in, &stat, WNOHANG);
+    } while (pid < 0 && errno == EINTR);
+    if (out != NULL) *out = pid;
+    int status  = -1;
+    if (WIFEXITED(stat)) {
+        status = WEXITSTATUS(stat);
+    } else if (WIFSIGNALED(status)) {
+        status = WTERMSIG(stat);
+    }
+    return status;
 }
 
 int

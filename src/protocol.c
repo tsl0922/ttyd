@@ -9,7 +9,6 @@
 #include <sys/queue.h>
 #include <sys/select.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <pthread.h>
 
 #if defined(__OpenBSD__) || defined(__APPLE__)
@@ -148,10 +147,11 @@ tty_client_destroy(struct tty_client *client) {
     if (kill(pid, server->sig_code) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
-    int status;
-    while (waitpid(client->pid, &status, 0) == -1 && errno == EINTR)
-        ;
-    lwsl_notice("process exited with code %d, pid: %d\n", status, client->pid);
+    pid_t pid_out;
+    int status = wait_proc(client->pid, &pid_out);
+    if (pid_out > 0) {
+        lwsl_notice("process exited with code %d, pid: %d\n", status, pid_out);
+    }
     close(client->pty);
 
 cleanup:
