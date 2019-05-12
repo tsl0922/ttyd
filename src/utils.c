@@ -95,7 +95,7 @@ wait_proc(pid_t in, pid_t *out) {
     int status  = -1;
     if (WIFEXITED(stat)) {
         status = WEXITSTATUS(stat);
-    } else if (WIFSIGNALED(status)) {
+    } else if (WIFSIGNALED(stat)) {
         status = WTERMSIG(stat);
     }
     return status;
