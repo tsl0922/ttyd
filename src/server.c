@@ -181,6 +181,15 @@ sig_handler(int sig) {
     lwsl_notice("send ^C to force exit.\n");
 }
 
+void
+sigchld_handler() {
+    pid_t pid;
+    int status = wait_proc(-1, &pid);
+    if (pid > 0) {
+        lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
+    }
+}
+
 int
 calc_command_start(int argc, char **argv) {
     // make a copy of argc and argv
@@ -322,7 +331,7 @@ main(int argc, char **argv) {
                 break;
             case 'r':
                 server->reconnect = atoi(optarg);
-                if (server->reconnect <= 0) {
+                if (server->reconnect < 0) {
                     fprintf(stderr, "ttyd: invalid reconnect: %s\n", optarg);
                     return -1;
                 }
@@ -439,7 +448,9 @@ main(int argc, char **argv) {
     lwsl_notice("  start command: %s\n", server->command);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
     lwsl_notice("  terminal type: %s\n", server->terminal_type);
-    lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
+    if (server->reconnect > 0) {
+        lwsl_notice("  reconnect timeout: %ds\n", server->reconnect);
+    }
     if (server->check_origin)
         lwsl_notice("  check origin: true\n");
     if (server->url_arg)
@@ -456,6 +467,7 @@ main(int argc, char **argv) {
 
     signal(SIGINT, sig_handler);  // ^C
     signal(SIGTERM, sig_handler); // kill
+    signal(SIGCHLD, sigchld_handler);
 
     context = lws_create_context(&info);
     if (context == NULL) {
