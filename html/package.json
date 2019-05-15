@@ -16,6 +16,7 @@
     "dependencies": {
         "core-js": "^2.5.3",
         "fast-text-encoding": "^1.0.0",
+        "url-join": "^4.0.0",
         "xterm": "^3.13.0",
         "zmodem.js": "^0.1.7"
     },
@@ -37,6 +38,8 @@
         "optimize-css-assets-webpack-plugin": "^4.0.1",
         "sass-loader": "^6.0.6",
         "style-loader": "^0.19.1",
+        "ts-loader": "^6.0.0",
+        "typescript": "^3.4.5",
         "uglifyjs-webpack-plugin": "^1.2.5",
         "webpack": "^4.6.0",
         "webpack-cli": "^2.1.2",

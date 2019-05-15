@@ -3,7 +3,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const devMode = process.env.NODE_ENV !== 'production';
 
 module.exports = {
-    entry: './js/app.js',
+    entry: './js/app.ts',
     output: {
         path: __dirname + '/dist',
         filename: devMode ? '[name].js' : '[name].[hash].js',
@@ -12,13 +12,18 @@ module.exports = {
         rules: [
             {
                 test: /\.js$/,
-                exclude: /node_modules\/(?!zmodem.js\/)/,
+                include: __dirname + '/node_modules/zmodem.js',
                 use: {
                     loader: 'babel-loader',
                     options: {
                         presets: ['env']
                     }
                 },
+            },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
             },
             {
                 test: /\.s?[ac]ss$/,
@@ -29,6 +34,9 @@ module.exports = {
                 ],
             },
         ]
+    },
+    resolve: {
+        extensions: [ '.tsx', '.ts', '.js' ]
     },
     plugins: [
         new CopyWebpackPlugin([
@@ -42,5 +50,5 @@ module.exports = {
     performance : {
         hints : false
     },
-    devtool: devMode ? 'cheap-module-eval-source-map' : 'source-map',
-}
+    devtool: 'inline-source-map',
+};
