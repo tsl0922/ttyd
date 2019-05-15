@@ -8,13 +8,13 @@ require('core-js/fn/typed');
 require('core-js/fn/string/ends-with');
 require('fast-text-encoding');
 
-var Zmodem = require('zmodem.js/src/zmodem_browser');
-var Terminal = require('xterm').Terminal;
+let Zmodem = require('zmodem.js/src/zmodem_browser');
+let Terminal = require('xterm').Terminal;
 
 Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
 Terminal.applyAddon(require('./overlay'));
 
-var modal = {
+let modal = {
     self: document.getElementById('modal'),
     header: document.getElementById('header'),
     status: {
@@ -67,9 +67,9 @@ function showSendModal(callback) {
     modal.choose.filesNames.textContent = '';
     modal.choose.files.onchange = function () {
         this.disabled = true;
-        var files = this.files;
-        var fileNames = '';
-        for (var i = 0; i < files.length; i++) {
+        let files = this.files;
+        let fileNames = '';
+        for (let i = 0; i < files.length; i++) {
             if (i === 0) {
                 fileNames = files[i].name;
             } else {
@@ -99,12 +99,12 @@ function resetModal(title) {
 }
 
 function updateProgress(xfer) {
-    var size = xfer.get_details().size;
-    var offset = xfer.get_offset();
+    let size = xfer.get_details().size;
+    let offset = xfer.get_offset();
     modal.progress.bytesReceived.textContent = bytesHuman(offset, 2);
     modal.progress.bytesFile.textContent = bytesHuman(size, 2);
 
-    var percentReceived = (100 * offset / size).toFixed(2);
+    let percentReceived = (100 * offset / size).toFixed(2);
     modal.progress.percentReceived.textContent = percentReceived + '%';
 
     modal.progress.progressBar.textContent = percentReceived + '%';
@@ -115,61 +115,57 @@ function bytesHuman (bytes, precision) {
     if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
     if (bytes === 0) return 0;
     if (typeof precision === 'undefined') precision = 1;
-    var units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'],
+    let units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'],
         number = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
 }
 
 function handleSend(zsession) {
-    return new Promise(function (res) {
-        showSendModal(function (files) {
+    return new Promise((res) => {
+        showSendModal((files) => {
             Zmodem.Browser.send_files(
                 zsession,
                 files,
                 {
-                    on_progress: function(obj, xfer) {
+                    on_progress: (obj, xfer) => {
                         updateFileInfo(xfer.get_details());
                         updateProgress(xfer);
                     },
-                    on_file_complete: function(obj) {
+                    on_file_complete: (obj) => {
                         // console.log(obj);
                     }
                 }
             ).then(
                 zsession.close.bind(zsession),
                 console.error.bind(console)
-            ).then(function () {
-                res();
-            });
+            ).then(() => res());
         });
     });
 }
 
 function handleReceive(zsession) {
-    zsession.on('offer', function (xfer) {
+    zsession.on('offer', (xfer) => {
         showReceiveModal(xfer);
-        var fileBuffer = [];
-        xfer.on('input', function (payload) {
+        let fileBuffer = [];
+        xfer.on('input', (payload) => {
             updateProgress(xfer);
             fileBuffer.push(new Uint8Array(payload));
         });
-        xfer.accept().then(function () {
+        xfer.accept().then(() => {
             Zmodem.Browser.save_to_disk(
                 fileBuffer,
                 xfer.get_details().name
             );
         }, console.error.bind(console));
     });
-    var promise = new Promise(function (res) {
-        zsession.on('session_end', function () {
-            res();
-        });
+    let promise = new Promise((res) => {
+        zsession.on('session_end', () => res());
     });
     zsession.start();
     return promise;
 }
 
-var terminalContainer = document.getElementById('terminal-container'),
+let terminalContainer = document.getElementById('terminal-container'),
     httpsEnabled = window.location.protocol === 'https:',
     url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname
         + (window.location.pathname.endsWith('/') ? '' : '/') + 'ws' + window.location.search,
@@ -179,22 +175,19 @@ var terminalContainer = document.getElementById('terminal-container'),
     autoReconnect = -1,
     reconnectTimer, term, title, wsError;
 
-var openWs = function() {
-    var ws = new WebSocket(url, ['tty']);
-    var sendMessage = function (message) {
+let openWs = function() {
+    let ws = new WebSocket(url, ['tty']);
+    let sendMessage = function (message) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(textEncoder.encode(message));
         }
     };
-    var sendData = function (data) {
-        sendMessage('0' + data);
-    };
-    var unloadCallback = function (event) {
-        var message = 'Close terminal? this will also terminate the command.';
-        (event || window.event).returnValue = message;
+    let unloadCallback = function (event) {
+        let message = 'Close terminal? this will also terminate the command.';
+        event.returnValue = message;
         return message;
     };
-    var resetTerm = function() {
+    let resetTerm = function() {
         hideModal();
         clearTimeout(reconnectTimer);
         if (ws.readyState !== WebSocket.CLOSED) {
@@ -203,17 +196,17 @@ var openWs = function() {
         openWs();
     };
 
-    var zsentry = new Zmodem.Sentry({
+    let zsentry = new Zmodem.Sentry({
         to_terminal: function _to_terminal(octets) {
-            var buffer = new Uint8Array(octets).buffer;
+            let buffer = new Uint8Array(octets).buffer;
             term.write(textDecoder.decode(buffer));
         },
 
         sender: function _ws_sender_func(octets) {
             // limit max packet size to 4096
             while (octets.length) {
-                var chunk = octets.splice(0, 4095);
-                var buffer = new Uint8Array(chunk.length + 1);
+                let chunk = octets.splice(0, 4095);
+                let buffer = new Uint8Array(chunk.length + 1);
                 buffer[0]= '0'.charCodeAt(0);
                 buffer.set(chunk, 1);
                 ws.send(buffer);
@@ -226,9 +219,9 @@ var openWs = function() {
 
         on_detect: function _on_detect(detection) {
             term.setOption('disableStdin', true);
-            var zsession = detection.confirm();
-            var promise = zsession.type === 'send' ? handleSend(zsession) : handleReceive(zsession);
-            promise.catch(console.error.bind(console)).then(function () {
+            let zsession = detection.confirm();
+            let promise = zsession.type === 'send' ? handleSend(zsession) : handleReceive(zsession);
+            promise.catch(console.error.bind(console)).then(() => {
                 hideModal();
                 term.setOption('disableStdin', false);
             });
@@ -237,7 +230,7 @@ var openWs = function() {
 
     ws.binaryType = 'arraybuffer';
 
-    ws.onopen = function(event) {
+    ws.onopen = function() {
         console.log('[ttyd] websocket opened');
         wsError = false;
         sendMessage(JSON.stringify({AuthToken: authToken}));
@@ -274,43 +267,44 @@ var openWs = function() {
             }
         });
 
-        term.on('resize', function(size) {
+        let addDomListener = function(element, type, handler) {
+            element.addEventListener(type, handler);
+            term._core.register({ dispose: () => element.removeEventListener(type, handler) });
+        };
+
+        term.onResize((size) => {
             if (ws.readyState === WebSocket.OPEN) {
                 sendMessage('1' + JSON.stringify({columns: size.cols, rows: size.rows}));
             }
-            setTimeout(function() {
-                term.showOverlay(size.cols + 'x' + size.rows);
-            }, 500);
+            setTimeout(() => term.showOverlay(size.cols + 'x' + size.rows), 500);
         });
 
-        term.on('title', function (data) {
+        term.onTitleChange((data) => {
             if (data && data !== '') {
                 document.title = (data + ' | ' + title);
             }
         });
 
-        term.on('data', sendData);
+        term.onData((data) => sendMessage('0' + data));
 
         while (terminalContainer.firstChild) {
             terminalContainer.removeChild(terminalContainer.firstChild);
         }
 
         // https://stackoverflow.com/a/27923937/1727928
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', () => {
             clearTimeout(window.resizedFinished);
-            window.resizedFinished = setTimeout(function () {
-                term.fit();
-            }, 250);
+            window.resizedFinished = setTimeout(() => term.fit(), 250);
         });
         window.addEventListener('beforeunload', unloadCallback);
 
-        term.open(terminalContainer, true);
+        term.open(terminalContainer);
         term.fit();
         term.focus();
     };
 
     ws.onmessage = function(event) {
-        var rawData = new Uint8Array(event.data),
+        let rawData = new Uint8Array(event.data),
             cmd = String.fromCharCode(rawData[0]),
             data = rawData.slice(1).buffer;
         switch(cmd) {
@@ -327,8 +321,8 @@ var openWs = function() {
                 document.title = title;
                 break;
             case '2':
-                var preferences = JSON.parse(textDecoder.decode(data));
-                Object.keys(preferences).forEach(function(key) {
+                let preferences = JSON.parse(textDecoder.decode(data));
+                Object.keys(preferences).forEach((key) => {
                     console.log('[ttyd] xterm option: ' + key + '=' +  preferences[key]);
                     term.setOption(key, preferences[key]);
                 });
