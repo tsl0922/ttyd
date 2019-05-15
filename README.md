@@ -113,7 +113,7 @@ Then open <http://localhost:8080> with a browser, you will get a bash shell with
 
 **More Examples:**
 
-- If you want to login with your system accounts on the web browser, run `ttyd login`.
+- If you want to login with your system accounts on the web browser, run `ttyd login`. You may need to set `/etc/securetty` first, for example: `printf "pts/0\npts/1\npts/2\npts/3\n" >> /etc/securetty`.
 - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
 
