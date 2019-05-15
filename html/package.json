@@ -16,7 +16,7 @@
     "dependencies": {
         "core-js": "^2.5.3",
         "fast-text-encoding": "^1.0.0",
-        "xterm": "^3.12.2",
+        "xterm": "^3.13.0",
         "zmodem.js": "^0.1.7"
     },
     "devDependencies": {
