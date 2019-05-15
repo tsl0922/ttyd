@@ -238,7 +238,7 @@ var openWs = function() {
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = function(event) {
-        console.log('Websocket connection opened');
+        console.log('[ttyd] websocket opened');
         wsError = false;
         sendMessage(JSON.stringify({AuthToken: authToken}));
 
@@ -329,22 +329,22 @@ var openWs = function() {
             case '2':
                 var preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(function(key) {
-                    console.log('Setting ' + key + ': ' +  preferences[key]);
+                    console.log('[ttyd] xterm option: ' + key + '=' +  preferences[key]);
                     term.setOption(key, preferences[key]);
                 });
                 break;
             case '3':
                 autoReconnect = JSON.parse(textDecoder.decode(data));
-                console.log('Enabling reconnect: ' + autoReconnect + ' seconds');
+                console.log('[ttyd] reconnect: ' + autoReconnect + ' seconds');
                 break;
             default:
-                console.log('Unknown command: ' + cmd);
+                console.log('[ttyd] unknown command: ' + cmd);
                 break;
         }
     };
 
     ws.onclose = function(event) {
-        console.log('Websocket connection closed with code: ' + event.code);
+        console.log('[ttyd] websocket closed, code: ' + event.code);
         if (term) {
             term.off('data');
             term.off('resize');
