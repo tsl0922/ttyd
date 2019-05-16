@@ -11,16 +11,6 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
-                include: __dirname + '/node_modules/zmodem.js',
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['env']
-                    }
-                },
-            },
-            {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/

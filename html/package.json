@@ -14,16 +14,11 @@
         "start": "gulp clean && webpack-serve webpack.dev.js"
     },
     "dependencies": {
-        "core-js": "^2.5.3",
-        "fast-text-encoding": "^1.0.0",
         "url-join": "^4.0.0",
         "xterm": "^3.13.0",
         "zmodem.js": "^0.1.7"
     },
     "devDependencies": {
-        "babel-core": "^6.26.3",
-        "babel-loader": "^7.1.4",
-        "babel-preset-env": "^1.6.1",
         "copy-webpack-plugin": "^4.5.1",
         "css-loader": "^0.28.8",
         "gulp": "^3.9.1",

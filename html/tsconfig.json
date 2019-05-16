@@ -4,7 +4,7 @@
     "sourceMap": true,
     "module": "commonjs",
     "target": "es5",
-    "lib": [ "dom", "es5"],
+    "lib": [ "dom", "es5", "es2015.promise"],
     "jsx": "react",
     "allowJs": true
   }

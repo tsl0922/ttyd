@@ -1,12 +1,5 @@
 import '../sass/app.scss';
 
-// polyfills for ie11
-import 'core-js/fn/array';
-import 'core-js/fn/object';
-import 'core-js/fn/promise';
-import 'core-js/fn/typed';
-import 'fast-text-encoding';
-
 import { Terminal, ITerminalOptions, IDisposable } from 'xterm';
 import * as fit from 'xterm/lib/addons/fit/fit'
 import * as overlay from './overlay'
@@ -21,7 +14,9 @@ interface ITtydTerminal extends Terminal {
     resizeDisposable: IDisposable;
     dataDisposable: IDisposable;
     reconnectTimeout: number;
-    showOverlay(msg: string, timeout?: number);
+
+    showOverlay(msg: string, timeout?: number): void;
+    fit(): void;
 }
 
 export interface IWindowWithTerminal extends Window {
@@ -140,7 +135,7 @@ let openWs = function() {
             if (ws.readyState === WebSocket.OPEN) {
                 sendMessage('1' + JSON.stringify({columns: size.cols, rows: size.rows}));
             }
-            setTimeout(() => (<any>term).showOverlay(size.cols + 'x' + size.rows), 500);
+            setTimeout(() => term.showOverlay(size.cols + 'x' + size.rows), 500);
         });
 
         term.onTitleChange((data: string) => {
@@ -158,12 +153,12 @@ let openWs = function() {
         // https://stackoverflow.com/a/27923937/1727928
         window.addEventListener('resize', () => {
             clearTimeout(window.resizeTimeout);
-            window.resizeTimeout = <number><any>setTimeout(() => (<any>term).fit(), 250);
+            window.resizeTimeout = setTimeout(() => term.fit(), 250);
         });
         window.addEventListener('beforeunload', unloadCallback);
 
         term.open(terminalContainer);
-        (<any>term).fit();
+        term.fit();
         term.focus();
     };
 
@@ -207,13 +202,13 @@ let openWs = function() {
             term.resizeDisposable.dispose();
             term.dataDisposable.dispose();
             if (!wsError) {
-                (<any>term).showOverlay('Connection Closed', null);
+                term.showOverlay('Connection Closed', null);
             }
         }
         window.removeEventListener('beforeunload', unloadCallback);
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
-            term.reconnectTimeout = <number><any>setTimeout(openWs, autoReconnect * 1000);
+            term.reconnectTimeout = setTimeout(openWs, autoReconnect * 1000);
         }
     };
 };

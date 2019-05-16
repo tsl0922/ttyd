@@ -1,4 +1,3 @@
-import * as Promise from 'core-js/fn/promise';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
 class Status {
