@@ -198,6 +198,7 @@ let openWs = function() {
 
     ws.onclose = function(event: CloseEvent) {
         console.log('[ttyd] websocket closed, code: ' + event.code);
+        modal.hide();
         if (term) {
             term.resizeDisposable.dispose();
             term.dataDisposable.dispose();
