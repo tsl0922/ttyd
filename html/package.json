@@ -16,7 +16,7 @@
     "dependencies": {
         "url-join": "^4.0.0",
         "xterm": "^3.13.0",
-        "zmodem.js": "^0.1.7"
+        "zmodem.js": "^0.1.9"
     },
     "devDependencies": {
         "copy-webpack-plugin": "^4.5.1",

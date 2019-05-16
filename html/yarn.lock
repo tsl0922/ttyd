@@ -1938,9 +1938,9 @@ cosmiconfig@^4.0.0:
     require-from-string "^2.0.1"
 
 crc-32@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/crc-32/-/crc-32-1.1.1.tgz#5d739d5e4c6e352ad8304d73223d483fe55adb8d"
-  integrity sha1-XXOdXkxuNSrYME1zIj1IP+Va240=
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/crc-32/-/crc-32-1.2.0.tgz#cb2db6e29b88508e32d9dd0ec1693e7b41a18208"
+  integrity sha512-1uBwHxF+Y/4yF5G48fwnKq6QsIXheor3ZLPT80yGBV1oEUwpPojlEhQbWKVw1VwcTQyMGHK1/XMmTjmlsmTTGA==
   dependencies:
     exit-on-epipe "~1.0.1"
     printj "~1.1.0"
@@ -2753,7 +2753,7 @@ exit-hook@^1.0.0:
 exit-on-epipe@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/exit-on-epipe/-/exit-on-epipe-1.0.1.tgz#0bdd92e87d5285d267daa8171d0eb06159689692"
-  integrity sha1-C92S6H1ShdJn2qgXHQ6wYVlolpI=
+  integrity sha512-h2z5mrROTxce56S+pnvAV890uu7ls7f1kEvVGJbw1OlFH3/mlJ5bkXu0KRyW94v37zzHPiUd55iLn3DA7TjWpw==
 
 expand-brackets@^0.1.4:
   version "0.1.5"
@@ -6727,9 +6727,9 @@ pretty-hrtime@^1.0.0:
   integrity sha1-t+PqQkNaTJsnWdmeDyAesZWALuE=
 
 printj@~1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/printj/-/printj-1.1.0.tgz#85487b5e8f96763b0b4a253613bef9dd9b387e3c"
-  integrity sha1-hUh7Xo+WdjsLSiU2E7753Zs4fjw=
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/printj/-/printj-1.1.2.tgz#d90deb2975a8b9f600fb3a1c94e3f4c53c78a222"
+  integrity sha512-zA2SmoLaxZyArQTOPj5LXecR+RagfPSU5Kw1qP+jkWeNlrq+eJZyY2oS68SU1Z/7/myXM4lo9716laOFAVStCQ==
 
 private@^0.1.6, private@^0.1.7, private@~0.1.5:
   version "0.1.8"
@@ -9007,9 +9007,9 @@ yeoman-generator@^2.0.4:
     through2 "^2.0.0"
     yeoman-environment "^2.0.5"
 
-zmodem.js@^0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/zmodem.js/-/zmodem.js-0.1.7.tgz#247affb76d2b1e3042b3fc8b4a087b9d5db8d1ed"
-  integrity sha1-JHr/t20rHjBCs/yLSgh7nV240e0=
+zmodem.js@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/zmodem.js/-/zmodem.js-0.1.9.tgz#8dda36d45091bbdf263819f961d3c1a20223daf7"
+  integrity sha512-xixLjW1eML0uiWULsXDInyfwNW9mqESzz7ra+2MWHNG2F5JINEkE5vzF5MigpPcLvrYoHdnehPcJwQZlDph3hQ==
   dependencies:
     crc-32 "^1.1.1"
