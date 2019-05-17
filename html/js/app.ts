@@ -1,11 +1,11 @@
 import '../sass/app.scss';
 
 import { Terminal, ITerminalOptions, IDisposable } from 'xterm';
-import * as fit from 'xterm/lib/addons/fit/fit'
+import * as fit from 'xterm/lib/addons/fit/fit';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
-import * as overlay from './overlay'
-import { Modal } from './zmodem'
+import * as overlay from './overlay';
+import { Modal } from './zmodem';
 
 Terminal.applyAddon(fit);
 Terminal.applyAddon(overlay);
@@ -28,31 +28,31 @@ declare let window: IWindowWithTerminal;
 
 const modal = new Modal();
 const terminalContainer = document.getElementById('terminal-container');
-const protocol = window.location.protocol === 'https:' ? 'wss://': 'ws://';
+const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
 const wsPath = window.location.pathname.endsWith('/') ? 'ws' : '/ws';
 const url = [protocol, window.location.host, window.location.pathname, wsPath, window.location.search].join('');
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
-let authToken = (typeof window.tty_auth_token !== 'undefined') ? window.tty_auth_token : null;
+const authToken = (typeof window.tty_auth_token !== 'undefined') ? window.tty_auth_token : null;
 let autoReconnect = -1;
 let term: ITtydTerminal;
 let title: string;
 let wsError: boolean;
 
-let openWs = function() {
-    let ws = new WebSocket(url, ['tty']);
-    let sendMessage = function (message) {
+const openWs = function(): void {
+    const ws = new WebSocket(url, ['tty']);
+    const sendMessage = function (message: string): void {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(textEncoder.encode(message));
         }
     };
-    let unloadCallback = function (event) {
-        let message = 'Close terminal? this will also terminate the command.';
+    const unloadCallback = function (event: BeforeUnloadEvent): string {
+        const message = 'Close terminal? this will also terminate the command.';
         event.returnValue = message;
         return message;
     };
-    let resetTerm = function() {
+    const resetTerm = function(): void {
         modal.hide();
         clearTimeout(term.reconnectTimeout);
         if (ws.readyState !== WebSocket.CLOSED) {
@@ -61,31 +61,31 @@ let openWs = function() {
         openWs();
     };
 
-    let zsentry = new Zmodem.Sentry({
-        to_terminal: function _to_terminal(octets) {
-            let buffer = new Uint8Array(octets).buffer;
+    const zsentry = new Zmodem.Sentry({
+        to_terminal: function(octets: ArrayBuffer): any {
+            const buffer = new Uint8Array(octets).buffer;
             term.write(textDecoder.decode(buffer));
         },
 
-        sender: function _ws_sender_func(octets) {
+        sender: function(octets: number[]): any {
             // limit max packet size to 4096
             while (octets.length) {
-                let chunk = octets.splice(0, 4095);
-                let buffer = new Uint8Array(chunk.length + 1);
-                buffer[0]= '0'.charCodeAt(0);
+                const chunk = octets.splice(0, 4095);
+                const buffer = new Uint8Array(chunk.length + 1);
+                buffer[0] = '0'.charCodeAt(0);
                 buffer.set(chunk, 1);
                 ws.send(buffer);
             }
         },
 
-        on_retract: function _on_retract() {
+        on_retract: function(): any {
             // console.log('on_retract');
         },
 
-        on_detect: function _on_detect(detection) {
+        on_detect: function(detection: any): any {
             term.setOption('disableStdin', true);
-            let zsession = detection.confirm();
-            let promise = zsession.type === 'send' ? modal.handleSend(zsession) : modal.handleReceive(zsession);
+            const zsession = detection.confirm();
+            const promise = zsession.type === 'send' ? modal.handleSend(zsession) : modal.handleReceive(zsession);
             promise.catch(console.error.bind(console)).then(() => {
                 modal.hide();
                 term.setOption('disableStdin', false);
@@ -95,7 +95,7 @@ let openWs = function() {
 
     ws.binaryType = 'arraybuffer';
 
-    ws.onopen = function() {
+    ws.onopen = function(): void {
         console.log('[ttyd] websocket opened');
         wsError = false;
         sendMessage(JSON.stringify({AuthToken: authToken}));
@@ -163,11 +163,11 @@ let openWs = function() {
         term.focus();
     };
 
-    ws.onmessage = function(event: MessageEvent) {
-        let rawData = new Uint8Array(event.data),
-            cmd = String.fromCharCode(rawData[0]),
-            data = rawData.slice(1).buffer;
-        switch(cmd) {
+    ws.onmessage = function(event: MessageEvent): void {
+        const rawData = new Uint8Array(event.data);
+        const cmd = String.fromCharCode(rawData[0]);
+        const data = rawData.slice(1).buffer;
+        switch (cmd) {
             case '0':
                 try {
                     zsentry.consume(data);
@@ -181,7 +181,7 @@ let openWs = function() {
                 document.title = title;
                 break;
             case '2':
-                let preferences = JSON.parse(textDecoder.decode(data));
+                const preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach((key) => {
                     console.log('[ttyd] xterm option: ' + key + '=' +  preferences[key]);
                     term.setOption(key, preferences[key]);
@@ -197,7 +197,7 @@ let openWs = function() {
         }
     };
 
-    ws.onclose = function(event: CloseEvent) {
+    ws.onclose = function(event: CloseEvent): void {
         console.log('[ttyd] websocket closed, code: ' + event.code);
         modal.hide();
         if (term) {

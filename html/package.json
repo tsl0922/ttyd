@@ -10,8 +10,9 @@
     "author": "Shuanglei Tao <tsl0922@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "build": "NODE_ENV=production npx wp --config webpack.prod.js && gulp",
-        "start": "gulp clean && npx webpack-dev-server --config webpack.dev.js"
+        "build": "NODE_ENV=production webpack --config webpack.prod.js && gulp",
+        "prestart": "gulp clean",
+        "start": "webpack-dev-server --config webpack.dev.js"
     },
     "dependencies": {
         "xterm": "^3.13.0",
@@ -32,11 +33,13 @@
         "style-loader": "^0.23.1",
         "terser-webpack-plugin": "^1.2.4",
         "ts-loader": "^6.0.0",
+        "tslint": "^5.16.0",
+        "tslint-consistent-codestyle": "^1.15.1",
+        "tslint-loader": "^3.5.4",
         "typescript": "^3.4.5",
         "webpack": "^4.31.0",
         "webpack-cli": "^3.3.2",
         "webpack-dev-server": "^3.3.1",
-        "webpack-merge": "^4.2.1",
-        "webpack-nano": "^0.6.2"
+        "webpack-merge": "^4.2.1"
     }
 }

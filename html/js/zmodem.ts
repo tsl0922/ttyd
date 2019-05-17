@@ -49,9 +49,9 @@ function bytesHuman (bytes: any, precision: number): string {
     if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
     if (bytes === 0) return '0';
     if (typeof precision === 'undefined') precision = 1;
-    let units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'],
-        number = Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+    const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const num = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, Math.floor(num))).toFixed(precision) +  ' ' + units[num];
 }
 
 export class Modal {
@@ -69,7 +69,7 @@ export class Modal {
         this.progress = new Progress();
     }
 
-    public reset(title): void {
+    public reset(title: string): void {
         this.header.textContent = title;
         this.status.element.style.display = 'none';
         this.choose.element.style.display = 'none';
@@ -85,7 +85,7 @@ export class Modal {
         this.element.classList.remove('is-active');
     }
 
-    public updateFileInfo(fileInfo): void {
+    public updateFileInfo(fileInfo: any): void {
         this.status.element.style.display = '';
         this.choose.element.style.display = 'none';
         this.progress.element.style.display = '';
@@ -94,11 +94,11 @@ export class Modal {
         this.progress.fileName.textContent = fileInfo.name;
     }
 
-    public showReceive(xfer): void {
+    public showReceive(xfer: any): void {
         this.reset('Receiving files');
         this.updateFileInfo(xfer.get_details());
         this.progress.skip.disabled = false;
-        this.progress.skip.onclick = function () {
+        this.progress.skip.onclick = function (): void {
             (<HTMLLinkElement>this).disabled = true;
             xfer.skip();
         };
@@ -106,17 +106,17 @@ export class Modal {
         this.element.classList.add('is-active');
     }
 
-    public showSend(callback): void {
+    public showSend(callback: (files: FileList) => any): void {
         this.reset('Sending files');
         this.choose.element.style.display = '';
         this.choose.files.disabled = false;
         this.choose.files.value = '';
         this.choose.filesNames.textContent = '';
-        let self:Modal = this;
-        this.choose.files.onchange = function () {
+        const self: Modal = this;
+        this.choose.files.onchange = function (): void {
             (<HTMLInputElement>this).disabled = true;
-            let files:FileList = (<HTMLInputElement>this).files;
-            let fileNames:string = '';
+            const files: FileList = (<HTMLInputElement>this).files;
+            let fileNames: string = '';
             for (let i = 0; i < files.length; i++) {
                 if (i === 0) {
                     fileNames = files[i].name;
@@ -130,20 +130,20 @@ export class Modal {
         this.element.classList.add('is-active');
     }
 
-    public updateProgress(xfer): void {
-        let size = xfer.get_details().size;
-        let offset = xfer.get_offset();
+    public updateProgress(xfer: any): void {
+        const size = xfer.get_details().size;
+        const offset = xfer.get_offset();
         this.progress.bytesReceived.textContent = bytesHuman(offset, 2);
         this.progress.bytesFile.textContent = bytesHuman(size, 2);
 
-        let percentReceived = (100 * offset / size).toFixed(2);
+        const percentReceived = (100 * offset / size).toFixed(2);
         this.progress.percentReceived.textContent = percentReceived + '%';
 
         this.progress.progressBar.textContent = percentReceived + '%';
         this.progress.progressBar.setAttribute('value', percentReceived);
     }
 
-    public handleSend(zsession): Promise<any> {
+    public handleSend(zsession: any): Promise<any> {
         return new Promise((res) => {
             this.showSend((files) => {
                 Zmodem.Browser.send_files(
@@ -166,10 +166,10 @@ export class Modal {
         });
     }
 
-    public handleReceive(zsession): Promise<any> {
+    public handleReceive(zsession: any): Promise<any> {
         zsession.on('offer', (xfer) => {
             this.showReceive(xfer);
-            let fileBuffer = [];
+            const fileBuffer = [];
             xfer.on('input', (payload) => {
                 this.updateProgress(xfer);
                 fileBuffer.push(new Uint8Array(payload));
@@ -181,7 +181,7 @@ export class Modal {
                 );
             }, console.error.bind(console));
         });
-        let promise = new Promise((res) => {
+        const promise = new Promise((res) => {
             zsession.on('session_end', () => res());
         });
         zsession.start();
