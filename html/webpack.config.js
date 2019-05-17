@@ -3,7 +3,9 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const devMode = process.env.NODE_ENV !== 'production';
 
 module.exports = {
-    entry: './js/app.ts',
+    entry: {
+        app: './js/app.ts'
+    },
     output: {
         path: __dirname + '/dist',
         filename: devMode ? '[name].js' : '[name].[hash].js',
@@ -40,5 +42,5 @@ module.exports = {
     performance : {
         hints : false
     },
-    devtool: 'inline-source-map',
+    devtool: 'source-map',
 };

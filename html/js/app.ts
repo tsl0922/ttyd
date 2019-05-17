@@ -2,10 +2,10 @@ import '../sass/app.scss';
 
 import { Terminal, ITerminalOptions, IDisposable } from 'xterm';
 import * as fit from 'xterm/lib/addons/fit/fit'
+import * as Zmodem from 'zmodem.js/src/zmodem_browser';
+
 import * as overlay from './overlay'
 import { Modal } from './zmodem'
-import * as Zmodem from 'zmodem.js/src/zmodem_browser';
-import * as urljoin from 'url-join';
 
 Terminal.applyAddon(fit);
 Terminal.applyAddon(overlay);
@@ -29,7 +29,8 @@ declare let window: IWindowWithTerminal;
 const modal = new Modal();
 const terminalContainer = document.getElementById('terminal-container');
 const protocol = window.location.protocol === 'https:' ? 'wss://': 'ws://';
-const url = urljoin(protocol, window.location.host, window.location.pathname, 'ws', window.location.search);
+const wsPath = window.location.pathname.endsWith('/') ? 'ws' : '/ws';
+const url = [protocol, window.location.host, window.location.pathname, wsPath, window.location.search].join('');
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
@@ -153,7 +154,7 @@ let openWs = function() {
         // https://stackoverflow.com/a/27923937/1727928
         window.addEventListener('resize', () => {
             clearTimeout(window.resizeTimeout);
-            window.resizeTimeout = setTimeout(() => term.fit(), 250);
+            window.resizeTimeout = <number><any>setTimeout(() => term.fit(), 250);
         });
         window.addEventListener('beforeunload', unloadCallback);
 
@@ -209,7 +210,7 @@ let openWs = function() {
         window.removeEventListener('beforeunload', unloadCallback);
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
-            term.reconnectTimeout = setTimeout(openWs, autoReconnect * 1000);
+            term.reconnectTimeout = <number><any>setTimeout(openWs, autoReconnect * 1000);
         }
     };
 };
