@@ -208,6 +208,10 @@ const openWs = function(): void {
             }
         }
         window.removeEventListener('beforeunload', unloadCallback);
+        // 1008: POLICY_VIOLATION - Auth failure 
+        if (event.code === 1008) {
+            location.reload();
+        }
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
             term.reconnectTimeout = <number><any>setTimeout(openWs, autoReconnect * 1000);
