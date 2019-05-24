@@ -15,7 +15,7 @@
         "start": "webpack-dev-server --config webpack.dev.js"
     },
     "dependencies": {
-        "xterm": "^3.13.0",
+        "xterm": "^3.13.2",
         "zmodem.js": "^0.1.9"
     },
     "devDependencies": {
