@@ -1,6 +1,6 @@
 import '../sass/app.scss';
 
-import { Terminal, ITerminalOptions, IDisposable } from 'xterm';
+import { Terminal, ITerminalOptions, ITheme } from 'xterm';
 import * as fit from 'xterm/lib/addons/fit/fit';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
@@ -10,9 +10,18 @@ import { Modal } from './zmodem';
 Terminal.applyAddon(fit);
 Terminal.applyAddon(overlay);
 
+const enum TtydCommand {
+    // server side
+    OUTPUT = '0',
+    SET_WINDOW_TITLE = '1',
+    SET_PREFERENCES = '2',
+    SET_RECONNECT = '3',
+    // client side
+    INPUT = '0',
+    RESIZE_TERMINAL = '1'
+}
+
 interface ITtydTerminal extends Terminal {
-    resizeDisposable: IDisposable;
-    dataDisposable: IDisposable;
     reconnectTimeout: number;
 
     showOverlay(msg: string, timeout?: number): void;
@@ -33,6 +42,31 @@ const wsPath = window.location.pathname.endsWith('/') ? 'ws' : '/ws';
 const url = [protocol, window.location.host, window.location.pathname, wsPath, window.location.search].join('');
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
+const termOptions = {
+    fontSize: 13,
+    fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
+    theme: {
+        foreground: '#d2d2d2',
+        background: '#2b2b2b',
+        cursor: '#adadad',
+        black: '#000000',
+        red: '#d81e00',
+        green: '#5ea702',
+        yellow: '#cfae00',
+        blue: '#427ab3',
+        magenta: '#89658e',
+        cyan: '#00a7aa',
+        white: '#dbded8',
+        brightBlack: '#686a66',
+        brightRed: '#f54235',
+        brightGreen: '#99e343',
+        brightYellow: '#fdeb61',
+        brightBlue: '#84b0d8',
+        brightMagenta: '#bc94b7',
+        brightCyan: '#37e6e8',
+        brightWhite: '#f1f1f0'
+    } as ITheme
+} as ITerminalOptions;
 
 const authToken = (typeof window.tty_auth_token !== 'undefined') ? window.tty_auth_token : null;
 let autoReconnect = -1;
@@ -72,7 +106,7 @@ const openWs = function(): void {
             while (octets.length) {
                 const chunk = octets.splice(0, 4095);
                 const buffer = new Uint8Array(chunk.length + 1);
-                buffer[0] = '0'.charCodeAt(0);
+                buffer[0] = TtydCommand.INPUT.charCodeAt(0);
                 buffer.set(chunk, 1);
                 ws.send(buffer);
             }
@@ -106,35 +140,11 @@ const openWs = function(): void {
 
         // expose term handle for some programatic cases
         // which need to get the content of the terminal
-        term = window.term = <ITtydTerminal>new Terminal({
-            fontSize: 13,
-            fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
-            theme: {
-                foreground: '#d2d2d2',
-                background: '#2b2b2b',
-                cursor: '#adadad',
-                black: '#000000',
-                red: '#d81e00',
-                green: '#5ea702',
-                yellow: '#cfae00',
-                blue: '#427ab3',
-                magenta: '#89658e',
-                cyan: '#00a7aa',
-                white: '#dbded8',
-                brightBlack: '#686a66',
-                brightRed: '#f54235',
-                brightGreen: '#99e343',
-                brightYellow: '#fdeb61',
-                brightBlue: '#84b0d8',
-                brightMagenta: '#bc94b7',
-                brightCyan: '#37e6e8',
-                brightWhite: '#f1f1f0'
-            }
-        } as ITerminalOptions);
+        term = window.term = <ITtydTerminal>new Terminal(termOptions);
 
-        term.resizeDisposable = term.onResize((size: {cols: number, rows: number}) => {
+        term.onResize((size: {cols: number, rows: number}) => {
             if (ws.readyState === WebSocket.OPEN) {
-                sendMessage('1' + JSON.stringify({columns: size.cols, rows: size.rows}));
+                sendMessage(TtydCommand.RESIZE_TERMINAL + JSON.stringify({columns: size.cols, rows: size.rows}));
             }
             setTimeout(() => term.showOverlay(size.cols + 'x' + size.rows), 500);
         });
@@ -145,7 +155,7 @@ const openWs = function(): void {
             }
         });
 
-        term.dataDisposable = term.onData((data: string) => sendMessage('0' + data));
+        term.onData((data: string) => sendMessage(TtydCommand.INPUT + data));
 
         while (terminalContainer.firstChild) {
             terminalContainer.removeChild(terminalContainer.firstChild);
@@ -168,7 +178,7 @@ const openWs = function(): void {
         const cmd = String.fromCharCode(rawData[0]);
         const data = rawData.slice(1).buffer;
         switch (cmd) {
-            case '0':
+            case TtydCommand.OUTPUT:
                 try {
                     zsentry.consume(data);
                 } catch (e) {
@@ -176,18 +186,18 @@ const openWs = function(): void {
                     resetTerm();
                 }
                 break;
-            case '1':
+            case TtydCommand.SET_WINDOW_TITLE:
                 title = textDecoder.decode(data);
                 document.title = title;
                 break;
-            case '2':
+            case TtydCommand.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach((key) => {
                     console.log('[ttyd] xterm option: ' + key + '=' +  preferences[key]);
                     term.setOption(key, preferences[key]);
                 });
                 break;
-            case '3':
+            case TtydCommand.SET_RECONNECT:
                 autoReconnect = JSON.parse(textDecoder.decode(data));
                 console.log('[ttyd] reconnect: ' + autoReconnect + ' seconds');
                 break;
@@ -201,16 +211,14 @@ const openWs = function(): void {
         console.log('[ttyd] websocket closed, code: ' + event.code);
         modal.hide();
         if (term) {
-            term.resizeDisposable.dispose();
-            term.dataDisposable.dispose();
             if (!wsError) {
                 term.showOverlay('Connection Closed', null);
             }
         }
         window.removeEventListener('beforeunload', unloadCallback);
-        // 1008: POLICY_VIOLATION - Auth failure 
+        // 1008: POLICY_VIOLATION - Auth failure
         if (event.code === 1008) {
-            location.reload();
+            window.location.reload();
         }
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && autoReconnect > 0) {
