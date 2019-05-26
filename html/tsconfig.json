@@ -1,11 +1,22 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/",
-    "sourceMap": true,
-    "module": "commonjs",
-    "target": "es5",
-    "lib": [ "dom", "es5", "es2015.promise"],
+    "target": "ES5",
+    "module": "ESNext",
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.promise"
+    ],
+    "allowJs": true,
     "jsx": "react",
-    "allowJs": true
-  }
+    "jsxFactory": "h",
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "experimentalDecorators": true
+  },
+  "include": [
+    "src/**/*.tsx",
+    "src/**/*.ts"
+  ]
 }

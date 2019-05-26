@@ -1,45 +1,48 @@
 {
-    "name": "ttyd",
-    "version": "1.1.0",
-    "description": "Share your terminal over the web",
-    "main": "js/app.js",
-    "repository": {
-        "url": "git@github.com:tsl0922/ttyd.git",
-        "type": "git"
-    },
-    "author": "Shuanglei Tao <tsl0922@gmail.com>",
-    "license": "MIT",
-    "scripts": {
-        "build": "NODE_ENV=production webpack --config webpack.prod.js && gulp",
-        "prestart": "gulp clean",
-        "start": "webpack-dev-server --config webpack.dev.js"
-    },
-    "dependencies": {
-        "xterm": "^3.13.2",
-        "zmodem.js": "^0.1.9"
-    },
-    "devDependencies": {
-        "copy-webpack-plugin": "^5.0.3",
-        "css-loader": "^2.1.1",
-        "gulp": "^4.0.2",
-        "gulp-clean": "^0.4.0",
-        "gulp-inline-source": "^4.0.0",
-        "html-webpack-inline-source-plugin": "^0.0.10",
-        "html-webpack-plugin": "^3.2.0",
-        "mini-css-extract-plugin": "^0.6.0",
-        "node-sass": "^4.12.0",
-        "optimize-css-assets-webpack-plugin": "^5.0.1",
-        "sass-loader": "^7.1.0",
-        "style-loader": "^0.23.1",
-        "terser-webpack-plugin": "^1.2.4",
-        "ts-loader": "^6.0.0",
-        "tslint": "^5.16.0",
-        "tslint-consistent-codestyle": "^1.15.1",
-        "tslint-loader": "^3.5.4",
-        "typescript": "^3.4.5",
-        "webpack": "^4.31.0",
-        "webpack-cli": "^3.3.2",
-        "webpack-dev-server": "^3.3.1",
-        "webpack-merge": "^4.2.1"
-    }
+  "private": true,
+  "name": "ttyd",
+  "version": "1.0.0",
+  "description": "Share your terminal over the web",
+  "repository": {
+    "url": "git@github.com:tsl0922/ttyd.git",
+    "type": "git"
+  },
+  "author": "Shuanglei Tao <tsl0922@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "prestart": "gulp clean",
+    "start": "webpack-dev-server",
+    "build": "NODE_ENV=production webpack && gulp",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^5.0.3",
+    "css-loader": "^1.0.1",
+    "gulp": "^4.0.2",
+    "gulp-clean": "^0.4.0",
+    "gulp-inline-source": "^4.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "mini-css-extract-plugin": "^0.6.0",
+    "node-sass": "^4.12.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.1",
+    "sass-loader": "^7.1.0",
+    "style-loader": "^0.23.1",
+    "terser-webpack-plugin": "^1.3.0",
+    "ts-loader": "^6.0.1",
+    "tslint": "^5.16.0",
+    "tslint-consistent-codestyle": "^1.15.1",
+    "tslint-loader": "^3.5.4",
+    "typescript": "^3.4.5",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.4.1",
+    "webpack-merge": "^4.2.1"
+  },
+  "dependencies": {
+    "decko": "^1.2.0",
+    "preact": "^8.4.2",
+    "preact-compat": "^3.18.5",
+    "preact-router": "^2.6.1",
+    "xterm": "^3.13.2"
+  }
 }
