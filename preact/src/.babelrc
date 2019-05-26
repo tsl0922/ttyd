@@ -1,5 +1,0 @@
-{
-    "presets": [ 
-        ["preact-cli/babel", { "modules": "commonjs" }]
-    ]
-}
