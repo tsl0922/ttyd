@@ -1,11 +1,11 @@
-import { h, Component } from 'preact';
 import { bind } from 'decko';
-import { Terminal as Xterm, ITerminalOptions } from 'xterm';
+import { Component, h } from 'preact';
+import { ITerminalOptions, Terminal as Xterm } from 'xterm';
+import 'xterm/dist/xterm.css';
 import * as fit from 'xterm/lib/addons/fit/fit';
 import * as overlay from './overlay';
-import 'xterm/dist/xterm.css';
 
-enum Command {
+const enum Command {
     // server side
     OUTPUT = '0',
     SET_WINDOW_TITLE = '1',
@@ -48,11 +48,11 @@ export default class Terminal extends Component<Props> {
         this.textDecoder = new TextDecoder();
     }
 
-    componentDidMount() {
+    public componentDidMount() {
         this.openTerminal();
     }
 
-    componentWillUnmount() {
+    public componentWillUnmount() {
         this.socket.close();
         this.terminal.dispose();
 
@@ -60,21 +60,27 @@ export default class Terminal extends Component<Props> {
         window.removeEventListener('beforeunload', this.onWindowUnload);
     }
 
+    public render({ id }: Props) {
+        return (
+            <div id={id} ref={(c) => this.container = c} />
+        );
+    }
+
     @bind
-    onWindowResize() {
+    private onWindowResize() {
         const { terminal } = this;
         clearTimeout(this.resizeTimeout);
         this.resizeTimeout = setTimeout(() => terminal.fit(), 250) as any;
     }
 
-    onWindowUnload(event: BeforeUnloadEvent): string {
+    private onWindowUnload(event: BeforeUnloadEvent): string {
         const message = 'Close terminal? this will also terminate the command.';
         event.returnValue = message;
         return message;
     }
 
     @bind
-    openTerminal() {
+    private openTerminal() {
         if (this.terminal) {
             this.terminal.dispose();
         }
@@ -103,7 +109,7 @@ export default class Terminal extends Component<Props> {
     }
 
     @bind
-    onSocketOpen() {
+    private onSocketOpen() {
         console.log('Websocket connection opened');
         const { socket, textEncoder, terminal } = this;
 
@@ -112,7 +118,7 @@ export default class Terminal extends Component<Props> {
     }
 
     @bind
-    onSocketClose(event: CloseEvent) {
+    private onSocketClose(event: CloseEvent) {
         console.log('Websocket connection closed with code: ' + event.code);
 
         const { terminal, openTerminal, autoReconnect } = this;
@@ -130,12 +136,12 @@ export default class Terminal extends Component<Props> {
     }
 
     @bind
-    onSocketData(event: MessageEvent) {
+    private onSocketData(event: MessageEvent) {
         const { terminal, textDecoder } = this;
 
-        let rawData = new Uint8Array(event.data),
-            cmd = String.fromCharCode(rawData[0]),
-            data = rawData.slice(1).buffer;
+        const rawData = new Uint8Array(event.data);
+        const cmd = String.fromCharCode(rawData[0]);
+        const data = rawData.slice(1).buffer;
 
         switch(cmd) {
             case Command.OUTPUT:
@@ -146,8 +152,8 @@ export default class Terminal extends Component<Props> {
                 document.title = this.title;
                 break;
             case Command.SET_PREFERENCES:
-                let preferences = JSON.parse(textDecoder.decode(data));
-                Object.keys(preferences).forEach(function(key) {
+                const preferences = JSON.parse(textDecoder.decode(data));
+                Object.keys(preferences).forEach((key) => {
                     console.log('Setting ' + key + ': ' +  preferences[key]);
                     terminal.setOption(key, preferences[key]);
                 });
@@ -163,26 +169,20 @@ export default class Terminal extends Component<Props> {
     }
 
     @bind
-    onTerminalResize(size: {cols: number, rows: number}) {
+    private onTerminalResize(size: {cols: number, rows: number}) {
         const { terminal, socket, textEncoder } = this;
         if (socket.readyState === WebSocket.OPEN) {
-            let msg = JSON.stringify({columns: size.cols, rows: size.rows});
+            const msg = JSON.stringify({columns: size.cols, rows: size.rows});
             socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
         }
         setTimeout(() => {terminal.showOverlay(size.cols + 'x' + size.rows)}, 500);
     }
 
     @bind
-    onTerminalData(data: string) {
+    private onTerminalData(data: string) {
         const { socket, textEncoder } = this;
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(textEncoder.encode(Command.INPUT + data));
         }
-    }
-
-    public render({ id }: Props) {
-        return (
-            <div id={id} ref={(c) => this.container = c}></div>
-        );
     }
 }

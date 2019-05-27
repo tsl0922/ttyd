@@ -1,9 +1,10 @@
-import { h, Component } from 'preact';
+import { Component, h } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
 import Terminal from './terminal';
 
 if ((module as any).hot) {
+    // tslint:disable-next-line:no-var-requires
     require('preact/debug');
 }
 
@@ -12,7 +13,7 @@ const wsPath = window.location.pathname.endsWith('/') ? 'ws' : '/ws';
 const url = [protocol, window.location.host, window.location.pathname, wsPath, window.location.search].join('');
 const termOptions = {
     fontSize: 13,
-    fontFamily: '"Menlo for Powerline", Menlo, Consolas, "Liberation Mono", Courier, monospace',
+    fontFamily: 'Menlo For Powerline,Consolas,Liberation Mono,Menlo,Courier,monospace',
     theme: {
         foreground: '#d2d2d2',
         background: '#2b2b2b',
