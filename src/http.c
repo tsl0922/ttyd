@@ -100,15 +100,14 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
 #if LWS_LIBRARY_VERSION_MAJOR < 3
                 if (n > 0 && lws_write_http(wsi, buf, n) < 0)
                     return 1;
-                goto try_to_reuse;
 #else
                 if (n > 0) {
                     pss->buffer = pss->ptr = strdup(buf);
                     pss->len = n;
                     lws_callback_on_writable(wsi);
                 }
-                return 0;
 #endif
+                goto try_to_reuse;
             }
 
             if (strcmp(pss->path, "/") != 0) {
