@@ -1,7 +1,7 @@
 import { Component, h } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
-import Terminal from './terminal';
+import Xterm from './terminal';
 
 if ((module as any).hot) {
     // tslint:disable-next-line:no-var-requires
@@ -40,7 +40,7 @@ const termOptions = {
 export default class App extends Component {
     public render() {
         return (
-            <Terminal id='terminal-container' url={url} options={termOptions} />
+            <Xterm id='terminal-container' url={url} options={termOptions} />
         );
     }
 }

@@ -1,9 +1,10 @@
 import { bind } from 'decko';
 import { Component, h } from 'preact';
-import { ITerminalOptions, Terminal as Xterm } from 'xterm';
+import { ITerminalOptions, Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { OverlayAddon } from './overlay';
+
 import 'xterm/dist/xterm.css';
-import * as fit from 'xterm/lib/addons/fit/fit';
-import * as overlay from './overlay';
 
 const enum Command {
     // server side
@@ -17,22 +18,19 @@ const enum Command {
     RESIZE_TERMINAL = '1'
 }
 
-interface ITerminal extends Xterm {
-    fit(): void;
-    showOverlay(msg: string, timeout?: number): void;
-}
-
 interface Props {
     id: string;
     url: string;
     options: ITerminalOptions;
 }
 
-export default class Terminal extends Component<Props> {
+export default class Xterm extends Component<Props> {
     private textEncoder: TextEncoder;
     private textDecoder: TextDecoder;
     private container: HTMLElement;
-    private terminal: ITerminal;
+    private terminal: Terminal;
+    private fitAddon: FitAddon;
+    private overlayAddon: OverlayAddon;
     private socket: WebSocket;
     private title: string;
     private autoReconnect: number;
@@ -41,11 +39,10 @@ export default class Terminal extends Component<Props> {
     constructor(props) {
         super(props);
 
-        Xterm.applyAddon(fit);
-        Xterm.applyAddon(overlay);
-
         this.textEncoder = new TextEncoder();
         this.textDecoder = new TextDecoder();
+        this.fitAddon = new FitAddon();
+        this.overlayAddon = new OverlayAddon();
     }
 
     public componentDidMount() {
@@ -68,9 +65,9 @@ export default class Terminal extends Component<Props> {
 
     @bind
     private onWindowResize() {
-        const { terminal } = this;
+        const { fitAddon } = this;
         clearTimeout(this.resizeTimeout);
-        this.resizeTimeout = setTimeout(() => terminal.fit(), 250) as any;
+        this.resizeTimeout = setTimeout(() => fitAddon.fit(), 250) as any;
     }
 
     private onWindowUnload(event: BeforeUnloadEvent): string {
@@ -86,13 +83,16 @@ export default class Terminal extends Component<Props> {
         }
 
         this.socket = new WebSocket(this.props.url, ['tty']);
-        this.terminal = new Xterm(this.props.options) as ITerminal;
+        this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container } = this;
 
         socket.binaryType = 'arraybuffer';
         socket.onopen = this.onSocketOpen;
         socket.onmessage = this.onSocketData;
         socket.onclose = this.onSocketClose;
+
+        terminal.loadAddon(this.fitAddon);
+        terminal.loadAddon(this.overlayAddon);
 
         terminal.onTitleChange((data) => {
             if (data && data !== '') {
@@ -111,18 +111,18 @@ export default class Terminal extends Component<Props> {
     @bind
     private onSocketOpen() {
         console.log('Websocket connection opened');
-        const { socket, textEncoder, terminal } = this;
+        const { socket, textEncoder, fitAddon } = this;
 
         socket.send(textEncoder.encode(JSON.stringify({AuthToken: ''})));
-        terminal.fit();
+        fitAddon.fit();
     }
 
     @bind
     private onSocketClose(event: CloseEvent) {
         console.log('Websocket connection closed with code: ' + event.code);
 
-        const { terminal, openTerminal, autoReconnect } = this;
-        terminal.showOverlay('Connection Closed', null);
+        const { overlayAddon, openTerminal, autoReconnect } = this;
+        overlayAddon.showOverlay('Connection Closed', null);
         window.removeEventListener('beforeunload', this.onWindowUnload);
 
         // 1008: POLICY_VIOLATION - Auth failure
@@ -141,25 +141,25 @@ export default class Terminal extends Component<Props> {
 
         const rawData = new Uint8Array(event.data);
         const cmd = String.fromCharCode(rawData[0]);
-        const data = rawData.slice(1).buffer;
+        const data = rawData.slice(1);
 
         switch(cmd) {
             case Command.OUTPUT:
-                terminal.write(textDecoder.decode(data));
+                terminal.writeUtf8(data);
                 break;
             case Command.SET_WINDOW_TITLE:
-                this.title = textDecoder.decode(data);
+                this.title = textDecoder.decode(data.buffer);
                 document.title = this.title;
                 break;
             case Command.SET_PREFERENCES:
-                const preferences = JSON.parse(textDecoder.decode(data));
+                const preferences = JSON.parse(textDecoder.decode(data.buffer));
                 Object.keys(preferences).forEach((key) => {
                     console.log('Setting ' + key + ': ' +  preferences[key]);
                     terminal.setOption(key, preferences[key]);
                 });
                 break;
             case Command.SET_RECONNECT:
-                this.autoReconnect = JSON.parse(textDecoder.decode(data));
+                this.autoReconnect = parseInt(textDecoder.decode(data.buffer));
                 console.log('Enabling reconnect: ' + this.autoReconnect + ' seconds');
                 break;
             default:
@@ -170,12 +170,12 @@ export default class Terminal extends Component<Props> {
 
     @bind
     private onTerminalResize(size: {cols: number, rows: number}) {
-        const { terminal, socket, textEncoder } = this;
+        const { overlayAddon, socket, textEncoder } = this;
         if (socket.readyState === WebSocket.OPEN) {
             const msg = JSON.stringify({columns: size.cols, rows: size.rows});
             socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
         }
-        setTimeout(() => {terminal.showOverlay(size.cols + 'x' + size.rows)}, 500);
+        setTimeout(() => {overlayAddon.showOverlay(size.cols + 'x' + size.rows)}, 500);
     }
 
     @bind

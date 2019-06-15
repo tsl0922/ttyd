@@ -1,20 +1,65 @@
 // ported from hterm.Terminal.prototype.showOverlay
 // https://chromium.googlesource.com/apps/libapps/+/master/hterm/js/hterm_terminal.js
-import { Terminal } from 'xterm';
+import { ITerminalAddon, Terminal } from 'xterm';
 
-interface IOverlayAddonTerminal extends Terminal {
-    __overlayNode: HTMLElement | null;
-    __overlayTimeout: number | null;
-}
+export class OverlayAddon implements ITerminalAddon {
+    private terminal: Terminal | undefined;
+    private overlayNode: HTMLElement | null;
+    private overlayTimeout: number | null;
 
-export function showOverlay(term: Terminal, msg: string, timeout?: number): void {
-    const addonTerminal = <IOverlayAddonTerminal> term;
-    if (!addonTerminal.__overlayNode) {
-        if (!term.element) {
+    constructor() {}
+
+    public activate(terminal: Terminal): void {
+        this.terminal = terminal;
+        this.overlayNode = this.createOverlayNode();
+    }
+
+    public dispose(): void {
+        document.removeChild(this.overlayNode);
+    }
+
+    public showOverlay(msg: string, timeout?: number): void {
+        const {terminal, overlayNode } = this;
+
+        overlayNode.style.color = '#101010';
+        overlayNode.style.backgroundColor = '#f0f0f0';
+        overlayNode.textContent = msg;
+        overlayNode.style.opacity = '0.75';
+
+        if (!overlayNode.parentNode) {
+            terminal.element.appendChild(overlayNode);
+        }
+
+        const divSize = terminal.element.getBoundingClientRect();
+        const overlaySize = overlayNode.getBoundingClientRect();
+
+        overlayNode.style.top = (divSize.height - overlaySize.height) / 2 + 'px';
+        overlayNode.style.left = (divSize.width - overlaySize.width) / 2 + 'px';
+
+        if (this.overlayTimeout) {
+            clearTimeout(this.overlayTimeout);
+        }
+        if (timeout === null) {
             return;
         }
-        addonTerminal.__overlayNode = document.createElement('div');
-        addonTerminal.__overlayNode.style.cssText = (
+
+        const self = this;
+        self.overlayTimeout = <number><any>setTimeout(() => {
+            overlayNode.style.opacity = '0';
+            self.overlayTimeout = <number><any>setTimeout(() => {
+                if (overlayNode.parentNode) {
+                    overlayNode.parentNode.removeChild(overlayNode);
+                }
+                self.overlayTimeout = null;
+                overlayNode.style.opacity = '0.75';
+            }, 200);
+        }, timeout || 1500);
+    }
+
+    private createOverlayNode(): HTMLElement {
+        const overlayNode = document.createElement('div');
+
+        overlayNode.style.cssText = (
             'border-radius: 15px;' +
             'font-size: xx-large;' +
             'opacity: 0.75;' +
@@ -25,50 +70,11 @@ export function showOverlay(term: Terminal, msg: string, timeout?: number): void
             '-moz-user-select: none;' +
             '-moz-transition: opacity 180ms ease-in;');
 
-        addonTerminal.__overlayNode.addEventListener('mousedown', (e) => {
+        overlayNode.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
         }, true);
+
+        return overlayNode;
     }
-
-    addonTerminal.__overlayNode.style.color = '#101010';
-    addonTerminal.__overlayNode.style.backgroundColor = '#f0f0f0';
-
-    addonTerminal.__overlayNode.textContent = msg;
-    addonTerminal.__overlayNode.style.opacity = '0.75';
-
-    if (!addonTerminal.__overlayNode.parentNode) {
-        term.element.appendChild(addonTerminal.__overlayNode);
-    }
-
-    const divSize = term.element.getBoundingClientRect();
-    const overlaySize = addonTerminal.__overlayNode.getBoundingClientRect();
-
-    addonTerminal.__overlayNode.style.top = (divSize.height - overlaySize.height) / 2 + 'px';
-    addonTerminal.__overlayNode.style.left = (divSize.width - overlaySize.width) / 2 + 'px';
-
-    if (addonTerminal.__overlayTimeout) {
-        clearTimeout(addonTerminal.__overlayTimeout);
-    }
-
-    if (timeout === null) {
-        return;
-    }
-
-    addonTerminal.__overlayTimeout = <number><any>setTimeout(() => {
-        addonTerminal.__overlayNode.style.opacity = '0';
-        addonTerminal.__overlayTimeout = <number><any>setTimeout(() => {
-            if (addonTerminal.__overlayNode.parentNode) {
-                addonTerminal.__overlayNode.parentNode.removeChild(addonTerminal.__overlayNode);
-            }
-            addonTerminal.__overlayTimeout = null;
-            addonTerminal.__overlayNode.style.opacity = '0.75';
-        }, 200);
-    }, timeout || 1500);
-}
-
-export function apply(terminalConstructor: typeof Terminal): void {
-    (<any>terminalConstructor.prototype).showOverlay = function (msg: string, timeout?: number): void {
-        return showOverlay(this, msg, timeout);
-    };
 }
