@@ -110,7 +110,7 @@ export default class Xterm extends Component<Props> {
 
     @bind
     private onSocketOpen() {
-        console.log('Websocket connection opened');
+        console.log('[ttyd] Websocket connection opened');
         const { socket, textEncoder, fitAddon } = this;
 
         socket.send(textEncoder.encode(JSON.stringify({AuthToken: ''})));
@@ -119,7 +119,7 @@ export default class Xterm extends Component<Props> {
 
     @bind
     private onSocketClose(event: CloseEvent) {
-        console.log('Websocket connection closed with code: ' + event.code);
+        console.log('[ttyd] websocket connection closed with code: ' + event.code);
 
         const { overlayAddon, openTerminal, autoReconnect } = this;
         overlayAddon.showOverlay('Connection Closed', null);
@@ -154,16 +154,16 @@ export default class Xterm extends Component<Props> {
             case Command.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data.buffer));
                 Object.keys(preferences).forEach((key) => {
-                    console.log('Setting ' + key + ': ' +  preferences[key]);
+                    console.log('[ttyd] setting ' + key + ': ' +  preferences[key]);
                     terminal.setOption(key, preferences[key]);
                 });
                 break;
             case Command.SET_RECONNECT:
                 this.autoReconnect = parseInt(textDecoder.decode(data.buffer));
-                console.log('Enabling reconnect: ' + this.autoReconnect + ' seconds');
+                console.log('[ttyd] enabling reconnect: ' + this.autoReconnect + ' seconds');
                 break;
             default:
-                console.warn('Unknown command: ' + cmd);
+                console.warn('[ttyd] unknown command: ' + cmd);
                 break;
         }
     }
