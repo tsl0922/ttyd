@@ -51,6 +51,7 @@
     "decko": "^1.2.0",
     "preact": "^8.4.2",
     "xterm": "^3.14.2",
-    "xterm-addon-fit": "^0.1.0-beta1"
+    "xterm-addon-fit": "^0.1.0-beta1",
+    "xterm-addon-web-links": "^0.1.0-beta10"
   }
 }

@@ -2,6 +2,7 @@ import { bind } from 'decko';
 import { Component, h } from 'preact';
 import { ITerminalOptions, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
 import { OverlayAddon } from './overlay';
 
 import 'xterm/dist/xterm.css';
@@ -93,6 +94,7 @@ export default class Xterm extends Component<Props> {
 
         terminal.loadAddon(this.fitAddon);
         terminal.loadAddon(this.overlayAddon);
+        terminal.loadAddon(new WebLinksAddon());
 
         terminal.onTitleChange((data) => {
             if (data && data !== '') {
