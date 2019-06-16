@@ -85,15 +85,15 @@ export default class Xterm extends Component<Props> {
 
         this.socket = new WebSocket(this.props.url, ['tty']);
         this.terminal = new Terminal(this.props.options);
-        const { socket, terminal, container } = this;
+        const { socket, terminal, container, fitAddon, overlayAddon } = this;
 
         socket.binaryType = 'arraybuffer';
         socket.onopen = this.onSocketOpen;
         socket.onmessage = this.onSocketData;
         socket.onclose = this.onSocketClose;
 
-        terminal.loadAddon(this.fitAddon);
-        terminal.loadAddon(this.overlayAddon);
+        terminal.loadAddon(fitAddon);
+        terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
 
         terminal.onTitleChange((data) => {
@@ -103,6 +103,12 @@ export default class Xterm extends Component<Props> {
         });
         terminal.onData(this.onTerminalData);
         terminal.onResize(this.onTerminalResize);
+        if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
+            terminal.onSelectionChange(() => {
+                overlayAddon.showOverlay('\u2702', 200);
+                document.execCommand('copy');
+            });
+        }
         terminal.open(container);
         terminal.focus();
 
