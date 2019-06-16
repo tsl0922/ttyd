@@ -121,7 +121,7 @@ export default class Xterm extends Component<Props> {
 
     @bind
     private onSocketClose(event: CloseEvent) {
-        console.log('[ttyd] websocket connection closed with code: ' + event.code);
+        console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
         const { overlayAddon, openTerminal, autoReconnect } = this;
         overlayAddon.showOverlay('Connection Closed', null);
@@ -156,16 +156,16 @@ export default class Xterm extends Component<Props> {
             case Command.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data.buffer));
                 Object.keys(preferences).forEach((key) => {
-                    console.log('[ttyd] setting ' + key + ': ' +  preferences[key]);
+                    console.log(`[ttyd] setting ${key}: ${preferences[key]}`);
                     terminal.setOption(key, preferences[key]);
                 });
                 break;
             case Command.SET_RECONNECT:
                 this.autoReconnect = parseInt(textDecoder.decode(data.buffer));
-                console.log('[ttyd] enabling reconnect: ' + this.autoReconnect + ' seconds');
+                console.log(`[ttyd] enabling reconnect: ${this.autoReconnect} seconds`);
                 break;
             default:
-                console.warn('[ttyd] unknown command: ' + cmd);
+                console.warn(`[ttyd] unknown command: ${cmd}`);
                 break;
         }
     }
@@ -177,7 +177,7 @@ export default class Xterm extends Component<Props> {
             const msg = JSON.stringify({columns: size.cols, rows: size.rows});
             socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
         }
-        setTimeout(() => {overlayAddon.showOverlay(size.cols + 'x' + size.rows)}, 500);
+        setTimeout(() => {overlayAddon.showOverlay(`${size.cols}x${size.rows}`)}, 500);
     }
 
     @bind
