@@ -312,22 +312,24 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     break;
                 }
                 if (send_initial_message(wsi, client->initial_cmd_index) < 0) {
+                    lwsl_err("failed to send initial message, index: %d\n", client->initial_cmd_index);
                     lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                     return -1;
                 }
                 client->initial_cmd_index++;
                 lws_callback_on_writable(wsi);
-                return 0;
+                break;
             }
             if (client->state != STATE_READY)
                 break;
 
             // read error or client exited, close connection
-            if (client->pty_len <= 0) {
-                lws_close_reason(wsi,
-                                 client->pty_len == 0 ? LWS_CLOSE_STATUS_NORMAL
-                                                       : LWS_CLOSE_STATUS_UNEXPECTED_CONDITION,
-                                 NULL, 0);
+            if (client->pty_len == 0) {
+                lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
+                return 1;
+            } else if (client->pty_len < 0) {
+                lwsl_err("read error: %d (%s)\n", errno, strerror(errno));
+                lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                 return -1;
             }
 
