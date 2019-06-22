@@ -7,6 +7,12 @@ import { OverlayAddon } from './overlay';
 
 import 'xterm/dist/xterm.css';
 
+export interface IWindowWithTerminal extends Window {
+    term: Terminal;
+    tty_auth_token?: string;
+}
+declare let window: IWindowWithTerminal;
+
 const enum Command {
     // server side
     OUTPUT = '0',
@@ -86,7 +92,7 @@ export default class Xterm extends Component<Props> {
         this.socket = new WebSocket(this.props.url, ['tty']);
         this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container, fitAddon, overlayAddon } = this;
-        (window as any).term = terminal;
+        window.term = terminal;
 
         socket.binaryType = 'arraybuffer';
         socket.onopen = this.onSocketOpen;
@@ -121,8 +127,9 @@ export default class Xterm extends Component<Props> {
     private onSocketOpen() {
         console.log('[ttyd] Websocket connection opened');
         const { socket, textEncoder, fitAddon } = this;
+        const authToken = window.tty_auth_token;
 
-        socket.send(textEncoder.encode(JSON.stringify({AuthToken: ''})));
+        socket.send(textEncoder.encode(JSON.stringify({AuthToken: authToken})));
         fitAddon.fit();
     }
 
