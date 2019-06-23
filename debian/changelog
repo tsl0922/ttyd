@@ -1,3 +1,9 @@
+ttyd (1.5.0-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Shuanglei Tao <tsl0922@gmail.com>  Sun, 23 Jun 2019 19:04:15 +0800
+
 ttyd (1.4.4-1) unstable; urgency=medium
 
   * New upstream release.
