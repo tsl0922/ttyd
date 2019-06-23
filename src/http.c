@@ -77,6 +77,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
     struct pss_http *pss = (struct pss_http *) user;
     unsigned char buffer[4096 + LWS_PRE], *p, *end;
     char buf[256];
+    bool done = false;
 
     switch (reason) {
         case LWS_CALLBACK_HTTP:
@@ -164,17 +165,26 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 } else if (m != -1 && m < n) {
                     n = m;
                 }
-                if (pss->ptr + n > pss->buffer + pss->len)
+                if (pss->ptr + n > pss->buffer + pss->len) {
                     n = (int) (pss->len - (pss->ptr - pss->buffer));
+                    done = true;
+                }
                 memcpy(buffer + LWS_PRE, pss->ptr, n);
                 pss->ptr += n;
                 if (lws_write_http(wsi, buffer + LWS_PRE, (size_t) n) < n) {
                     if (pss->buffer != (char *) index_html) free(pss->buffer);
                     return -1;
                 }
-            } while (!lws_send_pipe_choked(wsi) && pss->ptr != pss->buffer + pss->len);
+            } while (!lws_send_pipe_choked(wsi) && !done);
 
-            if (pss->buffer != (char *) index_html) free(pss->buffer);
+            if (!done && pss->ptr < pss->buffer + pss->len) {
+                lws_callback_on_writable(wsi);
+                break;
+            }
+
+            if (pss->buffer != (char *) index_html) {
+                free(pss->buffer);
+            }
             goto try_to_reuse;
 
         case LWS_CALLBACK_HTTP_FILE_COMPLETION:
