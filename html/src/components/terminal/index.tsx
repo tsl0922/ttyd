@@ -47,7 +47,7 @@ export class Xterm extends Component<Props, State> {
   private overlayAddon: OverlayAddon;
   private socket: WebSocket;
   private title: string;
-  private autoReconnect: number;
+  private reconnect: number;
   private resizeTimeout: number;
   private sentry: Zmodem.Sentry;
   private session: Zmodem.Session;
@@ -252,7 +252,7 @@ export class Xterm extends Component<Props, State> {
   private onSocketClose(event: CloseEvent) {
     console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-    const { overlayAddon, openTerminal, autoReconnect } = this;
+    const { overlayAddon, openTerminal, reconnect } = this;
     overlayAddon.showOverlay('Connection Closed', null);
     window.removeEventListener('beforeunload', this.onWindowUnload);
 
@@ -261,8 +261,8 @@ export class Xterm extends Component<Props, State> {
       window.location.reload();
     }
     // 1000: CLOSE_NORMAL
-    if (event.code !== 1000 && autoReconnect > 0) {
-      setTimeout(openTerminal, autoReconnect * 1000);
+    if (event.code !== 1000 && reconnect > 0) {
+      setTimeout(openTerminal, reconnect * 1000);
     }
   }
 
@@ -279,8 +279,8 @@ export class Xterm extends Component<Props, State> {
           this.sentry.consume(data);
         } catch (e) {
           console.log(`[ttyd] zmodem consume: `, e);
+          this.reconnect = 0.5;
           socket.close();
-          setTimeout(() => openTerminal(), 500);
         }
         break;
       case Command.SET_WINDOW_TITLE:
@@ -295,8 +295,8 @@ export class Xterm extends Component<Props, State> {
         });
         break;
       case Command.SET_RECONNECT:
-        this.autoReconnect = Number(textDecoder.decode(data));
-        console.log(`[ttyd] enabling reconnect: ${this.autoReconnect} seconds`);
+        this.reconnect = Number(textDecoder.decode(data));
+        console.log(`[ttyd] enabling reconnect: ${this.reconnect} seconds`);
         break;
       default:
         console.warn(`[ttyd] unknown command: ${cmd}`);
