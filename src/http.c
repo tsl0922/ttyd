@@ -138,9 +138,15 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                     return 1;
                 if (lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
                     return 1;
+#if LWS_LIBRARY_VERSION_MAJOR < 2
+                if (lws_write_http(wsi, index_html, index_html_len) < 0)
+                    return 1;
+                goto try_to_reuse;
+#else
                 pss->buffer = pss->ptr = (char *) index_html;
                 pss->len = index_html_len;
                 lws_callback_on_writable(wsi);
+#endif
             }
             break;
 
