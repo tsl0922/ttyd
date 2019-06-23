@@ -61,7 +61,7 @@ export class Xterm extends Component<Props, State> {
     this.overlayAddon = new OverlayAddon();
     this.sentry = new Zmodem.Sentry({
       to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
-      sender: (octets: number[]) => this.zmodemSend(octets),
+      sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
       on_retract: () => {},
       on_detect: (detection: any) => this.zmodemDetect(detection),
     });
@@ -106,12 +106,12 @@ export class Xterm extends Component<Props, State> {
   }
 
   @bind
-  private zmodemSend(data: number[]): void {
+  private zmodemSend(data: ArrayLike<number>): void {
     const { socket } = this;
-    const buffer = new Uint8Array(data.length + 1);
-    buffer[0] = Command.INPUT.charCodeAt(0);
-    buffer.set(data, 1);
-    socket.send(buffer);
+    const payload = new Uint8Array(data.length + 1);
+    payload[0] = Command.INPUT.charCodeAt(0);
+    payload.set(data, 1);
+    socket.send(payload);
   }
 
   @bind
@@ -140,12 +140,16 @@ export class Xterm extends Component<Props, State> {
     }
 
     Zmodem.Browser.send_files(session, files, {
-      on_progress: (_, xfer) => writeProgress(xfer),
+      on_progress: (_, xfer: any) => writeProgress(xfer),
       on_file_complete: () => {},
-    }).then(() => {
-      session.close();
-      terminal.setOption('disableStdin', false);
-    });
+    })
+      .then(() => {
+        session.close();
+        terminal.setOption('disableStdin', false);
+      })
+      .catch(e => {
+        console.log(`[ttyd] zmodem send: `, e);
+      });
   }
 
   @bind
@@ -268,7 +272,7 @@ export class Xterm extends Component<Props, State> {
 
   @bind
   private onSocketData(event: MessageEvent) {
-    const { terminal, textDecoder, socket, openTerminal } = this;
+    const { terminal, textDecoder, socket } = this;
     const rawData = event.data as ArrayBuffer;
     const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
     const data = rawData.slice(1);
