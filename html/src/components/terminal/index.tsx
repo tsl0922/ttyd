@@ -51,6 +51,7 @@ export class Xterm extends Component<Props, State> {
   private resizeTimeout: number;
   private sentry: Zmodem.Sentry;
   private session: Zmodem.Session;
+  private detection: Zmodem.Detection;
 
   constructor(props) {
     super(props);
@@ -115,11 +116,12 @@ export class Xterm extends Component<Props, State> {
   }
 
   @bind
-  private zmodemDetect(detection: any): void {
+  private zmodemDetect(detection: Zmodem.Detection): void {
     const { terminal, receiveFile } = this;
-
     terminal.setOption('disableStdin', true);
+    this.detection = detection;
     this.session = detection.confirm();
+
     if (this.session.type === 'send') {
       this.setState({ modal: true });
     } else {
@@ -133,18 +135,13 @@ export class Xterm extends Component<Props, State> {
 
     const { terminal, session, writeProgress } = this;
     const files: FileList = (event.target as HTMLInputElement).files;
-    if (files.length === 0) {
-      session.close();
-      terminal.setOption('disableStdin', false);
-      return;
-    }
 
     Zmodem.Browser.send_files(session, files, {
       on_progress: (_, xfer: any) => writeProgress(xfer),
-      on_file_complete: () => {},
     })
       .then(() => {
         session.close();
+        this.detection = null;
         terminal.setOption('disableStdin', false);
       })
       .catch(e => {
@@ -164,8 +161,12 @@ export class Xterm extends Component<Props, State> {
       });
       xfer.accept().then(() => {
         Zmodem.Browser.save_to_disk(fileBuffer, xfer.get_details().name);
-        terminal.setOption('disableStdin', false);
       });
+    });
+
+    session.on('session_end', () => {
+      this.detection = null;
+      terminal.setOption('disableStdin', false);
     });
 
     session.start();
@@ -272,7 +273,7 @@ export class Xterm extends Component<Props, State> {
 
   @bind
   private onSocketData(event: MessageEvent) {
-    const { terminal, textDecoder, socket } = this;
+    const { terminal, textDecoder } = this;
     const rawData = event.data as ArrayBuffer;
     const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
     const data = rawData.slice(1);
@@ -283,8 +284,11 @@ export class Xterm extends Component<Props, State> {
           this.sentry.consume(data);
         } catch (e) {
           console.log(`[ttyd] zmodem consume: `, e);
-          this.reconnect = 0.5;
-          socket.close();
+          terminal.setOption('disableStdin', false);
+          if (this.detection) {
+            this.detection.deny();
+            this.detection = null;
+          }
         }
         break;
       case Command.SET_WINDOW_TITLE:
