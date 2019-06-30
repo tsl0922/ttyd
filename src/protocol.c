@@ -200,12 +200,6 @@ thread_run_command(void *args) {
         }
     }
 
-    // set the pty file descriptor non blocking
-    int status_flags = fcntl(pty, F_GETFL);
-    if (status_flags != -1) {
-        fcntl(pty, F_SETFL, status_flags | O_NONBLOCK);
-    }
-
     lwsl_notice("started process, pid: %d\n", pid);
     client->pid = pid;
     client->pty = pty;
