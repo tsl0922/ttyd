@@ -3,10 +3,9 @@ import { Component, h } from 'preact';
 import { ITerminalOptions, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
-import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
 import { OverlayAddon } from './overlay';
-import { Modal } from '../modal';
+import { ZmodemAddon } from '../zmodem';
 
 import 'xterm/dist/xterm.css';
 
@@ -34,24 +33,18 @@ interface Props {
   options: ITerminalOptions;
 }
 
-interface State {
-  modal: boolean;
-}
-
-export class Xterm extends Component<Props, State> {
+export class Xterm extends Component<Props> {
   private textEncoder: TextEncoder;
   private textDecoder: TextDecoder;
   private container: HTMLElement;
   private terminal: Terminal;
   private fitAddon: FitAddon;
   private overlayAddon: OverlayAddon;
+  private zmodemAddon: ZmodemAddon;
   private socket: WebSocket;
   private title: string;
   private reconnect: number;
   private resizeTimeout: number;
-  private sentry: Zmodem.Sentry;
-  private session: Zmodem.Session;
-  private detection: Zmodem.Detection;
 
   constructor(props) {
     super(props);
@@ -60,12 +53,6 @@ export class Xterm extends Component<Props, State> {
     this.textDecoder = new TextDecoder();
     this.fitAddon = new FitAddon();
     this.overlayAddon = new OverlayAddon();
-    this.sentry = new Zmodem.Sentry({
-      to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
-      sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
-      on_retract: () => {},
-      on_detect: (detection: any) => this.zmodemDetect(detection),
-    });
   }
 
   componentDidMount() {
@@ -80,111 +67,21 @@ export class Xterm extends Component<Props, State> {
     window.removeEventListener('beforeunload', this.onWindowUnload);
   }
 
-  render({ id }: Props, { modal }: State) {
+  render({ id }: Props) {
     return (
       <div id={id} ref={c => (this.container = c)}>
-        <Modal show={modal}>
-          <label class="file-label">
-            <input
-              onChange={this.sendFile}
-              class="file-input"
-              type="file"
-              multiple
-            />
-            <span class="file-cta">
-              <strong>Choose files…</strong>
-            </span>
-          </label>
-        </Modal>
+        <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} />
       </div>
     );
   }
 
   @bind
-  private zmodemWrite(data: ArrayBuffer): void {
-    const { terminal } = this;
-    terminal.writeUtf8(new Uint8Array(data));
-  }
-
-  @bind
-  private zmodemSend(data: ArrayLike<number>): void {
+  private sendData(data: ArrayLike<number>) {
     const { socket } = this;
     const payload = new Uint8Array(data.length + 1);
     payload[0] = Command.INPUT.charCodeAt(0);
     payload.set(data, 1);
     socket.send(payload);
-  }
-
-  @bind
-  private zmodemDetect(detection: Zmodem.Detection): void {
-    const { terminal, receiveFile } = this;
-    terminal.setOption('disableStdin', true);
-    this.detection = detection;
-    this.session = detection.confirm();
-
-    if (this.session.type === 'send') {
-      this.setState({ modal: true });
-    } else {
-      receiveFile();
-    }
-  }
-
-  @bind
-  private sendFile(event: Event) {
-    this.setState({ modal: false });
-
-    const { terminal, session, writeProgress } = this;
-    const files: FileList = (event.target as HTMLInputElement).files;
-
-    Zmodem.Browser.send_files(session, files, {
-      on_progress: (_, xfer: any) => writeProgress(xfer),
-    })
-      .then(() => {
-        session.close();
-        this.detection = null;
-        terminal.setOption('disableStdin', false);
-      })
-      .catch(e => {
-        console.log(`[ttyd] zmodem send: `, e);
-      });
-  }
-
-  @bind
-  private receiveFile() {
-    const { terminal, session, writeProgress } = this;
-
-    session.on('offer', (xfer: any) => {
-      const fileBuffer = [];
-      xfer.on('input', payload => {
-        writeProgress(xfer);
-        fileBuffer.push(new Uint8Array(payload));
-      });
-      xfer.accept().then(() => {
-        Zmodem.Browser.save_to_disk(fileBuffer, xfer.get_details().name);
-      });
-    });
-
-    session.on('session_end', () => {
-      this.detection = null;
-      terminal.setOption('disableStdin', false);
-    });
-
-    session.start();
-  }
-
-  @bind
-  private writeProgress(xfer: any) {
-    const { terminal, bytesHuman } = this;
-
-    const file = xfer.get_details();
-    const name = file.name;
-    const size = file.size;
-    const offset = xfer.get_offset();
-    const percent = ((100 * offset) / size).toFixed(2);
-
-    terminal.write(
-      `${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`
-    );
   }
 
   @bind
@@ -219,6 +116,7 @@ export class Xterm extends Component<Props, State> {
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(overlayAddon);
     terminal.loadAddon(new WebLinksAddon());
+    terminal.loadAddon(this.zmodemAddon);
 
     terminal.onTitleChange(data => {
       if (data && data !== '') {
@@ -273,23 +171,14 @@ export class Xterm extends Component<Props, State> {
 
   @bind
   private onSocketData(event: MessageEvent) {
-    const { terminal, textDecoder } = this;
+    const { terminal, textDecoder, zmodemAddon } = this;
     const rawData = event.data as ArrayBuffer;
     const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
     const data = rawData.slice(1);
 
     switch (cmd) {
       case Command.OUTPUT:
-        try {
-          this.sentry.consume(data);
-        } catch (e) {
-          console.log(`[ttyd] zmodem consume: `, e);
-          terminal.setOption('disableStdin', false);
-          if (this.detection) {
-            this.detection.deny();
-            this.detection = null;
-          }
-        }
+        zmodemAddon.consume(data);
         break;
       case Command.SET_WINDOW_TITLE:
         this.title = textDecoder.decode(data);
@@ -330,17 +219,5 @@ export class Xterm extends Component<Props, State> {
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(textEncoder.encode(Command.INPUT + data));
     }
-  }
-
-  private bytesHuman(bytes: any, precision: number): string {
-    if (!/^([-+])?|(\.\d+)(\d+(\.\d+)?|(\d+\.)|Infinity)$/.test(bytes)) {
-      return '-';
-    }
-    if (bytes === 0) return '0';
-    if (typeof precision === 'undefined') precision = 1;
-    const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const num = Math.floor(Math.log(bytes) / Math.log(1024));
-    const value = (bytes / Math.pow(1024, Math.floor(num))).toFixed(precision);
-    return `${value} ${units[num]}`;
   }
 }
