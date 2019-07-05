@@ -21,7 +21,6 @@ const enum Command {
     OUTPUT = '0',
     SET_WINDOW_TITLE = '1',
     SET_PREFERENCES = '2',
-    SET_RECONNECT = '3',
 
     // client side
     INPUT = '0',
@@ -44,7 +43,6 @@ export class Xterm extends Component<Props> {
     private zmodemAddon: ZmodemAddon;
     private socket: WebSocket;
     private title: string;
-    private reconnect: number;
     private resizeTimeout: number;
     private backoff: backoff.Backoff;
 
@@ -124,7 +122,6 @@ export class Xterm extends Component<Props> {
         socket.onopen = this.onSocketOpen;
         socket.onmessage = this.onSocketData;
         socket.onclose = this.onSocketClose;
-        socket.onerror = this.onSocketError;
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
@@ -166,7 +163,7 @@ export class Xterm extends Component<Props> {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { overlayAddon, openTerminal, reconnect } = this;
+        const { overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
         window.removeEventListener('beforeunload', this.onWindowUnload);
 
@@ -174,15 +171,11 @@ export class Xterm extends Component<Props> {
         if (event.code === 1008) {
             window.location.reload();
         }
-        // 1000: CLOSE_NORMAL
-        if (event.code !== 1000 && reconnect > 0) {
-            setTimeout(openTerminal, reconnect * 1000);
-        }
-    }
 
-    @bind
-    private onSocketError() {
-        this.backoff.backoff();
+        // 1000: CLOSE_NORMAL
+        if (event.code !== 1000) {
+            this.backoff.backoff();
+        }
     }
 
     @bind
@@ -206,10 +199,6 @@ export class Xterm extends Component<Props> {
                     console.log(`[ttyd] setting ${key}: ${preferences[key]}`);
                     terminal.setOption(key, preferences[key]);
                 });
-                break;
-            case Command.SET_RECONNECT:
-                this.reconnect = Number(textDecoder.decode(data));
-                console.log(`[ttyd] enabling reconnect: ${this.reconnect} seconds`);
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);

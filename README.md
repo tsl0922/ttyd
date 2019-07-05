@@ -80,7 +80,6 @@ OPTIONS:
     -u, --uid               User id to run with
     -g, --gid               Group id to run with
     -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)
-    -r, --reconnect         Time to reconnect for the client in seconds (default: 10)
     -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
     -R, --readonly          Do not allow clients to write to the TTY
     -t, --client-option     Send option to client (format: key=value), repeat to add more options

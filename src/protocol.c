@@ -28,7 +28,6 @@
 // initial message list
 char initial_cmds[] = {
         SET_WINDOW_TITLE,
-        SET_RECONNECT,
         SET_PREFERENCES
 };
 
@@ -44,9 +43,6 @@ send_initial_message(struct lws *wsi, int index) {
         case SET_WINDOW_TITLE:
             gethostname(buffer, sizeof(buffer) - 1);
             n = sprintf((char *) p, "%c%s (%s)", cmd, server->command, buffer);
-            break;
-        case SET_RECONNECT:
-            n = sprintf((char *) p, "%c%d", cmd, server->reconnect);
             break;
         case SET_PREFERENCES:
             n = sprintf((char *) p, "%c%s", cmd, server->prefs_json);
