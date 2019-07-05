@@ -45,6 +45,7 @@ export class Xterm extends Component<Props> {
     private title: string;
     private resizeTimeout: number;
     private backoff: backoff.Backoff;
+    private backoffLock = false;
 
     constructor(props) {
         super(props);
@@ -58,10 +59,12 @@ export class Xterm extends Component<Props> {
             maxDelay: 10000,
         });
         this.backoff.on('ready', () => {
+            this.backoffLock = false;
             this.openTerminal();
         });
         this.backoff.on('backoff', (_, delay: number) => {
             console.log(`[ttyd] will attempt to reconnect websocket in ${delay}ms`);
+            this.backoffLock = true;
         });
     }
 
@@ -122,6 +125,7 @@ export class Xterm extends Component<Props> {
         socket.onopen = this.onSocketOpen;
         socket.onmessage = this.onSocketData;
         socket.onclose = this.onSocketClose;
+        socket.onerror = this.onSocketError;
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
@@ -149,9 +153,17 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
+    private reconnect() {
+        if (!this.backoffLock) {
+            this.backoff.backoff();
+        }
+    }
+
+    @bind
     private onSocketOpen() {
         console.log('[ttyd] Websocket connection opened');
         this.backoff.reset();
+
         const { socket, textEncoder, fitAddon } = this;
         const authToken = window.tty_auth_token;
 
@@ -174,8 +186,13 @@ export class Xterm extends Component<Props> {
 
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000) {
-            this.backoff.backoff();
+            this.reconnect();
         }
+    }
+
+    @bind
+    private onSocketError() {
+        this.reconnect();
     }
 
     @bind
