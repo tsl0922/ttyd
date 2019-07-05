@@ -1,4 +1,5 @@
 import { bind } from 'decko';
+import * as backoff from 'backoff';
 import { Component, h } from 'preact';
 import { ITerminalOptions, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -45,6 +46,7 @@ export class Xterm extends Component<Props> {
     private title: string;
     private reconnect: number;
     private resizeTimeout: number;
+    private backoff: backoff.Backoff;
 
     constructor(props) {
         super(props);
@@ -53,6 +55,16 @@ export class Xterm extends Component<Props> {
         this.textDecoder = new TextDecoder();
         this.fitAddon = new FitAddon();
         this.overlayAddon = new OverlayAddon();
+        this.backoff = backoff.exponential({
+            initialDelay: 100,
+            maxDelay: 10000,
+        });
+        this.backoff.on('ready', () => {
+            this.openTerminal();
+        });
+        this.backoff.on('backoff', (_, delay: number) => {
+            console.log(`[ttyd] will attempt to reconnect websocket in ${delay}ms`);
+        });
     }
 
     componentDidMount() {
@@ -112,6 +124,7 @@ export class Xterm extends Component<Props> {
         socket.onopen = this.onSocketOpen;
         socket.onmessage = this.onSocketData;
         socket.onclose = this.onSocketClose;
+        socket.onerror = this.onSocketError;
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
@@ -141,6 +154,7 @@ export class Xterm extends Component<Props> {
     @bind
     private onSocketOpen() {
         console.log('[ttyd] Websocket connection opened');
+        this.backoff.reset();
         const { socket, textEncoder, fitAddon } = this;
         const authToken = window.tty_auth_token;
 
@@ -164,6 +178,11 @@ export class Xterm extends Component<Props> {
         if (event.code !== 1000 && reconnect > 0) {
             setTimeout(openTerminal, reconnect * 1000);
         }
+    }
+
+    @bind
+    private onSocketError() {
+        this.backoff.backoff();
     }
 
     @bind

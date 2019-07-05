@@ -58,6 +58,7 @@
     "webpack-merge": "^4.2.1"
   },
   "dependencies": {
+    "backoff": "^2.5.0",
     "decko": "^1.2.0",
     "preact": "^8.4.2",
     "xterm": "^3.14.4",
