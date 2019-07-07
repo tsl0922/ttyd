@@ -53,7 +53,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         try {
             sentry.consume(data);
         } catch (e) {
-            console.log(`[ttyd] zmodem consume: `, e);
+            console.error(`[ttyd] zmodem consume: `, e);
             terminal.setOption('disableStdin', false);
         }
     }
@@ -79,6 +79,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         terminal.setOption('disableStdin', true);
         this.session = detection.confirm();
 
+        this.session.on('session_end', () => {
+            terminal.setOption('disableStdin', false);
+        });
+
         if (this.session.type === 'send') {
             this.setState({ modal: true });
         } else {
@@ -90,51 +94,51 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private sendFile(event: Event) {
         this.setState({ modal: false });
 
-        const { terminal, session, writeProgress } = this;
+        const { session, writeProgress } = this;
         const files: FileList = (event.target as HTMLInputElement).files;
 
         Zmodem.Browser.send_files(session, files, {
-            on_progress: (_, xfer: any) => writeProgress(xfer),
+            on_progress: (_, offer: Zmodem.Offer) => writeProgress(offer),
         })
             .then(() => {
                 session.close();
-                terminal.setOption('disableStdin', false);
             })
             .catch(e => {
-                console.log(`[ttyd] zmodem send: `, e);
+                console.error(`[ttyd] zmodem send: `, e);
             });
     }
 
     @bind
     private receiveFile() {
-        const { terminal, session, writeProgress } = this;
+        const { session, writeProgress } = this;
 
-        session.on('offer', (xfer: any) => {
+        session.on('offer', (offer: Zmodem.Offer) => {
             const fileBuffer = [];
-            xfer.on('input', payload => {
-                writeProgress(xfer);
+            offer.on('input', payload => {
+                writeProgress(offer);
                 fileBuffer.push(new Uint8Array(payload));
             });
-            xfer.accept().then(() => {
-                Zmodem.Browser.save_to_disk(fileBuffer, xfer.get_details().name);
-            });
-        });
-
-        session.on('session_end', () => {
-            terminal.setOption('disableStdin', false);
+            offer
+                .accept()
+                .then(() => {
+                    Zmodem.Browser.save_to_disk(fileBuffer, offer.get_details().name);
+                })
+                .catch(e => {
+                    console.error(`[ttyd] zmodem receive: `, e);
+                });
         });
 
         session.start();
     }
 
     @bind
-    private writeProgress(xfer: any) {
+    private writeProgress(offer: Zmodem.Offer) {
         const { terminal, bytesHuman } = this;
 
-        const file = xfer.get_details();
+        const file = offer.get_details();
         const name = file.name;
         const size = file.size;
-        const offset = xfer.get_offset();
+        const offset = offer.get_offset();
         const percent = ((100 * offset) / size).toFixed(2);
 
         terminal.write(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
