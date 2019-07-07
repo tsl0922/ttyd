@@ -141,6 +141,7 @@ export class Xterm extends Component<Props> {
         terminal.onResize(this.onTerminalResize);
         if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
             terminal.onSelectionChange(() => {
+                if (terminal.getSelection() === '') return;
                 overlayAddon.showOverlay('\u2702', 200);
                 document.execCommand('copy');
             });
