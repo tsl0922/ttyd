@@ -1,6 +1,6 @@
 import { bind } from 'decko';
 import { Component, h } from 'preact';
-import { ITerminalAddon, Terminal } from 'xterm';
+import { IDisposable, ITerminalAddon, Terminal } from 'xterm';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
 import { Modal } from '../modal';
@@ -15,8 +15,9 @@ interface State {
 
 export class ZmodemAddon extends Component<Props, State> implements ITerminalAddon {
     private terminal: Terminal | undefined;
+    private keyDispose: IDisposable | undefined;
     private sentry: Zmodem.Sentry;
-    private session: Zmodem.Session;
+    private session: Zmodem.Session | undefined;
 
     constructor(props) {
         super(props);
@@ -24,8 +25,8 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         this.sentry = new Zmodem.Sentry({
             to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
             sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
-            on_retract: () => this.zmodemRetract(),
-            on_detect: (detection: any) => this.zmodemDetect(detection),
+            on_retract: () => this.zmodemReset(),
+            on_detect: (detection: Zmodem.Detection) => this.zmodemDetect(detection),
         });
     }
 
@@ -49,12 +50,27 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     dispose(): void {}
 
     consume(data: ArrayBuffer) {
-        const { sentry, terminal } = this;
+        const { sentry, handleError } = this;
         try {
             sentry.consume(data);
         } catch (e) {
-            console.error(`[ttyd] zmodem consume: `, e);
-            terminal.setOption('disableStdin', false);
+            handleError(e, 'consume');
+        }
+    }
+
+    @bind
+    private handleError(e: Error, reason: string) {
+        console.error(`[ttyd] zmodem ${reason}: `, e);
+        this.zmodemReset();
+    }
+
+    @bind
+    private zmodemReset() {
+        this.terminal.setOption('disableStdin', false);
+
+        if (this.keyDispose) {
+            this.keyDispose.dispose();
+            this.keyDispose = null;
         }
     }
 
@@ -69,19 +85,19 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     }
 
     @bind
-    private zmodemRetract(): void {
-        this.terminal.setOption('disableStdin', false);
-    }
-
-    @bind
     private zmodemDetect(detection: Zmodem.Detection): void {
-        const { terminal, receiveFile } = this;
+        const { terminal, receiveFile, zmodemReset } = this;
         terminal.setOption('disableStdin', true);
-        this.session = detection.confirm();
 
-        this.session.on('session_end', () => {
-            terminal.setOption('disableStdin', false);
+        this.keyDispose = terminal.onKey(e => {
+            const event = e.domEvent;
+            if (event.ctrlKey && event.key === 'c') {
+                detection.deny();
+            }
         });
+
+        this.session = detection.confirm();
+        this.session.on('session_end', zmodemReset);
 
         if (this.session.type === 'send') {
             this.setState({ modal: true });
@@ -94,23 +110,19 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private sendFile(event: Event) {
         this.setState({ modal: false });
 
-        const { session, writeProgress } = this;
+        const { session, writeProgress, handleError } = this;
         const files: FileList = (event.target as HTMLInputElement).files;
 
         Zmodem.Browser.send_files(session, files, {
             on_progress: (_, offer: Zmodem.Offer) => writeProgress(offer),
         })
-            .then(() => {
-                session.close();
-            })
-            .catch(e => {
-                console.error(`[ttyd] zmodem send: `, e);
-            });
+            .then(() => session.close())
+            .catch(e => handleError(e, 'send'));
     }
 
     @bind
     private receiveFile() {
-        const { session, writeProgress } = this;
+        const { session, writeProgress, handleError } = this;
 
         session.on('offer', (offer: Zmodem.Offer) => {
             const fileBuffer = [];
@@ -120,12 +132,8 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
             });
             offer
                 .accept()
-                .then(() => {
-                    Zmodem.Browser.save_to_disk(fileBuffer, offer.get_details().name);
-                })
-                .catch(e => {
-                    console.error(`[ttyd] zmodem receive: `, e);
-                });
+                .then(() => Zmodem.Browser.save_to_disk(fileBuffer, offer.get_details().name))
+                .catch(e => handleError(e, 'receive'));
         });
 
         session.start();
