@@ -16,7 +16,7 @@
   position: absolute;
   right: 0;
   top: 0;
-  background-color: hsla(0, 0%, 4%, 0.86);
+  background-color: #4a4a4acc;
 }
 
 .modal-content {
@@ -28,8 +28,6 @@
 
   .box {
     background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 3px hsla(0, 0%, 4%, 0.1), 0 0 0 1px hsla(0, 0%, 4%, 0.1);
     color: #4a4a4a;
     display: block;
     padding: 1.25rem;
@@ -53,8 +51,9 @@
   }
 
   .file-cta {
+    cursor: pointer;
     background-color: #f5f5f5;
-    color: #4a4a4a;
+    color: #6200ee;
     outline: none;
     align-items: center;
     box-shadow: none;
@@ -67,6 +66,7 @@
     border-color: #dbdbdb;
     border-radius: 3px;
     font-size: 1em;
+    font-weight: 500;
     padding: calc(.375em - 1px) 1em;
     white-space: nowrap;
   }
