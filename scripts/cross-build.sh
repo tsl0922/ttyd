@@ -72,6 +72,7 @@ build_libwebsockets() {
 		    -DLWS_STATIC_PIC=ON \
 		    -DLWS_WITH_SHARED=OFF \
 		    -DLWS_UNIX_SOCK=ON \
+		    -DLWS_IPV6=ON \
 		    -DCMAKE_TOOLCHAIN_FILE=../../cross-$TARGET.cmake \
 		    -DCMAKE_INSTALL_PREFIX=$STAGE_DIR \
 		    ..
