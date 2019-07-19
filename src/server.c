@@ -85,7 +85,9 @@ void print_help() {
                     "    -o, --once              Accept only one client and exit on disconnection\n"
                     "    -B, --browser           Open terminal with the default system browser\n"
                     "    -I, --index             Custom index.html path\n"
+#ifdef LWS_WITH_IPV6
                     "    -6, --ipv6              Enable IPv6 support\n"
+#endif
                     "    -S, --ssl               Enable SSL\n"
                     "    -C, --ssl-cert          SSL certificate file path\n"
                     "    -K, --ssl-key           SSL key file path\n"
