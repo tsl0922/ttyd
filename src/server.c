@@ -38,28 +38,30 @@ static const struct lws_extension extensions[] = {
 
 // command line options
 static const struct option options[] = {
-        {"port",         required_argument, NULL, 'p'},
-        {"interface",    required_argument, NULL, 'i'},
-        {"credential",   required_argument, NULL, 'c'},
-        {"uid",          required_argument, NULL, 'u'},
-        {"gid",          required_argument, NULL, 'g'},
-        {"signal",       required_argument, NULL, 's'},
-        {"index",        required_argument, NULL, 'I'},
-        {"ipv6",         no_argument,       NULL, '6'},
-        {"ssl",          no_argument,       NULL, 'S'},
-        {"ssl-cert",     required_argument, NULL, 'C'},
-        {"ssl-key",      required_argument, NULL, 'K'},
-        {"ssl-ca",       required_argument, NULL, 'A'},
-        {"url-arg",      no_argument,       NULL, 'a'},
-        {"readonly",     no_argument,       NULL, 'R'},
-        {"check-origin", no_argument,       NULL, 'O'},
-        {"max-clients",  required_argument, NULL, 'm'},
-        {"once",         no_argument,       NULL, 'o'},
-        {"browser",      no_argument,       NULL, 'B'},
-        {"debug",        required_argument, NULL, 'd'},
-        {"version",      no_argument,       NULL, 'v'},
-        {"help",         no_argument,       NULL, 'h'},
-        {NULL,           0,                 0,     0}
+        {"port",          required_argument, NULL, 'p'},
+        {"interface",     required_argument, NULL, 'i'},
+        {"credential",    required_argument, NULL, 'c'},
+        {"uid",           required_argument, NULL, 'u'},
+        {"gid",           required_argument, NULL, 'g'},
+        {"signal",        required_argument, NULL, 's'},
+        {"index",         required_argument, NULL, 'I'},
+        {"ipv6",          no_argument,       NULL, '6'},
+        {"ssl",           no_argument,       NULL, 'S'},
+        {"ssl-cert",      required_argument, NULL, 'C'},
+        {"ssl-key",       required_argument, NULL, 'K'},
+        {"ssl-ca",        required_argument, NULL, 'A'},
+        {"url-arg",       no_argument,       NULL, 'a'},
+        {"readonly",      no_argument,       NULL, 'R'},
+        {"terminal-type", required_argument, NULL, 'T'},
+        {"client-option", required_argument, NULL, 't'},
+        {"check-origin",  no_argument,       NULL, 'O'},
+        {"max-clients",   required_argument, NULL, 'm'},
+        {"once",          no_argument,       NULL, 'o'},
+        {"browser",       no_argument,       NULL, 'B'},
+        {"debug",         required_argument, NULL, 'd'},
+        {"version",       no_argument,       NULL, 'v'},
+        {"help",          no_argument,       NULL, 'h'},
+        {NULL, 0, 0,                               0}
 };
 static const char *opt_string = "p:i:c:u:g:s:I:6aSC:K:A:Rt:T:Om:oBd:vh";
 
@@ -330,7 +332,7 @@ main(int argc, char **argv) {
                 break;
             case 'I':
                 if (!strncmp(optarg, "~/", 2)) {
-                    const char* home = getenv("HOME");
+                    const char *home = getenv("HOME");
                     server->index = malloc(strlen(home) + strlen(optarg) - 1);
                     sprintf(server->index, "%s%s", home, optarg + 1);
                 } else {
