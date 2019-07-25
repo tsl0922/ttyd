@@ -10,8 +10,10 @@ import { ZmodemAddon } from '../zmodem';
 
 import 'xterm/dist/xterm.css';
 
+type TerminalExtended = Terminal & FitAddon;
+
 export interface WindowExtended extends Window {
-    term: Terminal;
+    term: TerminalExtended;
     tty_auth_token?: string;
 }
 declare let window: WindowExtended;
@@ -120,6 +122,9 @@ export class Xterm extends Component<Props> {
         this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container, fitAddon, overlayAddon } = this;
         window.term = terminal;
+        window.term.fit = () => {
+            this.fitAddon.fit();
+        };
 
         socket.binaryType = 'arraybuffer';
         socket.onopen = this.onSocketOpen;
