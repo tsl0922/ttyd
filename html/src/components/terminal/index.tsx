@@ -10,8 +10,10 @@ import { ZmodemAddon } from '../zmodem';
 
 import 'xterm/dist/xterm.css';
 
+type TerminalExtended = Terminal & FitAddon;
+
 export interface WindowExtended extends Window {
-    term: Terminal;
+    term: TerminalExtended;
     tty_auth_token?: string;
 }
 declare let window: WindowExtended;
@@ -131,6 +133,10 @@ export class Xterm extends Component<Props> {
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
         terminal.loadAddon(this.zmodemAddon);
+
+        window.term.fit = () => {
+            this.fitAddon.fit();
+        }
 
         terminal.onTitleChange(data => {
             if (data && data !== '') {
