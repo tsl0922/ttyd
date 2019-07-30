@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/wait.h>
 
 #ifdef __linux__
