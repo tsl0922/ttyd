@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdbool.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
