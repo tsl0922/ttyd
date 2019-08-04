@@ -478,7 +478,7 @@ main(int argc, char **argv) {
         if (!LIST_EMPTY(&server->clients)) {
             struct tty_client *client;
             LIST_FOREACH(client, &server->clients, list) {
-                if (client->running && pthread_mutex_trylock(&client->mutex)) {
+                if (client->running && pthread_mutex_trylock(&client->mutex) == 0) {
                     if (client->state != STATE_DONE)
                         lws_callback_on_writable(client->wsi);
                     else

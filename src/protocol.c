@@ -130,7 +130,7 @@ tty_client_destroy(struct tty_client *client) {
 
     client->running = false;
 
-    if (pthread_mutex_trylock(&client->mutex)) {
+    if (pthread_mutex_trylock(&client->mutex) == 0) {
         client->state = STATE_DONE;
         pthread_cond_signal(&client->cond);
         pthread_mutex_unlock(&client->mutex);
