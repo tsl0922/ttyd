@@ -382,6 +382,10 @@ main(int argc, char **argv) {
                         return -1;
                     }
                     char *value = strsep(&option, "=");
+                    if (value == NULL) {
+                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
+                        return -1;
+                    }
                     free(option);
                     struct json_object *obj = json_tokener_parse(value);
                     json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
