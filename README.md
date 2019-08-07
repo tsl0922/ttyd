@@ -140,6 +140,26 @@ openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
 openssl pkcs12 -in client.p12 -out client.pem -clcerts
 ```
 
+Another easy and simple way to generate a CA and self signed certificates is to use the popular tool called [mkcert](https://github.com/FiloSottile/mkcert).
+Here is an example for a full CA and certificate generation:
+```bash
+$ mkcert -install
+Created a new local CA at "/Users/filippo/Library/Application Support/mkcert" 💥
+The local CA is now installed in the system trust store! ⚡️
+The local CA is now installed in the Firefox trust store (requires browser restart)! 🦊
+$ mkcert example.com "*.example.com" example.test localhost 127.0.0.1 ::1
+Using the local CA at "/Users/filippo/Library/Application Support/mkcert" ✨
+Created a new certificate valid for the following names 📜
+ - "example.com"
+ - "*.example.com"
+ - "example.test"
+ - "localhost"
+ - "127.0.0.1"
+ - "::1"
+The certificate is at "./example.com+5.pem" and the key at "./example.com+5-key.pem" ✅
+```
+You would simply have to adapt the `ttyd` commands below pointing to the right public and private key as well as the CA (if nessesary).
+
 Then start ttyd:
 
 ```bash
