@@ -1,0 +1,28 @@
+name: frontend
+
+on:
+  push:
+    paths:
+    - "html/*"
+  pull_request:
+    paths:
+    - "html/*"
+
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        node-version: [8.x, 10.x, 12.x]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: yarn install, check and build
+        run: |
+          cd html
+          yarn install
+          yarn run check
+          yarn run build
