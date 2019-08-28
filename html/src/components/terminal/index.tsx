@@ -8,9 +8,11 @@ import { WebLinksAddon } from 'xterm-addon-web-links';
 import { OverlayAddon } from './overlay';
 import { ZmodemAddon } from '../zmodem';
 
-import 'xterm/dist/xterm.css';
+import 'xterm/css/xterm.css';
 
-type TerminalExtended = Terminal & FitAddon;
+export interface TerminalExtended extends Terminal {
+    fit();
+}
 
 export interface WindowExtended extends Window {
     term: TerminalExtended;
@@ -121,7 +123,7 @@ export class Xterm extends Component<Props> {
         this.socket = new WebSocket(this.props.url, ['tty']);
         this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container, fitAddon, overlayAddon } = this;
-        window.term = terminal;
+        window.term = terminal as TerminalExtended;
         window.term.fit = () => {
             this.fitAddon.fit();
         };
