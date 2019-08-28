@@ -1,0 +1,16 @@
+name: release
+
+on:
+  push:
+    tags:
+    - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: build release archive
+        run: |
+          docker run --rm -v $(pwd):/ttyd -w /ttyd -e TTYD_VERSION=$GITHUB_SHA tsl0922/musl-cross ./scripts/cross-build.sh
+          ls -l bin
