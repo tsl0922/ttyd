@@ -82,7 +82,7 @@ if(WIN32)
     list(APPEND LINK_LIBS shell32)
 endif()
 
-option(SIMPLE_ACCESS_LOG "Only print clent ip in access log" OFF)
+option(SIMPLE_ACCESS_LOG "Only print client ip in access log" OFF)
 if (SIMPLE_ACCESS_LOG)
     add_definitions(-DSIMPLE_ACCESS_LOG)
     message(STATUS "Use SIMPLE_ACCESS_LOG")
