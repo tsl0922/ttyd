@@ -82,6 +82,12 @@ if(WIN32)
     list(APPEND LINK_LIBS shell32)
 endif()
 
+option(SIMPLE_ACCESS_LOG "Only print clent ip in access log" OFF)
+if (SIMPLE_ACCESS_LOG)
+    add_definitions(-DSIMPLE_ACCESS_LOG)
+    message(STATUS "Use SIMPLE_ACCESS_LOG")
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
