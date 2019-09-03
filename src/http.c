@@ -64,13 +64,12 @@ check_auth(struct lws *wsi, struct pss_http *pss) {
 void access_log(struct lws *wsi, const char *path) {
     char rip[50];
 
-#if LWS_LIBRARY_VERSION_MAJOR >=2 && LWS_LIBRARY_VERSION_MINOR >=4
-    struct lws *n_wsi = lws_get_network_wsi(wsi);
+#if LWS_LIBRARY_VERSION_MAJOR > 2 || (LWS_LIBRARY_VERSION_MAJOR ==2 && LWS_LIBRARY_VERSION_MINOR >=4)
+    lws_get_peer_simple(lws_get_network_wsi(wsi), rip, sizeof(rip));
 #else
-    struct lws *n_wsi = wsi;
+    char name[100];
+    lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
 #endif
-
-    lws_get_peer_simple(wsi, rip, sizeof(rip));
     lwsl_notice("HTTP %s - %s\n", path, rip);
 }
 

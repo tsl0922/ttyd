@@ -282,9 +282,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
             pthread_mutex_init(&client->mutex, NULL);
             pthread_cond_init(&client->cond, NULL);
-            lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
-                                   client->hostname, sizeof(client->hostname),
-                                   client->address, sizeof(client->address));
 
             pthread_mutex_lock(&server->mutex);
             LIST_INSERT_HEAD(&server->clients, client, list);
@@ -292,7 +289,14 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             pthread_mutex_unlock(&server->mutex);
 
             lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
-            lwsl_notice("WS   %s - %s (%s), clients: %d\n", buf, client->address, client->hostname, server->client_count);
+
+#if LWS_LIBRARY_VERSION_MAJOR > 2 || (LWS_LIBRARY_VERSION_MAJOR ==2 && LWS_LIBRARY_VERSION_MINOR >=4)
+            lws_get_peer_simple(lws_get_network_wsi(wsi), client->address, sizeof(client->address));
+#else
+            char name[100];
+            lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), client->address, sizeof(client->address));
+#endif
+            lwsl_notice("WS   %s - %s, clients: %d\n", buf, client->address, server->client_count);
             break;
 
         case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -411,7 +415,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_CLOSED:
             tty_client_destroy(client);
-            lwsl_notice("WS closed from %s (%s), clients: %d\n", client->address, client->hostname, server->client_count);
+            lwsl_notice("WS closed from %s, clients: %d\n", client->address, server->client_count);
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;

@@ -31,7 +31,6 @@ struct tty_client {
     bool initialized;
     int initial_cmd_index;
     bool authenticated;
-    char hostname[100];
     char address[50];
     char **args;
     int argc;
