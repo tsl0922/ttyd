@@ -64,7 +64,7 @@ set(HTML_HEADER
     ${CMAKE_SOURCE_DIR}/src/html.h)
 add_custom_command(OUTPUT ${HTML_HEADER}
         COMMAND ${CMAKE_XXD} -i index.html html.h
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
         DEPENDS ${CMAKE_SOURCE_DIR}/src/index.html
         COMMENT "Generating html.h from index.html")
 add_custom_target(htmlheader DEPENDS ${HTML_HEADER})
