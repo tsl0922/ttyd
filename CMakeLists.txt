@@ -60,11 +60,14 @@ find_package_handle_standard_args(JSON-C DEFAULT_MSG JSON-C_LIBRARY JSON-C_INCLU
 mark_as_advanced(JSON-C_INCLUDE_DIR JSON-C_LIBRARY)
 
 find_program(CMAKE_XXD NAMES xxd)
-add_custom_command(OUTPUT html.h
+set(HTML_HEADER
+    ${CMAKE_SOURCE_DIR}/src/html.h)
+add_custom_command(OUTPUT ${HTML_HEADER}
         COMMAND ${CMAKE_XXD} -i index.html html.h
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+        DEPENDS ${CMAKE_SOURCE_DIR}/src/index.html
         COMMENT "Generating html.h from index.html")
-list(APPEND SOURCE_FILES html.h)
+add_custom_target(htmlheader DEPENDS ${HTML_HEADER})
 
 set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR})
 set(LINK_LIBS pthread ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY})
@@ -83,6 +86,7 @@ if(WIN32)
 endif()
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_dependencies(${PROJECT_NAME} htmlheader)
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 target_compile_definitions(${PROJECT_NAME} PRIVATE TTYD_VERSION="${PROJECT_VERSION}")
