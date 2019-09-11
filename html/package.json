@@ -61,9 +61,9 @@
     "backoff": "^2.5.0",
     "decko": "^1.2.0",
     "preact": "^8.5.0",
-    "xterm": "^3.15.0-vscode1",
-    "xterm-addon-fit": "^0.1.0",
-    "xterm-addon-web-links": "^0.1.0-beta10",
+    "xterm": "^4.0.0",
+    "xterm-addon-fit": "^0.2.0",
+    "xterm-addon-web-links": "^0.2.0",
     "zmodem.js": "^0.1.9"
   }
 }
