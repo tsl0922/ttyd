@@ -161,9 +161,23 @@ cleanup:
 
     pthread_mutex_destroy(&client->mutex);
 
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+    lws_sul_schedule(context, 0, &client->sul_stagger, NULL, LWS_SET_TIMER_USEC_CANCEL);
+#endif
+
     // remove from client list
     tty_client_remove(client);
 }
+
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+void
+stagger_callback(lws_sorted_usec_list_t *sul) {
+    struct tty_client *client = lws_container_of(sul, struct tty_client, sul_stagger);
+
+    lws_callback_on_writable(client->wsi);
+    lws_sul_schedule(context, 0, sul, stagger_callback, 10 * LWS_US_PER_MS);
+}
+#endif
 
 void *
 thread_run_command(void *args) {
@@ -357,6 +371,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             // check if there are more fragmented messages
             if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
                 return 0;
+            } else {
+                #if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+                lws_sul_schedule(context, 0, &client->sul_stagger, stagger_callback, 10);
+                #endif
             }
 
             switch (command) {

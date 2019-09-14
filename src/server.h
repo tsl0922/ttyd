@@ -36,6 +36,9 @@ struct tty_client {
     int argc;
 
     struct lws *wsi;
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+    lws_sorted_usec_list_t sul_stagger;
+#endif
     struct winsize size;
     char *buffer;
     size_t len;
