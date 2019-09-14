@@ -18,6 +18,10 @@
 #define TTYD_VERSION "unknown"
 #endif
 
+#if LWS_LIBRARY_VERSION_NUMBER == 3002000
+#error "libwebsockets 3.2.0 is not compatible with ttyd."
+#endif
+
 volatile bool force_exit = false;
 struct lws_context *context;
 struct tty_server *server;
