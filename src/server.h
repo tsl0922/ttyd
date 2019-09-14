@@ -50,6 +50,10 @@ struct tty_client {
     pthread_cond_t cond;
 
     LIST_ENTRY(tty_client) list;
+
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+    lws_sorted_usec_list_t sul_stagger;
+#endif
 };
 
 struct pss_http {
