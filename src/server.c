@@ -186,6 +186,14 @@ sigchld_handler() {
     int status = wait_proc(-1, &pid);
     if (pid > 0) {
         lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
+        struct tty_client *iterator;
+        LIST_FOREACH(iterator, &server->clients, list) {
+            if (iterator->pid == pid) {
+                iterator->running = false;
+                iterator->exit_status = status;
+                break;
+            }
+        }
     }
 }
 

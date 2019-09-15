@@ -44,6 +44,7 @@ struct tty_client {
 
     int pid;
     int pty;
+    int exit_status;
     enum pty_state state;
     char pty_buffer[LWS_PRE + 1 + BUF_SIZE];
     ssize_t pty_len;

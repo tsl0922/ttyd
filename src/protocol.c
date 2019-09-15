@@ -133,9 +133,9 @@ tty_client_destroy(struct tty_client *client) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
     pid_t pid_out;
-    int status = wait_proc(client->pid, &pid_out);
+    client->exit_status = wait_proc(client->pid, &pid_out);
     if (pid_out > 0) {
-        lwsl_notice("process exited with code %d, pid: %d\n", status, pid_out);
+        lwsl_notice("process exited with code %d, pid: %d\n", client->exit_status, pid_out);
     }
     close(client->pty);
 
@@ -196,7 +196,14 @@ spawn_process(struct tty_client *client) {
 
 void
 tty_client_poll(struct tty_client *client) {
-    if (!client->running || client->state == STATE_READY) return;
+    if (client->pid <= 0 || client->state == STATE_READY) return;
+
+    if (!client->running) {
+        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
+        client->pty_len = client->exit_status;
+        client->state = STATE_READY;
+        return;
+    }
 
     fd_set des_set;
     FD_ZERO (&des_set);
@@ -372,9 +379,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                             return -1;
                         }
                     }
-                    if (spawn_process(client) != 0) {
-                        return 1;
-                    }
+                    if (spawn_process(client) != 0) return 1;
                     break;
                 default:
                     lwsl_warn("ignored unknown message type: %c\n", command);
