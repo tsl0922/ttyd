@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <stdbool.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
@@ -48,9 +47,6 @@ struct tty_client {
     enum pty_state state;
     char pty_buffer[LWS_PRE + 1 + BUF_SIZE];
     ssize_t pty_len;
-    pthread_t thread;
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
 
     LIST_ENTRY(tty_client) list;
 };
@@ -80,7 +76,6 @@ struct tty_server {
     bool once;                                // whether accept only one client and exit on disconnection
     char socket_path[255];                    // UNIX domain socket path
     char terminal_type[30];                   // terminal type to report
-    pthread_mutex_t mutex;
 };
 
 extern int
@@ -89,3 +84,5 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
 extern int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
+extern void
+tty_client_poll(struct tty_client *client);

@@ -61,10 +61,11 @@ check_auth(struct lws *wsi, struct pss_http *pss) {
     return AUTH_FAIL;
 }
 
-void access_log(struct lws *wsi, const char *path) {
+void
+access_log(struct lws *wsi, const char *path) {
     char rip[50];
 
-#if LWS_LIBRARY_VERSION_MAJOR > 2 || (LWS_LIBRARY_VERSION_MAJOR ==2 && LWS_LIBRARY_VERSION_MINOR >=4)
+#if LWS_LIBRARY_VERSION_NUMBER >= 2004000
     lws_get_peer_simple(lws_get_network_wsi(wsi), rip, sizeof(rip));
 #else
     char name[100];

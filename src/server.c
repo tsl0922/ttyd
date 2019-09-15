@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#include <pthread.h>
 #include <signal.h>
 #include <sys/stat.h>
 
@@ -165,7 +164,6 @@ tty_server_free(struct tty_server *ts) {
             unlink(ts->socket_path);
         }
     }
-    pthread_mutex_destroy(&ts->mutex);
     free(ts);
 }
 
@@ -229,6 +227,15 @@ calc_command_start(int argc, char **argv) {
     return start;
 }
 
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+void
+stagger_callback(lws_sorted_usec_list_t *sul) {
+    struct tty_client *client = lws_container_of(sul, struct tty_client, sul_stagger);
+
+    lws_callback_on_writable(client->wsi);
+}
+#endif
+
 int
 main(int argc, char **argv) {
     if (argc == 1) {
@@ -238,7 +245,6 @@ main(int argc, char **argv) {
 
     int start = calc_command_start(argc, argv);
     server = tty_server_new(argc, argv, start);
-    pthread_mutex_init(&server->mutex, NULL);
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -476,26 +482,20 @@ main(int argc, char **argv) {
         open_uri(url);
     }
 
-    // libwebsockets main loop
     while (!force_exit) {
-        pthread_mutex_lock(&server->mutex);
         if (!LIST_EMPTY(&server->clients)) {
             struct tty_client *client;
             LIST_FOREACH(client, &server->clients, list) {
-                if (client->running && pthread_mutex_trylock(&client->mutex) == 0) {
-                    if (client->state != STATE_DONE)
-                        lws_callback_on_writable(client->wsi);
-                    else
-                        pthread_cond_signal(&client->cond);
-                    pthread_mutex_unlock(&client->mutex);
-                }
+                tty_client_poll(client);
+#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
+                lws_sul_schedule(context, 0, &client->sul_stagger, stagger_callback, 0);
+#else
+                lws_callback_on_writable(client->wsi);
+#endif
             }
         }
-        pthread_mutex_unlock(&server->mutex);
-        lws_service(context, 10);
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-        usleep(10 * LWS_US_PER_MS);
-#endif
+        lws_service(context, 0);
+        usleep(10 * 1000); // 10ms
     }
 
     lws_context_destroy(context);

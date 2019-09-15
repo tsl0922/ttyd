@@ -7,9 +7,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <pthread.h>
 
 #if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
@@ -111,7 +108,6 @@ check_host_origin(struct lws *wsi) {
 
 void
 tty_client_remove(struct tty_client *client) {
-    pthread_mutex_lock(&server->mutex);
     struct tty_client *iterator;
     LIST_FOREACH(iterator, &server->clients, list) {
         if (iterator == client) {
@@ -120,7 +116,6 @@ tty_client_remove(struct tty_client *client) {
             break;
         }
     }
-    pthread_mutex_unlock(&server->mutex);
 }
 
 void
@@ -129,12 +124,6 @@ tty_client_destroy(struct tty_client *client) {
         goto cleanup;
 
     client->running = false;
-
-    if (pthread_mutex_trylock(&client->mutex) == 0) {
-        client->state = STATE_DONE;
-        pthread_cond_signal(&client->cond);
-        pthread_mutex_unlock(&client->mutex);
-    }
 
     // kill process (group) and free resource
     int pgid = getpgid(client->pid);
@@ -159,8 +148,6 @@ cleanup:
         free(client->args[i]);
     }
 
-    pthread_mutex_destroy(&client->mutex);
-
 #if LWS_LIBRARY_VERSION_NUMBER >= 3002000
     lws_sul_schedule(context, 0, &client->sul_stagger, NULL, LWS_SET_TIMER_USEC_CANCEL);
 #endif
@@ -169,20 +156,8 @@ cleanup:
     tty_client_remove(client);
 }
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-void
-stagger_callback(lws_sorted_usec_list_t *sul) {
-    struct tty_client *client = lws_container_of(sul, struct tty_client, sul_stagger);
-
-    lws_callback_on_writable(client->wsi);
-    lws_sul_schedule(context, 0, sul, stagger_callback, 10 * LWS_US_PER_MS);
-}
-#endif
-
-void *
-thread_run_command(void *args) {
-    struct tty_client *client = (struct tty_client *) args;
-
+int
+spawn_process(struct tty_client *client) {
     // append url args to arguments
     char *argv[server->argc + client->argc + 1];
     int i, n = 0;
@@ -195,11 +170,10 @@ thread_run_command(void *args) {
     argv[n] = NULL;
 
     int pty;
-    fd_set des_set;
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
     if (pid < 0) { /* error */
         lwsl_err("forkpty failed: %d (%s)\n", errno, strerror(errno));
-        pthread_exit((void *) 1);
+        return 1;
     } else if (pid == 0) { /* child */
         setenv("TERM", server->terminal_type, true);
         // Don't pass the web socket onto child processes
@@ -217,32 +191,24 @@ thread_run_command(void *args) {
     if (client->size.ws_row > 0 && client->size.ws_col > 0)
         ioctl(client->pty, TIOCSWINSZ, &client->size);
 
-    while (client->running) {
-        FD_ZERO (&des_set);
-        FD_SET (pty, &des_set);
-        struct timeval tv = { 1, 0 };
-        int ret = select(pty + 1, &des_set, NULL, NULL, &tv);
-        if (ret == 0) continue;
-        if (ret < 0) break;
+    return 0;
+}
 
-        if (FD_ISSET (pty, &des_set)) {
-            while (client->running) {
-                pthread_mutex_lock(&client->mutex);
-                while (client->state == STATE_READY) {
-                    pthread_cond_wait(&client->cond, &client->mutex);
-                }
-                memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
-                client->pty_len = read(pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
-                client->state = STATE_READY;
-                pthread_mutex_unlock(&client->mutex);
-                break;
-            }
-        }
+void
+tty_client_poll(struct tty_client *client) {
+    if (!client->running || client->state == STATE_READY) return;
 
-        if (client->pty_len <= 0) break;
+    fd_set des_set;
+    FD_ZERO (&des_set);
+    FD_SET (client->pty, &des_set);
+    struct timeval tv = { 0, 0 };
+    if (select(client->pty + 1, &des_set, NULL, NULL, &tv) <= 0) return;
+
+    if (FD_ISSET (client->pty, &des_set)) {
+        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
+        client->pty_len = read(client->pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
+        client->state = STATE_READY;
     }
-
-    pthread_exit((void *) 0);
 }
 
 int
@@ -294,17 +260,12 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 }
             }
 
-            pthread_mutex_init(&client->mutex, NULL);
-            pthread_cond_init(&client->cond, NULL);
-
-            pthread_mutex_lock(&server->mutex);
             LIST_INSERT_HEAD(&server->clients, client, list);
             server->client_count++;
-            pthread_mutex_unlock(&server->mutex);
 
             lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
 
-#if LWS_LIBRARY_VERSION_MAJOR > 2 || (LWS_LIBRARY_VERSION_MAJOR ==2 && LWS_LIBRARY_VERSION_MINOR >=4)
+#if LWS_LIBRARY_VERSION_NUMBER >= 2004000
             lws_get_peer_simple(lws_get_network_wsi(wsi), client->address, sizeof(client->address));
 #else
             char name[100];
@@ -328,8 +289,9 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_callback_on_writable(wsi);
                 break;
             }
-            if (client->state != STATE_READY)
+            if (client->state != STATE_READY) {
                 break;
+            }
 
             // read error or client exited, close connection
             if (client->pty_len == 0) {
@@ -371,10 +333,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             // check if there are more fragmented messages
             if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
                 return 0;
-            } else {
-                #if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-                lws_sul_schedule(context, 0, &client->sul_stagger, stagger_callback, 10);
-                #endif
             }
 
             switch (command) {
@@ -414,9 +372,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                             return -1;
                         }
                     }
-                    int err = pthread_create(&client->thread, NULL, thread_run_command, client);
-                    if (err != 0) {
-                        lwsl_err("pthread_create return: %d\n", err);
+                    if (spawn_process(client) != 0) {
                         return 1;
                     }
                     break;
