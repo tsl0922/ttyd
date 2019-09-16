@@ -47,7 +47,7 @@ clone the repo at [https://bitbucket.org/mgpagano/ttyd/src/master/](https://bitb
 - Install on FreeBSD:
 
     ```bash
-    sudo apt-get install cmake gcc git vim libwebsockets libjson++
+    sudo pkg install cmake gcc git vim libwebsockets libjson++
     git clone https://github.com/tsl0922/ttyd.git
     cd ttyd && mkdir build && cd build
     cmake ..
