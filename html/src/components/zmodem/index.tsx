@@ -70,6 +70,8 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
             this.keyDispose.dispose();
             this.keyDispose = null;
         }
+
+        this.terminal.focus();
     }
 
     @bind
