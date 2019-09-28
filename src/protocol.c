@@ -176,12 +176,20 @@ spawn_process(struct tty_client *client) {
         return 1;
     } else if (pid == 0) { /* child */
         setenv("TERM", server->terminal_type, true);
-        // Don't pass the web socket onto child processes
+#if LWS_LIBRARY_VERSION_NUMBER < 3001000
+        // libwebsockets set FD_CLOEXEC since v3.1.0
         close(lws_get_socket_fd(client->wsi));
+#endif
         if (execvp(argv[0], argv) < 0) {
             perror("execvp failed\n");
             _exit(-errno);
         }
+    }
+
+    // set the file descriptor close-on-exec
+    int status_flags = fcntl(pty, F_GETFL);
+    if (status_flags != -1) {
+        fcntl(pty, F_SETFD, status_flags | FD_CLOEXEC);
     }
 
     lwsl_notice("started process, pid: %d\n", pid);
