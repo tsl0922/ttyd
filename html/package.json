@@ -60,7 +60,7 @@
   "dependencies": {
     "backoff": "^2.5.0",
     "decko": "^1.2.0",
-    "preact": "^8.5.0",
+    "preact": "^10.0.0",
     "xterm": "^4.0.2",
     "xterm-addon-fit": "^0.2.1",
     "xterm-addon-web-links": "^0.2.1",
