@@ -21,7 +21,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install build-essential cmake libjson-c-dev libssl-dev
-      - name: compile libwebsockets-${{ matrix.node-version }} from source
+      - name: compile libwebsockets-${{ matrix.lws-version }} from source
         env:
           LWS_VERSION: ${{ matrix.lws-version }}
         run: |
