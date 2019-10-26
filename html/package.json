@@ -60,9 +60,9 @@
   "dependencies": {
     "backoff": "^2.5.0",
     "decko": "^1.2.0",
-    "preact": "^8.5.0",
-    "xterm": "^4.0.2",
-    "xterm-addon-fit": "^0.2.1",
+    "preact": "^10.0.1",
+    "xterm": "^4.2.0",
+    "xterm-addon-fit": "^0.3.0",
     "xterm-addon-web-links": "^0.2.1",
     "zmodem.js": "^0.1.9"
   }

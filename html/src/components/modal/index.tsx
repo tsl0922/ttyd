@@ -1,4 +1,4 @@
-import { Component, ComponentChildren, h } from 'preact';
+import { h, Component, ComponentChildren } from 'preact';
 
 import './modal.scss';
 

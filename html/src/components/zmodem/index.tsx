@@ -1,5 +1,5 @@
 import { bind } from 'decko';
-import { Component, h } from 'preact';
+import { h, Component } from 'preact';
 import { IDisposable, ITerminalAddon, Terminal } from 'xterm';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 

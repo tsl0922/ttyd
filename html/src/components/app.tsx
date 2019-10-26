@@ -1,4 +1,4 @@
-import { Component, h } from 'preact';
+import { h, Component } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
 import { Xterm } from './terminal';
