@@ -503,7 +503,6 @@ main(int argc, char **argv) {
             }
         }
         lws_service(context, 0);
-        usleep(10 * 1000); // 10ms
     }
 
     lws_context_destroy(context);

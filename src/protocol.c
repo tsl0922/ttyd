@@ -216,7 +216,7 @@ tty_client_poll(struct tty_client *client) {
     fd_set des_set;
     FD_ZERO (&des_set);
     FD_SET (client->pty, &des_set);
-    struct timeval tv = { 0, 0 };
+    struct timeval tv = { 0, 5000 }; // 5ms
     if (select(client->pty + 1, &des_set, NULL, NULL, &tv) <= 0) return;
 
     if (FD_ISSET (client->pty, &des_set)) {
