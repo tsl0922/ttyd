@@ -1,5 +1,6 @@
 import { bind } from 'decko';
 import { h, Component } from 'preact';
+import { saveAs } from 'file-saver';
 import { IDisposable, ITerminalAddon, Terminal } from 'xterm';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
@@ -76,7 +77,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private zmodemWrite(data: ArrayBuffer): void {
-        this.terminal.writeUtf8(new Uint8Array(data));
+        this.terminal.write(new Uint8Array(data));
     }
 
     @bind
@@ -132,7 +133,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
             });
             offer
                 .accept()
-                .then(() => Zmodem.Browser.save_to_disk(fileBuffer, offer.get_details().name))
+                .then(() => {
+                    const blob = new Blob(fileBuffer, { type: 'application/octet-stream' });
+                    saveAs(blob, offer.get_details().name);
+                })
                 .catch(e => handleError(e, 'receive'));
         });
 
