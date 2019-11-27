@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
+#include <uv.h>
 
 // client message
 #define INPUT '0'
@@ -15,15 +16,9 @@
 // websocket url path
 #define WS_PATH "/ws"
 
-#define BUF_SIZE 32768 // 32K
-
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct tty_server *server;
-
-enum pty_state {
-    STATE_INIT, STATE_READY, STATE_DONE
-};
 
 struct tty_client {
     bool running;
@@ -35,9 +30,6 @@ struct tty_client {
     int argc;
 
     struct lws *wsi;
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-    lws_sorted_usec_list_t sul_stagger;
-#endif
     struct winsize size;
     char *buffer;
     size_t len;
@@ -45,9 +37,10 @@ struct tty_client {
     int pid;
     int pty;
     int exit_status;
-    enum pty_state state;
-    char pty_buffer[LWS_PRE + 1 + BUF_SIZE];
+    char *pty_buffer;
     ssize_t pty_len;
+
+    uv_pipe_t pipe;
 
     LIST_ENTRY(tty_client) list;
 };
@@ -77,6 +70,7 @@ struct tty_server {
     bool once;                                // whether accept only one client and exit on disconnection
     char socket_path[255];                    // UNIX domain socket path
     char terminal_type[30];                   // terminal type to report
+    uv_loop_t *loop;                          // the libuv event loop
 };
 
 extern int
@@ -85,5 +79,3 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
 extern int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
-extern void
-tty_client_poll(struct tty_client *client);

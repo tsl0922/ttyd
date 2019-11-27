@@ -20,7 +20,7 @@ jobs:
       - name: install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential cmake libjson-c-dev libssl-dev
+          sudo apt-get install build-essential cmake libjson-c-dev libssl-dev libuv1-dev
       - name: compile libwebsockets-${{ matrix.lws-version }} from source
         env:
           LWS_VERSION: ${{ matrix.lws-version }}
@@ -28,7 +28,7 @@ jobs:
           cd $(mktemp -d)
           curl -sLo- https://github.com/warmcat/libwebsockets/archive/v${LWS_VERSION}.tar.gz | tar xz
           cd libwebsockets-${LWS_VERSION}
-          cmake -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
+          cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
           make && sudo make install
       - uses: actions/checkout@v1
       - name: build ttyd

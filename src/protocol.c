@@ -140,20 +140,49 @@ tty_client_destroy(struct tty_client *client) {
     close(client->pty);
 
 cleanup:
+    uv_read_stop((uv_stream_t *) &client->pipe);
+
     // free the buffer
     if (client->buffer != NULL)
         free(client->buffer);
+    if (client->pty_buffer != NULL)
+        free(client->pty_buffer);
 
     for (int i = 0; i < client->argc; i++) {
         free(client->args[i]);
     }
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-    lws_sul_schedule(context, 0, &client->sul_stagger, NULL, LWS_SET_TIMER_USEC_CANCEL);
-#endif
-
     // remove from client list
     tty_client_remove(client);
+}
+
+void
+alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    buf->base = xmalloc(suggested_size);
+    buf->len = suggested_size;
+}
+
+void
+read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+    struct tty_client *client = (struct tty_client *) stream->data;
+    client->pty_len = nread;
+
+    if (nread <= 0) {
+        if (nread == UV_ENOBUFS || nread == 0)
+            return;
+        if (nread == UV_EOF)
+            client->pty_len = 0;
+        else
+            lwsl_err("read_cb: %s\n", uv_err_name(nread));
+        client->pty_buffer = NULL;
+    } else {
+        client->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t ) nread);
+        memcpy(client->pty_buffer + LWS_PRE + 1, buf->base, (size_t ) nread);
+    }
+    free(buf->base);
+
+    lws_callback_on_writable(client->wsi);
+    uv_read_stop(stream);
 }
 
 int
@@ -199,31 +228,12 @@ spawn_process(struct tty_client *client) {
     if (client->size.ws_row > 0 && client->size.ws_col > 0)
         ioctl(client->pty, TIOCSWINSZ, &client->size);
 
+    client->pipe.data = client;
+    uv_pipe_open(&client->pipe, pty);
+
+    lws_callback_on_writable(client->wsi);
+
     return 0;
-}
-
-void
-tty_client_poll(struct tty_client *client) {
-    if (client->pid <= 0 || client->state == STATE_READY) return;
-
-    if (!client->running) {
-        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
-        client->pty_len = client->exit_status;
-        client->state = STATE_READY;
-        return;
-    }
-
-    fd_set des_set;
-    FD_ZERO (&des_set);
-    FD_SET (client->pty, &des_set);
-    struct timeval tv = { 0, 5000 }; // 5ms
-    if (select(client->pty + 1, &des_set, NULL, NULL, &tv) <= 0) return;
-
-    if (FD_ISSET (client->pty, &des_set)) {
-        memset(client->pty_buffer, 0, sizeof(client->pty_buffer));
-        client->pty_len = read(client->pty, client->pty_buffer + LWS_PRE + 1, BUF_SIZE);
-        client->state = STATE_READY;
-    }
 }
 
 int
@@ -261,9 +271,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->authenticated = false;
             client->wsi = wsi;
             client->buffer = NULL;
-            client->state = STATE_INIT;
             client->pty_len = 0;
             client->argc = 0;
+
+            uv_pipe_init(server->loop, &client->pipe, 0);
 
             if (server->url_arg) {
                 while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
@@ -293,6 +304,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             if (!client->initialized) {
                 if (client->initial_cmd_index == sizeof(initial_cmds)) {
                     client->initialized = true;
+                    uv_read_start((uv_stream_t *)& client->pipe, alloc_cb, read_cb);
                     break;
                 }
                 if (send_initial_message(wsi, client->initial_cmd_index) < 0) {
@@ -302,9 +314,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 }
                 client->initial_cmd_index++;
                 lws_callback_on_writable(wsi);
-                break;
-            }
-            if (client->state != STATE_READY) {
                 break;
             }
 
@@ -318,12 +327,17 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 return -1;
             }
 
+            if (client->pty_buffer == NULL)
+                break;
+
             client->pty_buffer[LWS_PRE] = OUTPUT;
             n = (size_t) (client->pty_len + 1);
             if (lws_write(wsi, (unsigned char *) client->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
-                lwsl_err("write data to WS\n");
+                lwsl_err("write OUTPUT to WS\n");
             }
-            client->state = STATE_DONE;
+            free(client->pty_buffer);
+            client->pty_buffer = NULL;
+            uv_read_start((uv_stream_t *)& client->pipe, alloc_cb, read_cb);
             break;
 
         case LWS_CALLBACK_RECEIVE:
@@ -356,9 +370,10 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         break;
                     if (server->readonly)
                         return 0;
-                    if (write(client->pty, client->buffer + 1, client->len - 1) == -1) {
-                        lwsl_err("write INPUT to pty: %d (%s)\n", errno, strerror(errno));
-                        lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
+                    uv_buf_t b = { client->buffer + 1, client->len - 1 };
+                    int err = uv_try_write((uv_stream_t *) &client->pipe, &b, 1);
+                    if (err < 0) {
+                        lwsl_err("uv_try_write: %s\n", uv_err_name(err));
                         return -1;
                     }
                     break;
@@ -401,8 +416,8 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_CLOSED:
-            tty_client_destroy(client);
             lwsl_notice("WS closed from %s, clients: %d\n", client->address, server->client_count);
+            tty_client_destroy(client);
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;

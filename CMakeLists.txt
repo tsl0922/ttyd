@@ -59,6 +59,14 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(JSON-C DEFAULT_MSG JSON-C_LIBRARY JSON-C_INCLUDE_DIR)
 mark_as_advanced(JSON-C_INCLUDE_DIR JSON-C_LIBRARY)
 
+pkg_check_modules(LIBUV REQUIRED libuv>=1.0.0)
+find_path(LIBUV_INCLUDE_DIR NAMES uv.h
+        HINTS ${LIBUV_INCLUDEDIRS} ${LIBUV_INCLUDEDIR})
+find_library(LIBUV_LIBRARY NAMES uv libuv
+        HINTS ${LIBUV_LIBRARY_DIRS} ${LIBUV_LIBDIR})
+find_package_handle_standard_args(LIBUV DEFAULT_MSG LIBUV_LIBRARY LIBUV_INCLUDE_DIR)
+mark_as_advanced(LIBUV_INCLUDE_DIR LIBUV_LIBRARY)
+
 find_program(CMAKE_XXD NAMES xxd)
 add_custom_command(OUTPUT html.h
         COMMAND ${CMAKE_XXD} -i index.html html.h
@@ -66,8 +74,8 @@ add_custom_command(OUTPUT html.h
         COMMENT "Generating html.h from index.html")
 list(APPEND SOURCE_FILES html.h)
 
-set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR})
-set(LINK_LIBS ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY})
+set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR} ${LIBUV_INCLUDE_DIR})
+set(LINK_LIBS ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY} ${LIBUV_LIBRARY})
 
 if(APPLE)
     # required for the new homebrew version of libwebsockets

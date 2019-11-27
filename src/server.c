@@ -140,6 +140,9 @@ tty_server_new(int argc, char **argv, int start) {
     }
     *ptr = '\0'; // null terminator
 
+    ts->loop = xmalloc(sizeof *ts->loop);
+    uv_loop_init(ts->loop);
+
     return ts;
 }
 
@@ -164,37 +167,52 @@ tty_server_free(struct tty_server *ts) {
             unlink(ts->socket_path);
         }
     }
+    uv_loop_close(ts->loop);
+    free(ts->loop);
     free(ts);
 }
 
 void
-sig_handler(int sig) {
+signal_cb(uv_signal_t *watcher, int signum) {
+    char sig_name[20];
+    pid_t pid;
+    int status;
+
+    switch (watcher->signum) {
+        case SIGINT:
+        case SIGTERM:
+            get_sig_name(watcher->signum, sig_name, sizeof(sig_name));
+            lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
+            break;
+        case SIGCHLD:
+            status = wait_proc(-1, &pid);
+            if (pid > 0) {
+                lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
+                struct tty_client *iterator;
+                LIST_FOREACH(iterator, &server->clients, list) {
+                    if (iterator->pid == pid) {
+                        iterator->running = false;
+                        iterator->exit_status = status;
+                        break;
+                    }
+                }
+            }
+            return;
+        default:
+            signal(SIGABRT, SIG_DFL);
+            abort();
+    }
+
     if (force_exit)
         exit(EXIT_FAILURE);
-
-    char sig_name[20];
-    get_sig_name(sig, sig_name, sizeof(sig_name));
-    lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, sig);
     force_exit = true;
     lws_cancel_service(context);
+#if LWS_LIBRARY_VERSION_MAJOR < 3
+    lws_libuv_stop(context);
+#else
+    uv_stop(server->loop);
+#endif
     lwsl_notice("send ^C to force exit.\n");
-}
-
-void
-sigchld_handler() {
-    pid_t pid;
-    int status = wait_proc(-1, &pid);
-    if (pid > 0) {
-        lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
-        struct tty_client *iterator;
-        LIST_FOREACH(iterator, &server->clients, list) {
-            if (iterator->pid == pid) {
-                iterator->running = false;
-                iterator->exit_status = status;
-                break;
-            }
-        }
-    }
 }
 
 int
@@ -235,15 +253,6 @@ calc_command_start(int argc, char **argv) {
     return start;
 }
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-void
-stagger_callback(lws_sorted_usec_list_t *sul) {
-    struct tty_client *client = lws_container_of(sul, struct tty_client, sul_stagger);
-
-    lws_callback_on_writable(client->wsi);
-}
-#endif
-
 int
 main(int argc, char **argv) {
     if (argc == 1) {
@@ -264,7 +273,7 @@ main(int argc, char **argv) {
     info.gid = -1;
     info.uid = -1;
     info.max_http_header_pool = 16;
-    info.options = LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
+    info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
     info.extensions = extensions;
     info.max_http_header_data = 20480;
 
@@ -474,9 +483,11 @@ main(int argc, char **argv) {
         lwsl_notice("  custom index.html: %s\n", server->index);
     }
 
-    signal(SIGINT, sig_handler);  // ^C
-    signal(SIGTERM, sig_handler); // kill
-    signal(SIGCHLD, sigchld_handler);
+#if LWS_LIBRARY_VERSION_MAJOR >= 3
+    void *foreign_loops[1];
+    foreign_loops[0] = server->loop;
+    info.foreign_loops = foreign_loops;
+#endif
 
     context = lws_create_context(&info);
     if (context == NULL) {
@@ -490,20 +501,29 @@ main(int argc, char **argv) {
         open_uri(url);
     }
 
-    while (!force_exit) {
-        if (!LIST_EMPTY(&server->clients)) {
-            struct tty_client *client;
-            LIST_FOREACH(client, &server->clients, list) {
-                tty_client_poll(client);
-#if LWS_LIBRARY_VERSION_NUMBER >= 3002000
-                lws_sul_schedule(context, 0, &client->sul_stagger, stagger_callback, 0);
-#else
-                lws_callback_on_writable(client->wsi);
-#endif
-            }
-        }
-        lws_service(context, 10);
+#if LWS_LIBRARY_VERSION_MAJOR >= 3
+    int sig_nums[] = {SIGINT, SIGTERM, SIGCHLD};
+    int ns = sizeof(sig_nums)/sizeof(sig_nums[0]);
+    uv_signal_t signals[ns];
+    for (int i = 0; i < ns; i++) {
+        uv_signal_init(server->loop, &signals[i]);
+        uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
     }
+
+    lws_service(context, 0);
+
+    for (int i = 0; i < ns; i++) {
+        uv_signal_stop(&signals[i]);
+    }
+#else
+#if LWS_LIBRARY_VERSION_MAJOR < 2
+    lws_uv_initloop(context, server->loop, signal_cb, 0);
+#else
+    lws_uv_sigint_cfg(context, 1, signal_cb);
+    lws_uv_initloop(context, server->loop, 0);
+#endif
+    lws_libuv_run(context, 0);
+#endif
 
     lws_context_destroy(context);
 
