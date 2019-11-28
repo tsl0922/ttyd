@@ -502,7 +502,7 @@ main(int argc, char **argv) {
 #endif
             }
         }
-        lws_service(context, 0);
+        lws_service(context, 10);
     }
 
     lws_context_destroy(context);
