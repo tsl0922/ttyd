@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <sys/queue.h>
 
 #if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
@@ -107,40 +106,23 @@ check_host_origin(struct lws *wsi) {
 }
 
 void
-tty_client_remove(struct tty_client *client) {
-    struct tty_client *iterator;
-    LIST_FOREACH(iterator, &server->clients, list) {
-        if (iterator == client) {
-            LIST_REMOVE(iterator, list);
-            server->client_count--;
-            break;
-        }
-    }
-}
-
-void
 tty_client_destroy(struct tty_client *client) {
-    if (!client->running || client->pid <= 0)
+    if (client->pid <= 0)
         goto cleanup;
-
-    client->running = false;
 
     // kill process (group) and free resource
     int pgid = getpgid(client->pid);
     int pid = pgid > 0 ? -pgid : client->pid;
-    lwsl_notice("sending %s (%d) to process (group) %d\n", server->sig_name, server->sig_code, pid);
     if (kill(pid, server->sig_code) != 0) {
+        if (errno == ESRCH)
+            goto cleanup;
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
-    pid_t pid_out;
-    client->exit_status = wait_proc(client->pid, &pid_out);
-    if (pid_out > 0) {
-        lwsl_notice("process exited with code %d, pid: %d\n", client->exit_status, pid_out);
-    }
-    close(client->pty);
 
 cleanup:
     uv_read_stop((uv_stream_t *) &client->pipe);
+
+    close(client->pty);
 
     // free the buffer
     if (client->buffer != NULL)
@@ -151,9 +133,6 @@ cleanup:
     for (int i = 0; i < client->argc; i++) {
         free(client->args[i]);
     }
-
-    // remove from client list
-    tty_client_remove(client);
 }
 
 void
@@ -224,7 +203,6 @@ spawn_process(struct tty_client *client) {
     lwsl_notice("started process, pid: %d\n", pid);
     client->pid = pid;
     client->pty = pty;
-    client->running = true;
     if (client->size.ws_row > 0 && client->size.ws_col > 0)
         ioctl(client->pty, TIOCSWINSZ, &client->size);
 
@@ -265,7 +243,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_ESTABLISHED:
-            client->running = false;
             client->initialized = false;
             client->initial_cmd_index = 0;
             client->authenticated = false;
@@ -286,7 +263,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 }
             }
 
-            LIST_INSERT_HEAD(&server->clients, client, list);
             server->client_count++;
 
             lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
@@ -416,6 +392,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_CLOSED:
+            server->client_count--;
             lwsl_notice("WS closed from %s, clients: %d\n", client->address, server->client_count);
             tty_client_destroy(client);
             if (server->once && server->client_count == 0) {

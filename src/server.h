@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <sys/ioctl.h>
-#include <sys/queue.h>
 #include <uv.h>
 
 // client message
@@ -21,7 +20,6 @@ extern struct lws_context *context;
 extern struct tty_server *server;
 
 struct tty_client {
-    bool running;
     bool initialized;
     int initial_cmd_index;
     bool authenticated;
@@ -41,8 +39,6 @@ struct tty_client {
     ssize_t pty_len;
 
     uv_pipe_t pipe;
-
-    LIST_ENTRY(tty_client) list;
 };
 
 struct pss_http {
@@ -53,7 +49,6 @@ struct pss_http {
 };
 
 struct tty_server {
-    LIST_HEAD(client, tty_client) clients;    // client list
     int client_count;                         // client count
     char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential

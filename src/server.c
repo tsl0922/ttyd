@@ -109,7 +109,6 @@ tty_server_new(int argc, char **argv, int start) {
     ts = xmalloc(sizeof(struct tty_server));
 
     memset(ts, 0, sizeof(struct tty_server));
-    LIST_INIT(&ts->clients);
     ts->client_count = 0;
     ts->sig_code = SIGHUP;
     sprintf(ts->terminal_type, "%s", "xterm-256color");
@@ -188,14 +187,6 @@ signal_cb(uv_signal_t *watcher, int signum) {
             status = wait_proc(-1, &pid);
             if (pid > 0) {
                 lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
-                struct tty_client *iterator;
-                LIST_FOREACH(iterator, &server->clients, list) {
-                    if (iterator->pid == pid) {
-                        iterator->running = false;
-                        iterator->exit_status = status;
-                        break;
-                    }
-                }
             }
             return;
         default:
