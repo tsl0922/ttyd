@@ -14,6 +14,7 @@ addons:
       - cmake
       - libjson-c-dev
       - libssl-dev
+      - libuv1-dev
 install:
   - yarn --cwd ./html install
   - yarn --cwd ./html run check
@@ -22,7 +23,7 @@ install:
     pushd /tmp
       curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz
       cd libwebsockets-$LIBWEBSOCKETS_VERSION
-      cmake -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
+      cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
       make && sudo make install
     popd
 script: |
