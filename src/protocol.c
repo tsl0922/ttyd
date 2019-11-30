@@ -108,6 +108,7 @@ check_host_origin(struct lws *wsi) {
 void
 pss_tty_free(struct pss_tty *pss) {
     uv_read_stop((uv_stream_t *) &pss->pipe);
+    uv_close((uv_handle_t*) &pss->pipe, NULL);
     uv_signal_stop(&pss->watcher);
 
     close(pss->pty);
@@ -324,7 +325,6 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
                 return 1;
             } else if (pss->pty_len < 0) {
-                lwsl_err("read error: %d (%s)\n", errno, strerror(errno));
                 lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                 return -1;
             }
