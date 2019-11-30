@@ -17,9 +17,16 @@
 
 extern volatile bool force_exit;
 extern struct lws_context *context;
-extern struct tty_server *server;
+extern struct server *server;
 
-struct tty_client {
+struct pss_http {
+    char path[128];
+    char *buffer;
+    char *ptr;
+    size_t len;
+};
+
+struct pss_tty {
     bool initialized;
     int initial_cmd_index;
     bool authenticated;
@@ -42,14 +49,7 @@ struct tty_client {
     uv_signal_t watcher;
 };
 
-struct pss_http {
-    char path[128];
-    char *buffer;
-    char *ptr;
-    size_t len;
-};
-
-struct tty_server {
+struct server {
     int client_count;                         // client count
     char *prefs_json;                         // client preferences
     char *credential;                         // encoded basic auth credential

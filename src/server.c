@@ -19,13 +19,13 @@
 
 volatile bool force_exit = false;
 struct lws_context *context;
-struct tty_server *server;
+struct server *server;
 
 // websocket protocols
 static const struct lws_protocols protocols[] = {
-        {"http-only", callback_http, sizeof(struct pss_http),   0},
-        {"tty",       callback_tty,  sizeof(struct tty_client), 0},
-        {NULL, NULL,                 0,                         0}
+        {"http-only", callback_http, sizeof(struct pss_http), 0},
+        {"tty",       callback_tty,  sizeof(struct pss_tty),  0},
+        {NULL, NULL,                 0,                       0}
 };
 
 // websocket extensions
@@ -101,14 +101,14 @@ void print_help() {
     );
 }
 
-struct tty_server *
-tty_server_new(int argc, char **argv, int start) {
-    struct tty_server *ts;
+struct server *
+server_new(int argc, char **argv, int start) {
+    struct server *ts;
     size_t cmd_len = 0;
 
-    ts = xmalloc(sizeof(struct tty_server));
+    ts = xmalloc(sizeof(struct server));
 
-    memset(ts, 0, sizeof(struct tty_server));
+    memset(ts, 0, sizeof(struct server));
     ts->client_count = 0;
     ts->sig_code = SIGHUP;
     sprintf(ts->terminal_type, "%s", "xterm-256color");
@@ -146,7 +146,7 @@ tty_server_new(int argc, char **argv, int start) {
 }
 
 void
-tty_server_free(struct tty_server *ts) {
+server_free(struct server *ts) {
     if (ts == NULL)
         return;
     if (ts->credential != NULL)
@@ -244,7 +244,7 @@ main(int argc, char **argv) {
     }
 
     int start = calc_command_start(argc, argv);
-    server = tty_server_new(argc, argv, start);
+    server = server_new(argc, argv, start);
 
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -511,7 +511,7 @@ main(int argc, char **argv) {
     lws_context_destroy(context);
 
     // cleanup
-    tty_server_free(server);
+    server_free(server);
 
     return 0;
 }
