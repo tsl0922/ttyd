@@ -106,21 +106,9 @@ check_host_origin(struct lws *wsi) {
 }
 
 void
-tty_client_destroy(struct tty_client *client) {
-    if (client->pid <= 0)
-        goto cleanup;
-
-    // kill process (group) and free resource
-    int pgid = getpgid(client->pid);
-    int pid = pgid > 0 ? -pgid : client->pid;
-    if (kill(pid, server->sig_code) != 0) {
-        if (errno == ESRCH)
-            goto cleanup;
-        lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
-    }
-
-cleanup:
+tty_client_free(struct tty_client *client) {
     uv_read_stop((uv_stream_t *) &client->pipe);
+    uv_signal_stop(&client->watcher);
 
     close(client->pty);
 
@@ -164,6 +152,21 @@ read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     uv_read_stop(stream);
 }
 
+void
+child_cb(uv_signal_t *handle, int signum) {
+    struct tty_client *client;
+    pid_t pid;
+    int status;
+
+    client = (struct tty_client *) handle->data;
+    status = wait_proc(client->pid, &pid);
+    if (pid > 0) {
+        lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
+        client->pid = 0;
+        tty_client_free(client);
+    }
+}
+
 int
 spawn_process(struct tty_client *client) {
     // append url args to arguments
@@ -176,6 +179,8 @@ spawn_process(struct tty_client *client) {
         argv[n++] = client->args[i];
     }
     argv[n] = NULL;
+
+    uv_signal_start(&client->watcher, child_cb, SIGCHLD);
 
     int pty;
     pid_t pid = forkpty(&pty, NULL, NULL, NULL);
@@ -214,6 +219,18 @@ spawn_process(struct tty_client *client) {
     return 0;
 }
 
+void
+kill_process(pid_t pid, int sig) {
+    if (pid <= 0) return;
+
+    // kill process (group) and free resource
+    lwsl_notice("killing process %d with signal %d\n", pid, sig);
+    int pgid = getpgid(pid);
+    if (kill(pgid > 0 ? -pgid : pid, sig) != 0) {
+        lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
+    }
+}
+
 int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
              void *user, void *in, size_t len) {
@@ -250,8 +267,11 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             client->buffer = NULL;
             client->pty_len = 0;
             client->argc = 0;
+            client->loop = server->loop;
 
-            uv_pipe_init(server->loop, &client->pipe, 0);
+            uv_pipe_init(client->loop, &client->pipe, 0);
+            uv_signal_init(client->loop, &client->watcher);
+            client->watcher.data = client;
 
             if (server->url_arg) {
                 while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
@@ -394,7 +414,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_CLOSED:
             server->client_count--;
             lwsl_notice("WS closed from %s, clients: %d\n", client->address, server->client_count);
-            tty_client_destroy(client);
+            kill_process(client->pid, server->sig_code);
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;

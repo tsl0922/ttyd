@@ -174,8 +174,6 @@ tty_server_free(struct tty_server *ts) {
 void
 signal_cb(uv_signal_t *watcher, int signum) {
     char sig_name[20];
-    pid_t pid;
-    int status;
 
     switch (watcher->signum) {
         case SIGINT:
@@ -183,12 +181,6 @@ signal_cb(uv_signal_t *watcher, int signum) {
             get_sig_name(watcher->signum, sig_name, sizeof(sig_name));
             lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
             break;
-        case SIGCHLD:
-            status = wait_proc(-1, &pid);
-            if (pid > 0) {
-                lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
-            }
-            return;
         default:
             signal(SIGABRT, SIG_DFL);
             abort();
@@ -493,7 +485,7 @@ main(int argc, char **argv) {
     }
 
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-    int sig_nums[] = {SIGINT, SIGTERM, SIGCHLD};
+    int sig_nums[] = {SIGINT, SIGTERM};
     int ns = sizeof(sig_nums)/sizeof(sig_nums[0]);
     uv_signal_t signals[ns];
     for (int i = 0; i < ns; i++) {

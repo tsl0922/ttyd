@@ -34,11 +34,12 @@ struct tty_client {
 
     int pid;
     int pty;
-    int exit_status;
     char *pty_buffer;
     ssize_t pty_len;
 
+    uv_loop_t *loop;
     uv_pipe_t pipe;
+    uv_signal_t watcher;
 };
 
 struct pss_http {
