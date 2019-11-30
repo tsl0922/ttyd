@@ -113,10 +113,14 @@ pss_tty_free(struct pss_tty *pss) {
     close(pss->pty);
 
     // free the buffer
-    if (pss->buffer != NULL)
+    if (pss->buffer != NULL) {
         free(pss->buffer);
-    if (pss->pty_buffer != NULL)
+        pss->buffer = NULL;
+    }
+    if (pss->pty_buffer != NULL) {
         free(pss->pty_buffer);
+        pss->pty_buffer = NULL;
+    }
 
     for (int i = 0; i < pss->argc; i++) {
         free(pss->args[i]);
@@ -134,14 +138,16 @@ read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     struct pss_tty *pss = (struct pss_tty *) stream->data;
     pss->pty_len = nread;
 
+    uv_read_stop(stream);
+
     if (nread <= 0) {
         if (nread == UV_ENOBUFS || nread == 0)
             return;
+        pss->pty_buffer = NULL;
         if (nread == UV_EOF)
             pss->pty_len = 0;
         else
             lwsl_err("read_cb: %s\n", uv_err_name(nread));
-        pss->pty_buffer = NULL;
     } else {
         pss->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t ) nread);
         memcpy(pss->pty_buffer + LWS_PRE + 1, buf->base, (size_t ) nread);
@@ -149,7 +155,6 @@ read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     free(buf->base);
 
     lws_callback_on_writable(pss->wsi);
-    uv_read_stop(stream);
 }
 
 void
@@ -163,6 +168,7 @@ child_cb(uv_signal_t *handle, int signum) {
     if (pid > 0) {
         lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
         pss->pid = 0;
+        pss->pty_len = status > 0 ? -status : status;
         pss_tty_free(pss);
     }
 }
@@ -414,6 +420,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_CLOSED:
             server->client_count--;
             lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
+            uv_read_stop((uv_stream_t *) &pss->pipe);
             kill_process(pss->pid, server->sig_code);
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
