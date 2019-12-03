@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include <sys/ioctl.h>
 #include <uv.h>
 
 // client message
@@ -35,11 +34,10 @@ struct pss_tty {
     int argc;
 
     struct lws *wsi;
-    struct winsize size;
     char *buffer;
     size_t len;
 
-    int pid;
+    pid_t pid;
     int pty;
     char *pty_buffer;
     ssize_t pty_len;

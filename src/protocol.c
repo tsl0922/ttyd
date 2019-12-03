@@ -1,24 +1,15 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <sys/ioctl.h>
-
-#if defined(__OpenBSD__) || defined(__APPLE__)
-#include <util.h>
-#elif defined(__FreeBSD__)
-#include <libutil.h>
-#else
-#include <pty.h>
-#endif
 
 #include <libwebsockets.h>
 #include <json.h>
 
 #include "server.h"
+#include "terminal.h"
 #include "utils.h"
 
 // initial message list
@@ -51,8 +42,7 @@ send_initial_message(struct lws *wsi, int index) {
 }
 
 bool
-parse_window_size(const char *json, struct winsize *size) {
-    int columns, rows;
+parse_window_size(const char *json, int *cols, int *rows) {
     json_object *obj = json_tokener_parse(json);
     struct json_object *o = NULL;
 
@@ -60,17 +50,13 @@ parse_window_size(const char *json, struct winsize *size) {
         lwsl_err("columns field not exists, json: %s\n", json);
         return false;
     }
-    columns = json_object_get_int(o);
+    *cols = json_object_get_int(o);
     if (!json_object_object_get_ex(obj, "rows", &o)) {
         lwsl_err("rows field not exists, json: %s\n", json);
         return false;
     }
-    rows = json_object_get_int(o);
+    *rows = json_object_get_int(o);
     json_object_put(obj);
-
-    memset(size, 0, sizeof(struct winsize));
-    size->ws_col = (unsigned short) columns;
-    size->ws_row = (unsigned short) rows;
 
     return true;
 }
@@ -189,37 +175,16 @@ spawn_process(struct pss_tty *pss) {
 
     uv_signal_start(&pss->watcher, child_cb, SIGCHLD);
 
-    int pty;
-    pid_t pid = forkpty(&pty, NULL, NULL, NULL);
-    if (pid < 0) { /* error */
-        lwsl_err("forkpty failed: %d (%s)\n", errno, strerror(errno));
+    pss->pid = pty_fork(&pss->pty, argv[0], argv, server->terminal_type);
+    if (pss->pid < 0) {
+        lwsl_err("pty_fork: %d (%s)\n", errno, strerror(errno));
         return 1;
-    } else if (pid == 0) { /* child */
-        setenv("TERM", server->terminal_type, true);
-#if LWS_LIBRARY_VERSION_NUMBER < 3001000
-        // libwebsockets set FD_CLOEXEC since v3.1.0
-        close(lws_get_socket_fd(pss->wsi));
-#endif
-        if (execvp(argv[0], argv) < 0) {
-            perror("execvp failed\n");
-            _exit(-errno);
-        }
     }
 
-    // set the file descriptor close-on-exec
-    int status_flags = fcntl(pty, F_GETFL);
-    if (status_flags != -1) {
-        fcntl(pty, F_SETFD, status_flags | FD_CLOEXEC);
-    }
-
-    lwsl_notice("started process, pid: %d\n", pid);
-    pss->pid = pid;
-    pss->pty = pty;
-    if (pss->size.ws_row > 0 && pss->size.ws_col > 0)
-        ioctl(pss->pty, TIOCSWINSZ, &pss->size);
+    lwsl_notice("started process, pid: %d\n", pss->pid);
 
     pss->pipe.data = pss;
-    uv_pipe_open(&pss->pipe, pty);
+    uv_pipe_open(&pss->pipe, pss->pty);
 
     lws_callback_on_writable(pss->wsi);
 
@@ -380,9 +345,12 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     }
                     break;
                 case RESIZE_TERMINAL:
-                    if (parse_window_size(pss->buffer + 1, &pss->size) && pss->pty > 0) {
-                        if (ioctl(pss->pty, TIOCSWINSZ, &pss->size) == -1) {
-                            lwsl_err("ioctl TIOCSWINSZ: %d (%s)\n", errno, strerror(errno));
+                    {
+                        int cols, rows;
+                        if (parse_window_size(pss->buffer + 1, &cols, &rows)) {
+                            if (pty_resize(pss->pty, cols, rows) < 0) {
+                                lwsl_err("pty_resize: %d (%s)\n", errno, strerror(errno));
+                            }
                         }
                     }
                     break;
