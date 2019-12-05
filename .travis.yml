@@ -3,6 +3,7 @@ node_js:
   - "12"
 services: docker
 env:
+  - LIBWEBSOCKETS_VERSION=3.2.0
   - LIBWEBSOCKETS_VERSION=3.1.0
   - LIBWEBSOCKETS_VERSION=2.4.2
   - LIBWEBSOCKETS_VERSION=1.7.9
@@ -24,7 +25,7 @@ install:
       curl -sLo- https://github.com/warmcat/libwebsockets/archive/v$LIBWEBSOCKETS_VERSION.tar.gz | tar xz
       cd libwebsockets-$LIBWEBSOCKETS_VERSION
       cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
-      make && sudo make install
+      make && sudo make install && sudo ldconfig
     popd
 script: |
   yarn --cwd ./html run build

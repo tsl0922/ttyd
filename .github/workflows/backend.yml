@@ -29,7 +29,7 @@ jobs:
           curl -sLo- https://github.com/warmcat/libwebsockets/archive/v${LWS_VERSION}.tar.gz | tar xz
           cd libwebsockets-${LWS_VERSION}
           cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
-          make && sudo make install
+          make && sudo make install && sudo ldconfig
       - uses: actions/checkout@v1
       - name: build ttyd
         run: |
