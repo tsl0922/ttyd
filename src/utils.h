@@ -25,6 +25,10 @@ get_sig_name(int sig, char *buf, size_t len);
 int
 get_sig(const char *sig_name);
 
+// Set the given file descriptor close-on-exec
+bool
+fd_set_cloexec(const int fd);
+
 // waitpid with WNOHANG and return the status
 int
 wait_proc(pid_t in, pid_t *out);

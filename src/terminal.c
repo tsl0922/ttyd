@@ -14,6 +14,8 @@
 #include <pty.h>
 #endif
 
+#include "utils.h"
+
 pid_t
 pty_fork(int *pty, const char *file, char *const argv[], const char *term) {
     pid_t pid = forkpty(pty, NULL, NULL, NULL);
@@ -29,11 +31,13 @@ pty_fork(int *pty, const char *file, char *const argv[], const char *term) {
         }
     }
 
-    // set the file descriptor close-on-exec
-    int status_flags = fcntl(*pty, F_GETFL);
-    if (status_flags != -1) {
-        fcntl(*pty, F_SETFD, status_flags | FD_CLOEXEC);
+    // set the file descriptor non blocking
+    int flags = fcntl(*pty, F_GETFL);
+    if (flags != -1) {
+        fcntl(*pty, F_SETFD, flags | O_NONBLOCK);
     }
+    // set the file descriptor close-on-exec
+    fd_set_cloexec(*pty);
 
     return pid;
 }

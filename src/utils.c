@@ -5,6 +5,7 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 #ifdef __linux__
@@ -83,6 +84,14 @@ get_sig(const char *sig_name) {
             return sig;
     }
     return atoi(sig_name);
+}
+
+bool
+fd_set_cloexec(const int fd) {
+    int flags = fcntl(fd, F_GETFD);
+    if (flags < 0)
+        return false;
+    return (flags & FD_CLOEXEC) == 0 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != -1;
 }
 
 int

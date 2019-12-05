@@ -175,6 +175,10 @@ spawn_process(struct pss_tty *pss) {
 
     uv_signal_start(&pss->watcher, child_cb, SIGCHLD);
 
+    // ensure the lws socket fd close-on-exec
+    fd_set_cloexec(lws_get_socket_fd(pss->wsi));
+
+    // create process with pseudo-tty
     pss->pid = pty_fork(&pss->pty, argv[0], argv, server->terminal_type);
     if (pss->pid < 0) {
         lwsl_err("pty_fork: %d (%s)\n", errno, strerror(errno));
