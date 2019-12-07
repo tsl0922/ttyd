@@ -190,12 +190,13 @@ signal_cb(uv_signal_t *watcher, int signum) {
         exit(EXIT_FAILURE);
     force_exit = true;
     lws_cancel_service(context);
-#if LWS_LIBRARY_VERSION_MAJOR < 3
-    lws_libuv_stop(context);
-#else
+#if LWS_LIBRARY_VERSION_MAJOR >= 3
     uv_stop(server->loop);
-#endif
     lwsl_notice("send ^C to force exit.\n");
+#else
+    lws_libuv_stop(context);
+    exit(EXIT_SUCCESS);
+#endif
 }
 
 int
