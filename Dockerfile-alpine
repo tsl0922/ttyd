@@ -1,13 +1,12 @@
-FROM alpine:3.9
-LABEL maintainer "Shuanglei Tao - tsl0922@gmail.com" \
-    maintainer "Damien Duportal - damien.duportal@gmail.com"
+FROM tsl0922/musl-cross
+RUN git clone --depth=1 https://github.com/tsl0922/ttyd.git /tmp/ttyd \
+    && cd /tmp/ttyd && ./scripts/cross-build.sh x86_64
 
-RUN apk add --no-cache \
-    bash \
-    tini \
-    ttyd
+FROM alpine:3.9
+COPY --from=0 /tmp/ttyd/build/ttyd /usr/local/bin/ttyd
+RUN apk add --no-cache tini
 
 EXPOSE 7681
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["ttyd", "bash"]
+CMD ["ttyd", "sh"]
