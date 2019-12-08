@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # This script should be run inside the tsl0922/musl-cross docker image
+# Example:
+#         docker run --rm -v $(pwd):/ttyd -w /ttyd tsl0922/musl-cross ./scripts/cross-build.sh mips
 #
 set -eo pipefail
 
@@ -13,7 +15,6 @@ JSON_C_VERSION="${JSON_C_VERSION:-0.13.1}"
 OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2t}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.34.0}"
 LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-3.2.0}"
-TTYD_VERSION="${TTYD_VERSION:-1.5.2}"
 
 build_zlib() {
 	echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -72,34 +73,33 @@ build_libwebsockets() {
 	echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
 	curl -sLo- https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
 	pushd ${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}
-		sed -i '13s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static")\n;' CMakeLists.txt
 		sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
 		mkdir build && cd build
-		cmake -DLWS_WITHOUT_TESTAPPS=ON \
+		cmake -DCMAKE_TOOLCHAIN_FILE=${BUILD_DIR}/cross-${TARGET}.cmake \
+		    -DCMAKE_INSTALL_PREFIX=${STAGE_DIR} \
+		    -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+		    -DCMAKE_EXE_LINKER_FLAGS="-static" \
+		    -DLWS_WITHOUT_TESTAPPS=ON \
 		    -DLWS_WITH_LIBUV=ON \
 		    -DLWS_STATIC_PIC=ON \
 		    -DLWS_WITH_SHARED=OFF \
 		    -DLWS_UNIX_SOCK=ON \
 		    -DLWS_IPV6=ON \
-		    -DCMAKE_TOOLCHAIN_FILE=../../cross-${TARGET}.cmake \
-		    -DCMAKE_INSTALL_PREFIX=${STAGE_DIR} \
 		    ..
 		make install
 	popd
 }
 
 build_ttyd() {
-	echo "=== Building ttyd-${TTYD_VERSION} (${TARGET})..."
-	curl -sLo- https://github.com/tsl0922/ttyd/archive/${TTYD_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
-	pushd ${BUILD_DIR}/ttyd-${TTYD_VERSION}
-		sed -i '5s;^;\nSET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")\nSET(CMAKE_EXE_LINKER_FLAGS "-static -no-pie -s")\n;' CMakeLists.txt
-		mkdir build && cd build
-		cmake -DCMAKE_TOOLCHAIN_FILE=../../cross-${TARGET}.cmake \
-		    -DCMAKE_BUILD_TYPE=RELEASE \
-		    ..
-		make
-	popd
-	cp ${BUILD_DIR}/ttyd-${TTYD_VERSION}/build/ttyd bin/ttyd_linux.${ALIAS}
+	echo "=== Building ttyd (${TARGET})..."
+	rm -rf build && mkdir -p build && cd build
+  cmake -DCMAKE_TOOLCHAIN_FILE=${BUILD_DIR}/cross-${TARGET}.cmake \
+      -DCMAKE_INSTALL_PREFIX=${STAGE_DIR} \
+      -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+      -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -s" \
+      -DCMAKE_BUILD_TYPE=RELEASE \
+      ..
+  make install
 }
 
 build() {
@@ -110,6 +110,7 @@ build() {
 
 	echo "=== Building target ${ALIAS} (${TARGET})..."
 
+  rm -rf ${STAGE_DIR} ${BUILD_DIR}
 	mkdir -p ${STAGE_DIR} ${BUILD_DIR}
 	export PKG_CONFIG_PATH="${STAGE_DIR}/lib/pkgconfig"
 
@@ -123,25 +124,17 @@ build() {
 	build_ttyd
 }
 
-TARGETS=(
-	i386    i386-linux-musl
-	x86_64  x86_64-linux-musl
-	arm     arm-linux-musleabi
-	armhf   arm-linux-musleabihf
-	aarch64 aarch64-linux-musl
-	mips    mips-linux-musl
-	mipsel  mipsel-linux-musl
-)
+case $1 in
+  i386|x86_64|mips|mipsel)
+    build $1-linux-musl $1
+    ;;
+  arm)
+    build arm-linux-musleabi $1
+    ;;
+  armhf)
+    build arm-linux-musleabihf $1
+    ;;
+  *)
+    echo "usage: $0 i386|x86_64|arm|armhf|mips|mipsel" && exit 1
+esac
 
-rm -rf bin && mkdir bin
-rm -rf ${STAGE_ROOT} ${BUILD_ROOT}
-
-for ((i=0; i<${#TARGETS[@]}; i+=2)); do
-	build "${TARGETS[$i+1]}" "${TARGETS[$i]}"
-done
-
-echo "=== Archiving bin to a tarball..."
-pushd bin
-	sha256sum ttyd_linux.* > SHA256SUMS
-	tar czvf ../ttyd_${TTYD_VERSION}_linux.tar.gz ttyd_linux.* SHA256SUMS
-popd
