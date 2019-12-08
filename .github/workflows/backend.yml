@@ -43,7 +43,7 @@ jobs:
         arch: [i386, x86_64, arm, armhf, mips, mipsel]
     steps:
       - uses: actions/checkout@v1
-      - name: cross build - ${{ matrix.arch }}
+      - name: cross build (${{ matrix.arch }})
         env:
           ARCH: ${{ matrix.arch }}
         run: docker run --rm -v $(pwd):/ttyd -w /ttyd tsl0922/musl-cross ./scripts/cross-build.sh $ARCH
