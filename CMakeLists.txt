@@ -37,35 +37,27 @@ find_package(Libwebsockets ${LIBWEBSOCKETS_MIN_VERSION} QUIET)
 
 find_package(PkgConfig)
 
-if(Libwebsockets_FOUND)
-    set(LIBWEBSOCKETS_INCLUDE_DIR ${LIBWEBSOCKETS_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
-else() # try to find libwebsockets with pkg-config
-    pkg_check_modules(Libwebsockets REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
-    find_path(LIBWEBSOCKETS_INCLUDE_DIR libwebsockets.h
-            HINTS ${LIBWEBSOCKETS_INCLUDEDIR} ${LIBWEBSOCKETS_INCLUDE_DIRS})
-    find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets libwebsockets
-            HINTS ${LIBWEBSOCKETS_LIBDIR} ${LIBWEBSOCKETS_LIBRARY_DIRS})
+if(NOT Libwebsockets_FOUND)
+    pkg_check_modules(PC_LIBWEBSOCKETS REQUIRED libwebsockets>=${LIBWEBSOCKETS_MIN_VERSION})
+    find_path(LIBWEBSOCKETS_INCLUDE_DIRS libwebsockets.h HINTS ${PC_LIBWEBSOCKETS_INCLUDEDIR})
+    find_library(LIBWEBSOCKETS_LIBRARIES NAMES websockets libwebsockets HINTS ${PC_LIBWEBSOCKETS_LIBDIR})
     include(FindPackageHandleStandardArgs)
-    find_package_handle_standard_args(LIBWEBSOCKETS DEFAULT_MSG LIBWEBSOCKETS_LIBRARIES LIBWEBSOCKETS_INCLUDE_DIR)
-    mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIR LIBWEBSOCKETS_LIBRARIES)
+    find_package_handle_standard_args(LIBWEBSOCKETS DEFAULT_MSG LIBWEBSOCKETS_LIBRARIES LIBWEBSOCKETS_INCLUDE_DIRS)
+    mark_as_advanced(LIBWEBSOCKETS_INCLUDE_DIRS LIBWEBSOCKETS_LIBRARIES)
 endif()
 
 pkg_check_modules(PC_JSON-C REQUIRED json-c)
-find_path(JSON-C_INCLUDE_DIR json.h
-        HINTS ${PC_JSON-C_INCLUDEDIR} ${PC_JSON-C_INCLUDE_DIRS} PATH_SUFFIXES json-c json)
-find_library(JSON-C_LIBRARY NAMES json-c libjson-c
-        HINTS ${PC_JSON-C_LIBDIR} ${PC_JSON-C_LIBRARY_DIRS})
+find_path(JSON-C_INCLUDE_DIRS json.h HINTS ${PC_JSON-C_INCLUDEDIR} PATH_SUFFIXES json-c json)
+find_library(JSON-C_LIBRARIES NAMES json-c libjson-c HINTS ${PC_JSON-C_LIBDIR})
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(JSON-C DEFAULT_MSG JSON-C_LIBRARY JSON-C_INCLUDE_DIR)
-mark_as_advanced(JSON-C_INCLUDE_DIR JSON-C_LIBRARY)
+find_package_handle_standard_args(JSON-C DEFAULT_MSG JSON-C_LIBRARIES JSON-C_INCLUDE_DIRS)
+mark_as_advanced(JSON-C_INCLUDE_DIRS JSON-C_LIBRARIES)
 
-pkg_check_modules(LIBUV REQUIRED libuv>=1.0.0)
-find_path(LIBUV_INCLUDE_DIR NAMES uv.h
-        HINTS ${LIBUV_INCLUDEDIRS} ${LIBUV_INCLUDEDIR})
-find_library(LIBUV_LIBRARY NAMES uv libuv
-        HINTS ${LIBUV_LIBRARY_DIRS} ${LIBUV_LIBDIR})
-find_package_handle_standard_args(LIBUV DEFAULT_MSG LIBUV_LIBRARY LIBUV_INCLUDE_DIR)
-mark_as_advanced(LIBUV_INCLUDE_DIR LIBUV_LIBRARY)
+pkg_check_modules(PC_LIBUV REQUIRED libuv>=1.0.0)
+find_path(LIBUV_INCLUDE_DIRS NAMES uv.h HINTS ${PC_LIBUV_INCLUDEDIR})
+find_library(LIBUV_LIBRARIES NAMES uv libuv HINTS ${PC_LIBUV_LIBDIR})
+find_package_handle_standard_args(LIBUV DEFAULT_MSG LIBUV_LIBRARIES LIBUV_INCLUDE_DIRS)
+mark_as_advanced(LIBUV_INCLUDE_DIRS LIBUV_LIBRARIES)
 
 find_program(CMAKE_XXD NAMES xxd)
 add_custom_command(OUTPUT html.h
@@ -74,8 +66,8 @@ add_custom_command(OUTPUT html.h
         COMMENT "Generating html.h from index.html")
 list(APPEND SOURCE_FILES html.h)
 
-set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIR} ${JSON-C_INCLUDE_DIR} ${LIBUV_INCLUDE_DIR})
-set(LINK_LIBS ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARY} ${LIBUV_LIBRARY})
+set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
+set(LINK_LIBS ${OPENSSL_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
 
 if(APPLE)
     # required for the new homebrew version of libwebsockets
