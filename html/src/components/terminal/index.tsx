@@ -3,6 +3,7 @@ import * as backoff from 'backoff';
 import { Component, h } from 'preact';
 import { ITerminalOptions, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import { OverlayAddon } from './overlay';
@@ -221,8 +222,13 @@ export class Xterm extends Component<Props> {
             case Command.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(key => {
-                    console.log(`[ttyd] setting ${key}: ${preferences[key]}`);
-                    terminal.setOption(key, preferences[key]);
+                    if (key === 'rendererType' && preferences[key] === 'webgl') {
+                        terminal.loadAddon(new WebglAddon());
+                        console.log(`[ttyd] WebGL renderer enabled`);
+                    } else {
+                        console.log(`[ttyd] option: ${key}=${preferences[key]}`);
+                        terminal.setOption(key, preferences[key]);
+                    }
                 });
                 break;
             default:
