@@ -10,9 +10,13 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
       - uses: actions/checkout@v1
-      - name: build release archive
+      - name: Build Release
         run: |
-          docker run --rm -v $(pwd):/ttyd -w /ttyd -e TTYD_VERSION=$GITHUB_SHA tsl0922/musl-cross ./scripts/cross-build.sh
+          mkdir -p bin
+          for arch in i386 x86_64 arm armhf mips mipsel; do
+            docker run --rm -v $(pwd):/ttyd -w /ttyd tsl0922/musl-cross ./scripts/cross-build.sh $arch
+            cp build/ttyd bin/ttyd.$arch
+          done
       - uses: ncipollo/release-action@v1
         with:
           artifact: "bin/*"
