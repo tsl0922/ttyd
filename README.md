@@ -6,7 +6,7 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 
 # Features
 
-- Built on top of [Libwebsockets][2] with C for speed
+- Built on top of [Libwebsockets][2] with [libuv][20] for speed
 - Fully-featured terminal based on [Xterm.js][3] with [CJK][18] and IME support
 - Graphical [ZMODEM][16] integration with [lrzsz][17] support
 - SSL support based on [OpenSSL][4]
@@ -40,8 +40,8 @@ brew install ttyd
     You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
     
 - Install on Gentoo:
-clone the repo at [https://bitbucket.org/mgpagano/ttyd/src/master/](https://bitbucket.org/mgpagano/ttyd/src/master/) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository) for creating a local repository.
 
+clone the repo at [https://bitbucket.org/mgpagano/ttyd/src/master/](https://bitbucket.org/mgpagano/ttyd/src/master/) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository) for creating a local repository.
 
 ## Install on Windows
 
@@ -185,3 +185,4 @@ Docker containers are jailed environments which are more secure, this is useful 
   [17]: https://ohse.de/uwe/software/lrzsz.html
   [18]: https://en.wikipedia.org/wiki/CJK_characters
   [19]: https://cmake.org/
+  [20]: https://libuv.org/
