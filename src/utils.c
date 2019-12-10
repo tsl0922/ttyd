@@ -4,9 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <signal.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <sys/wait.h>
 
 #ifdef __linux__
 // https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
@@ -92,22 +90,6 @@ fd_set_cloexec(const int fd) {
     if (flags < 0)
         return false;
     return (flags & FD_CLOEXEC) == 0 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != -1;
-}
-
-int
-wait_proc(pid_t in, pid_t *out) {
-    int stat = 0, pid;
-    do {
-        pid = waitpid(in, &stat, WNOHANG);
-    } while (pid < 0 && errno == EINTR);
-    if (out != NULL) *out = pid;
-    int status  = -1;
-    if (WIFEXITED(stat)) {
-        status = WEXITSTATUS(stat);
-    } else if (WIFSIGNALED(stat)) {
-        status = WTERMSIG(stat);
-    }
-    return status;
 }
 
 int

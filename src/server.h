@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <uv.h>
 
+#include "queue.h"
+
 // client message
 #define INPUT '0'
 #define RESIZE_TERMINAL '1'
@@ -18,6 +20,10 @@ extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct server *server;
 
+typedef enum {
+    STATE_INIT, STATE_KILL, STATE_EXIT
+} proc_state;
+
 struct pss_http {
     char path[128];
     char *buffer;
@@ -25,26 +31,34 @@ struct pss_http {
     size_t len;
 };
 
+struct pty_proc {
+    char **args;
+    int argc;
+
+    pid_t pid;
+    int status;
+    proc_state state;
+
+    int pty;
+    char *pty_buffer;
+    ssize_t pty_len;
+
+    uv_pipe_t pipe;
+
+    LIST_ENTRY(pty_proc) entry;
+};
+
 struct pss_tty {
     bool initialized;
     int initial_cmd_index;
     bool authenticated;
     char address[50];
-    char **args;
-    int argc;
 
     struct lws *wsi;
     char *buffer;
     size_t len;
 
-    pid_t pid;
-    int pty;
-    char *pty_buffer;
-    ssize_t pty_len;
-
-    uv_loop_t *loop;
-    uv_pipe_t pipe;
-    uv_signal_t watcher;
+    struct pty_proc *proc;
 };
 
 struct server {
@@ -64,7 +78,11 @@ struct server {
     bool once;                                // whether accept only one client and exit on disconnection
     char socket_path[255];                    // UNIX domain socket path
     char terminal_type[30];                   // terminal type to report
+
     uv_loop_t *loop;                          // the libuv event loop
+    uv_signal_t watcher;                      // SIGCHLD watcher
+
+    LIST_HEAD(proc, pty_proc) procs;         // started process list
 };
 
 extern int

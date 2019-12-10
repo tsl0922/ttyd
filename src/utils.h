@@ -29,10 +29,6 @@ get_sig(const char *sig_name);
 bool
 fd_set_cloexec(const int fd);
 
-// waitpid with WNOHANG and return the status
-int
-wait_proc(pid_t in, pid_t *out);
-
 // Open uri with the default application of system
 int
 open_uri(char *uri);

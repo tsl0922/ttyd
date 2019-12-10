@@ -109,6 +109,7 @@ server_new(int argc, char **argv, int start) {
     ts = xmalloc(sizeof(struct server));
 
     memset(ts, 0, sizeof(struct server));
+    LIST_INIT(&ts->procs);
     ts->client_count = 0;
     ts->sig_code = SIGHUP;
     sprintf(ts->terminal_type, "%s", "xterm-256color");
@@ -141,6 +142,8 @@ server_new(int argc, char **argv, int start) {
 
     ts->loop = xmalloc(sizeof *ts->loop);
     uv_loop_init(ts->loop);
+    uv_signal_init(ts->loop, &ts->watcher);
+    ts->watcher.data = &ts->procs;
 
     return ts;
 }
@@ -166,6 +169,7 @@ server_free(struct server *ts) {
             unlink(ts->socket_path);
         }
     }
+    uv_signal_stop(&ts->watcher);
     uv_loop_close(ts->loop);
     free(ts->loop);
     free(ts);

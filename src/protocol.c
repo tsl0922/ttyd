@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/wait.h>
 
 #include <libwebsockets.h>
 #include <json.h>
@@ -92,26 +93,22 @@ check_host_origin(struct lws *wsi) {
 }
 
 void
-pss_tty_free(struct pss_tty *pss) {
-    uv_read_stop((uv_stream_t *) &pss->pipe);
-    uv_close((uv_handle_t*) &pss->pipe, NULL);
-    uv_signal_stop(&pss->watcher);
+pty_proc_free(struct pty_proc *proc) {
+    uv_read_stop((uv_stream_t *) &proc->pipe);
+    uv_close((uv_handle_t*) &proc->pipe, NULL);
 
-    close(pss->pty);
+    close(proc->pty);
 
-    // free the buffer
-    if (pss->buffer != NULL) {
-        free(pss->buffer);
-        pss->buffer = NULL;
-    }
-    if (pss->pty_buffer != NULL) {
-        free(pss->pty_buffer);
-        pss->pty_buffer = NULL;
+    if (proc->pty_buffer != NULL) {
+        free(proc->pty_buffer);
+        proc->pty_buffer = NULL;
     }
 
-    for (int i = 0; i < pss->argc; i++) {
-        free(pss->args[i]);
+    for (int i = 0; i < proc->argc; i++) {
+        free(proc->args[i]);
     }
+
+    free(proc);
 }
 
 void
@@ -123,21 +120,22 @@ alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 void
 read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     struct pss_tty *pss = (struct pss_tty *) stream->data;
-    pss->pty_len = nread;
+    struct pty_proc *proc = pss->proc;
+    proc->pty_len = nread;
 
     uv_read_stop(stream);
 
     if (nread <= 0) {
         if (nread == UV_ENOBUFS || nread == 0)
             return;
-        pss->pty_buffer = NULL;
+        proc->pty_buffer = NULL;
         if (nread == UV_EOF)
-            pss->pty_len = 0;
+            proc->pty_len = 0;
         else
             lwsl_err("read_cb: %s\n", uv_err_name(nread));
     } else {
-        pss->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t ) nread);
-        memcpy(pss->pty_buffer + LWS_PRE + 1, buf->base, (size_t ) nread);
+        proc->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t ) nread);
+        memcpy(proc->pty_buffer + LWS_PRE + 1, buf->base, (size_t ) nread);
     }
     free(buf->base);
 
@@ -146,49 +144,67 @@ read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
 void
 child_cb(uv_signal_t *handle, int signum) {
-    struct pss_tty *pss;
     pid_t pid;
-    int status;
+    int stat;
 
-    pss = (struct pss_tty *) handle->data;
-    status = wait_proc(pss->pid, &pid);
-    if (pid > 0) {
-        lwsl_notice("process exited with code %d, pid: %d\n", status, pid);
-        pss->pid = 0;
-        pss->pty_len = status > 0 ? -status : status;
-        pss_tty_free(pss);
+    struct pty_proc *proc;
+    LIST_HEAD(proc, pty_proc) *procs = handle->data;
+    LIST_FOREACH(proc, procs, entry) {
+        do
+            pid = waitpid(proc->pid, &stat, WNOHANG);
+        while (pid == -1 && errno == EINTR);
+
+        if (pid <= 0)
+            continue;
+
+        if (WIFEXITED(stat)) {
+            proc->status = WEXITSTATUS(stat);
+            lwsl_notice("process exited with code %d, pid: %d\n", proc->status, proc->pid);
+        } else if (WIFSIGNALED(stat)) {
+            int term_sig = WTERMSIG(stat);
+            proc->status = 128 + term_sig;
+            lwsl_notice("process killed with signal %d, pid: %d\n", term_sig, proc->pid);
+        }
+
+        LIST_REMOVE(proc, entry);
+        if (proc->state == STATE_KILL) {
+            pty_proc_free(proc);
+        } else {
+            proc->state = STATE_EXIT;
+        }
     }
 }
 
 int
 spawn_process(struct pss_tty *pss) {
+    struct pty_proc *proc = pss->proc;
     // append url args to arguments
-    char *argv[server->argc + pss->argc + 1];
+    char *argv[server->argc + proc->argc + 1];
     int i, n = 0;
     for (i = 0; i < server->argc; i++) {
         argv[n++] = server->argv[i];
     }
-    for (i = 0; i < pss->argc; i++) {
-        argv[n++] = pss->args[i];
+    for (i = 0; i < proc->argc; i++) {
+        argv[n++] = proc->args[i];
     }
     argv[n] = NULL;
 
-    uv_signal_start(&pss->watcher, child_cb, SIGCHLD);
+    uv_signal_start(&server->watcher, child_cb, SIGCHLD);
 
     // ensure the lws socket fd close-on-exec
     fd_set_cloexec(lws_get_socket_fd(pss->wsi));
 
     // create process with pseudo-tty
-    pss->pid = pty_fork(&pss->pty, argv[0], argv, server->terminal_type);
-    if (pss->pid < 0) {
+    proc->pid = pty_fork(&proc->pty, argv[0], argv, server->terminal_type);
+    if (proc->pid < 0) {
         lwsl_err("pty_fork: %d (%s)\n", errno, strerror(errno));
         return 1;
     }
 
-    lwsl_notice("started process, pid: %d\n", pss->pid);
+    lwsl_notice("started process, pid: %d\n", proc->pid);
 
-    pss->pipe.data = pss;
-    uv_pipe_open(&pss->pipe, pss->pty);
+    proc->pipe.data = pss;
+    uv_pipe_open(&proc->pipe, proc->pty);
 
     lws_callback_on_writable(pss->wsi);
 
@@ -198,9 +214,7 @@ spawn_process(struct pss_tty *pss) {
 void
 kill_process(pid_t pid, int sig) {
     if (pid <= 0) return;
-
-    // kill process (group) and free resource
-    lwsl_notice("killing process %d with signal %d\n", pid, sig);
+    lwsl_notice("killing process %d with signal: %d\n", pid, sig);
     int pgid = getpgid(pid);
     if (kill(pgid > 0 ? -pgid : pid, sig) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
@@ -211,6 +225,7 @@ int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
              void *user, void *in, size_t len) {
     struct pss_tty *pss = (struct pss_tty *) user;
+    struct pty_proc *proc;
     char buf[256];
     size_t n = 0;
 
@@ -241,24 +256,24 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             pss->authenticated = false;
             pss->wsi = wsi;
             pss->buffer = NULL;
-            pss->pty_len = 0;
-            pss->argc = 0;
-            pss->loop = server->loop;
 
-            uv_pipe_init(pss->loop, &pss->pipe, 0);
-            uv_signal_init(pss->loop, &pss->watcher);
-            pss->watcher.data = pss;
+            pss->proc = proc = xmalloc(sizeof(struct pty_proc));
+            memset(proc, 0, sizeof(struct pty_proc));
+            proc->status = -1;
+            proc->state = STATE_INIT;
+            uv_pipe_init(server->loop, &proc->pipe, 0);
 
             if (server->url_arg) {
                 while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
                     if (strncmp(buf, "arg=", 4) == 0) {
-                        pss->args = xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
-                        pss->args[pss->argc] = strdup(&buf[4]);
-                        pss->argc++;
+                        proc->args = xrealloc(proc->args, (proc->argc + 1) * sizeof(char *));
+                        proc->args[proc->argc] = strdup(&buf[4]);
+                        proc->argc++;
                     }
                 }
             }
 
+            LIST_INSERT_HEAD(&server->procs, proc, entry);
             server->client_count++;
 
             lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
@@ -273,10 +288,11 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_SERVER_WRITEABLE:
+            proc = pss->proc;
             if (!pss->initialized) {
                 if (pss->initial_cmd_index == sizeof(initial_cmds)) {
                     pss->initialized = true;
-                    uv_read_start((uv_stream_t *)& pss->pipe, alloc_cb, read_cb);
+                    uv_read_start((uv_stream_t *)& proc->pipe, alloc_cb, read_cb);
                     break;
                 }
                 if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
@@ -290,25 +306,25 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             }
 
             // read error or client exited, close connection
-            if (pss->pty_len == 0) {
+            if (proc->status == 0 || proc->pty_len == 0) {
                 lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
                 return 1;
-            } else if (pss->pty_len < 0) {
+            } else if (proc->status > 0 || proc->pty_len < 0) {
                 lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
                 return -1;
             }
 
-            if (pss->pty_buffer == NULL)
+            if (proc->pty_buffer == NULL)
                 break;
 
-            pss->pty_buffer[LWS_PRE] = OUTPUT;
-            n = (size_t) (pss->pty_len + 1);
-            if (lws_write(wsi, (unsigned char *) pss->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
+            proc->pty_buffer[LWS_PRE] = OUTPUT;
+            n = (size_t) (proc->pty_len + 1);
+            if (lws_write(wsi, (unsigned char *) proc->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
                 lwsl_err("write OUTPUT to WS\n");
             }
-            free(pss->pty_buffer);
-            pss->pty_buffer = NULL;
-            uv_read_start((uv_stream_t *)& pss->pipe, alloc_cb, read_cb);
+            free(proc->pty_buffer);
+            proc->pty_buffer = NULL;
+            uv_read_start((uv_stream_t *)& proc->pipe, alloc_cb, read_cb);
             break;
 
         case LWS_CALLBACK_RECEIVE:
@@ -335,14 +351,15 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 return 0;
             }
 
+            proc = pss->proc;
             switch (command) {
                 case INPUT:
-                    if (pss->pty == 0)
+                    if (proc->pty == 0)
                         break;
                     if (server->readonly)
                         return 0;
                     uv_buf_t b = { pss->buffer + 1, pss->len - 1 };
-                    int err = uv_try_write((uv_stream_t *) &pss->pipe, &b, 1);
+                    int err = uv_try_write((uv_stream_t *) &proc->pipe, &b, 1);
                     if (err < 0) {
                         lwsl_err("uv_try_write: %s\n", uv_err_name(err));
                         return -1;
@@ -352,14 +369,14 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                     {
                         int cols, rows;
                         if (parse_window_size(pss->buffer + 1, &cols, &rows)) {
-                            if (pty_resize(pss->pty, cols, rows) < 0) {
+                            if (pty_resize(proc->pty, cols, rows) < 0) {
                                 lwsl_err("pty_resize: %d (%s)\n", errno, strerror(errno));
                             }
                         }
                     }
                     break;
                 case JSON_DATA:
-                    if (pss->pid > 0)
+                    if (proc->pid > 0)
                         break;
                     if (server->credential != NULL) {
                         json_object *obj = json_tokener_parse(pss->buffer);
@@ -392,8 +409,19 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_CLOSED:
             server->client_count--;
             lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
-            uv_read_stop((uv_stream_t *) &pss->pipe);
-            kill_process(pss->pid, server->sig_code);
+            if (pss->buffer != NULL) {
+                free(pss->buffer);
+            }
+
+            proc = pss->proc;
+            if (proc->state == STATE_EXIT) {
+                pty_proc_free(proc);
+            } else {
+                proc->state = STATE_KILL;
+                uv_read_stop((uv_stream_t *) &proc->pipe);
+                kill_process(proc->pid, server->sig_code);
+            }
+
             if (server->once && server->client_count == 0) {
                 lwsl_notice("exiting due to the --once option.\n");
                 force_exit = true;
