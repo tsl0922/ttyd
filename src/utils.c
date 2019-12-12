@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
 // https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
 const char *sys_signame[NSIG] = {
     "zero",  "HUP",  "INT",   "QUIT", "ILL",   "TRAP", "ABRT", "UNUSED",
