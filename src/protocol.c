@@ -43,7 +43,11 @@ send_initial_message(struct lws *wsi, int index) {
 }
 
 bool
-parse_window_size(const char *json, int *cols, int *rows) {
+parse_window_size(struct pss_tty *pss, int *cols, int *rows) {
+    char json[pss->len];
+    strncpy(json, pss->buffer + 1, pss->len - 1);
+    json[pss->len-1] = '\0';
+
     json_object *obj = json_tokener_parse(json);
     struct json_object *o = NULL;
 
@@ -368,7 +372,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                 case RESIZE_TERMINAL:
                     {
                         int cols, rows;
-                        if (parse_window_size(pss->buffer + 1, &cols, &rows)) {
+                        if (parse_window_size(pss, &cols, &rows)) {
                             if (pty_resize(proc->pty, cols, rows) < 0) {
                                 lwsl_err("pty_resize: %d (%s)\n", errno, strerror(errno));
                             }
