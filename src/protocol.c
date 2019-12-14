@@ -165,9 +165,12 @@ child_cb(uv_signal_t *handle, int signum) {
             proc->status = WEXITSTATUS(stat);
             lwsl_notice("process exited with code %d, pid: %d\n", proc->status, proc->pid);
         } else if (WIFSIGNALED(stat)) {
-            int term_sig = WTERMSIG(stat);
-            proc->status = 128 + term_sig;
-            lwsl_notice("process killed with signal %d, pid: %d\n", term_sig, proc->pid);
+            int sig = WTERMSIG(stat);
+            char sig_name[20];
+
+            proc->status = 128 + sig;
+            get_sig_name(sig, sig_name, sizeof(sig_name));
+            lwsl_notice("process killed with signal %d (%s), pid: %d\n", sig, sig_name, proc->pid);
         }
 
         LIST_REMOVE(proc, entry);
@@ -216,9 +219,14 @@ spawn_process(struct pss_tty *pss) {
 }
 
 void
-kill_process(pid_t pid, int sig) {
-    if (pid <= 0) return;
-    lwsl_notice("killing process %d with signal: %d\n", pid, sig);
+kill_process(struct pty_proc *proc) {
+    if (proc->pid <= 0) return;
+
+    pid_t pid = proc->pid;
+    int sig = server->sig_code;
+    char *sig_name = server->sig_name;
+
+    lwsl_notice("killing process %d with signal: %d (%s)\n", pid, sig, sig_name);
     int pgid = getpgid(pid);
     if (uv_kill(pgid > 0 ? -pgid : pid, sig) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
@@ -423,7 +431,7 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             } else {
                 proc->state = STATE_KILL;
                 uv_read_stop((uv_stream_t *) &proc->pipe);
-                kill_process(proc->pid, server->sig_code);
+                kill_process(proc);
             }
 
             if (server->once && server->client_count == 0) {
