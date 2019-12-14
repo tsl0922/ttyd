@@ -220,7 +220,7 @@ kill_process(pid_t pid, int sig) {
     if (pid <= 0) return;
     lwsl_notice("killing process %d with signal: %d\n", pid, sig);
     int pgid = getpgid(pid);
-    if (kill(pgid > 0 ? -pgid : pid, sig) != 0) {
+    if (uv_kill(pgid > 0 ? -pgid : pid, sig) != 0) {
         lwsl_err("kill: %d, errno: %d (%s)\n", pid, errno, strerror(errno));
     }
 }
