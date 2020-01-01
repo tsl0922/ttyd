@@ -431,7 +431,7 @@ main(int argc, char **argv) {
         if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
 #if defined(LWS_USE_UNIX_SOCK) || defined(LWS_WITH_UNIX_SOCK)
             info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
-            strncpy(server->socket_path, info.iface, sizeof(server->socket_path));
+            strncpy(server->socket_path, info.iface, sizeof(server->socket_path) - 1);
 #else
             fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
             return -1;
