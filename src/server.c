@@ -475,17 +475,30 @@ main(int argc, char **argv) {
     void *foreign_loops[1];
     foreign_loops[0] = server->loop;
     info.foreign_loops = foreign_loops;
+    info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
 #endif
 
     context = lws_create_context(&info);
     if (context == NULL) {
-        lwsl_err("libwebsockets init failed\n");
+        lwsl_err("libwebsockets context creation failed\n");
         return 1;
     }
 
+#if LWS_LIBRARY_VERSION_MAJOR >= 3
+    struct lws_vhost *vhost = lws_create_vhost(context, &info);
+    if (vhost == NULL) {
+        lwsl_err("libwebsockets vhost creation failed\n");
+        return 1;
+    }
+    int port = lws_get_vhost_listen_port(vhost);
+#else
+    int port = info.port;
+#endif
+    lwsl_notice(" Listening on port: %d\n", port);
+
     if (browser) {
         char url[30];
-        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", info.port);
+        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", port);
         open_uri(url);
     }
 
