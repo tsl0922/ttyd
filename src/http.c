@@ -1,5 +1,6 @@
 #include <string.h>
 #include <libwebsockets.h>
+#include <openssl/ssl.h>
 
 #include "server.h"
 #include "html.h"
