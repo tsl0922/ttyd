@@ -48,5 +48,4 @@ build
 .idea/
 
 # Project files
-html.h
 !init.d

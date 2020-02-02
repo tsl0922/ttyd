@@ -9,4 +9,4 @@ install [Yarn](https://yarnpkg.com), and run: `yarn install`.
 
 ## Publish
 
-Run `yarn run build`, this will compile the inlined html to `../src/index.html`.
+Run `yarn run build`, this will compile the inlined html to `../src/html.h`.
