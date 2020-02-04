@@ -67,7 +67,7 @@
     "xterm": "^4.3.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-web-links": "^0.2.1",
-    "xterm-addon-webgl": "^0.4.0",
+    "xterm-addon-webgl": "^0.5.0",
     "zmodem.js": "^0.1.9"
   }
 }
