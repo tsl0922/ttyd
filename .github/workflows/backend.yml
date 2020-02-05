@@ -20,7 +20,7 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential cmake libjson-c-dev libssl-dev libuv1-dev
+          sudo apt-get install build-essential cmake libjson-c-dev zlib1g-dev libssl-dev libuv1-dev
       - name: Install libwebsockets-${{ matrix.lws-version }}
         env:
           LWS_VERSION: ${{ matrix.lws-version }}
