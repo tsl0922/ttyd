@@ -106,7 +106,7 @@ uncompress_html(char **output, size_t *output_len) {
     return true;
 }
 
-bool
+void
 pss_buffer_free(struct pss_http *pss) {
     if (pss->buffer != (char *) index_html && pss->buffer != html_cache)
         free(pss->buffer);
