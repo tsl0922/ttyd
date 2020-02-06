@@ -8,9 +8,10 @@ if ((module as any).hot) {
     require('preact/debug');
 }
 
-const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-const wsPath = window.location.pathname.endsWith('/') ? 'ws' : '/ws';
-const url = [protocol, window.location.host, window.location.pathname, wsPath, window.location.search].join('');
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const path = window.location.pathname.replace(/[\/]+$/, '');
+const wsUrl = [protocol, '//', window.location.host, path, '/ws', window.location.search].join('');
+const tokenUrl = [window.location.protocol, '//', window.location.host, path, '/token'].join('');
 const termOptions = {
     fontSize: 13,
     fontFamily: 'Menlo For Powerline,Consolas,Liberation Mono,Menlo,Courier,monospace',
@@ -39,6 +40,6 @@ const termOptions = {
 
 export class App extends Component {
     render() {
-        return <Xterm id="terminal-container" url={url} options={termOptions} />;
+        return <Xterm id="terminal-container" wsUrl={wsUrl} tokenUrl={tokenUrl} options={termOptions} />;
     }
 }

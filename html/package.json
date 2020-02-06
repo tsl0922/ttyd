@@ -65,6 +65,7 @@
     "decko": "^1.2.0",
     "file-saver": "^2.0.2",
     "preact": "^10.0.5",
+    "whatwg-fetch": "^3.0.0",
     "xterm": "^4.4.0",
     "xterm-addon-fit": "^0.3.0",
     "xterm-addon-web-links": "^0.2.1",

@@ -73,7 +73,7 @@ const devConfig =  {
         compress: true,
         port: 9000,
         proxy: [{
-            context: ['/auth_token.js', '/ws'],
+            context: ['/token', '/ws'],
             target: 'http://localhost:7681',
             ws: true
         }]

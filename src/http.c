@@ -149,15 +149,15 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             p = buffer + LWS_PRE;
             end = p + sizeof(buffer) - LWS_PRE;
 
-            if (strncmp(pss->path, "/auth_token.js", 14) == 0) {
+            if (strncmp(pss->path, "/token", 6) == 0) {
                 const char *credential = server->credential != NULL ? server->credential : "";
-                size_t n = sprintf(buf, "var tty_auth_token = '%s';\n", credential);
+                size_t n = sprintf(buf, "{\"token\": \"%s\"}", credential);
                 if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
                     return 1;
                 if (lws_add_http_header_by_token(wsi,
                                                  WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                                 (unsigned char *) "application/javascript",
-                                                 22, &p, end))
+                                                 (unsigned char *) "application/json;charset=utf-8",
+                                                 30, &p, end))
                     return 1;
                 if (lws_add_http_header_content_length(wsi, (unsigned long) n, &p, end))
                     return 1;

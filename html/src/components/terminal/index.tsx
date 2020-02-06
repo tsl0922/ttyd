@@ -17,7 +17,6 @@ export interface TerminalExtended extends Terminal {
 
 export interface WindowExtended extends Window {
     term: TerminalExtended;
-    tty_auth_token?: string;
 }
 declare let window: WindowExtended;
 
@@ -34,7 +33,8 @@ const enum Command {
 
 interface Props {
     id: string;
-    url: string;
+    wsUrl: string;
+    tokenUrl: string;
     options: ITerminalOptions;
 }
 
@@ -47,6 +47,7 @@ export class Xterm extends Component<Props> {
     private overlayAddon: OverlayAddon;
     private zmodemAddon: ZmodemAddon;
     private socket: WebSocket;
+    private token: string;
     private title: string;
     private resizeTimeout: number;
     private backoff: backoff.Backoff;
@@ -65,7 +66,7 @@ export class Xterm extends Component<Props> {
         });
         this.backoff.on('ready', () => {
             this.backoffLock = false;
-            this.openTerminal();
+            this.refreshToken().then(this.openTerminal);
         });
         this.backoff.on('backoff', (_, delay: number) => {
             console.log(`[ttyd] will attempt to reconnect websocket in ${delay}ms`);
@@ -73,7 +74,8 @@ export class Xterm extends Component<Props> {
         });
     }
 
-    componentDidMount() {
+    async componentDidMount() {
+        await this.refreshToken();
         this.openTerminal();
     }
 
@@ -103,6 +105,19 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
+    private async refreshToken() {
+        try {
+            const resp = await fetch(this.props.tokenUrl);
+            if (resp.ok) {
+                const json = await resp.json();
+                this.token = json.token;
+            }
+        } catch (e) {
+            console.log(`[ttyd] fetch ${this.props.tokenUrl}: ${e.message}`);
+        }
+    }
+
+    @bind
     private onWindowResize() {
         const { fitAddon } = this;
         clearTimeout(this.resizeTimeout);
@@ -121,7 +136,7 @@ export class Xterm extends Component<Props> {
             this.terminal.dispose();
         }
 
-        this.socket = new WebSocket(this.props.url, ['tty']);
+        this.socket = new WebSocket(this.props.wsUrl, ['tty']);
         this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container, fitAddon, overlayAddon } = this;
         window.term = terminal as TerminalExtended;
@@ -174,9 +189,7 @@ export class Xterm extends Component<Props> {
         this.backoff.reset();
 
         const { socket, textEncoder, fitAddon } = this;
-        const authToken = window.tty_auth_token;
-
-        socket.send(textEncoder.encode(JSON.stringify({ AuthToken: authToken })));
+        socket.send(textEncoder.encode(JSON.stringify({ AuthToken: this.token })));
         fitAddon.fit();
     }
 
@@ -187,11 +200,6 @@ export class Xterm extends Component<Props> {
         const { overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
         window.removeEventListener('beforeunload', this.onWindowUnload);
-
-        // 1008: POLICY_VIOLATION - Auth failure
-        if (event.code === 1008) {
-            window.location.reload();
-        }
 
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000) {
