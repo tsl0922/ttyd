@@ -160,6 +160,22 @@ Docker containers are jailed environments which are more secure, this is useful 
 - Sharing single docker container with multiple clients: `docker run -it --rm -p 7681:7681 tsl0922/ttyd`.
 - Creating new docker container for each client: `ttyd docker run -it --rm ubuntu`.
 
+## Nginx reverse proxy
+
+Sample config to proxy ttyd under the `/ttyd` path:
+
+```nginx
+location ~ ^/ttyd(.*)$ {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_pass http://127.0.0.1:7681/$1;
+}
+```
+
 # Credits
 
 - [GoTTY][1]: ttyd is a port of GoTTY to `C` language with many improvements.
