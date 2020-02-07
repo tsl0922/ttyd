@@ -20,7 +20,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session | undefined;
 
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
 
         this.sentry = new Zmodem.Sentry({

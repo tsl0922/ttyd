@@ -11,14 +11,15 @@ import { ZmodemAddon } from '../zmodem';
 
 import 'xterm/css/xterm.css';
 
-export interface TerminalExtended extends Terminal {
-    fit();
+interface TtydTerminal extends Terminal {
+    fit(): void;
 }
 
-export interface WindowExtended extends Window {
-    term: TerminalExtended;
+declare global {
+    interface Window {
+        term: TtydTerminal;
+    }
 }
-declare let window: WindowExtended;
 
 const enum Command {
     // server side
@@ -53,7 +54,7 @@ export class Xterm extends Component<Props> {
     private backoff: backoff.Backoff;
     private backoffLock = false;
 
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
 
         this.textEncoder = new TextEncoder();
@@ -113,7 +114,7 @@ export class Xterm extends Component<Props> {
                 this.token = json.token;
             }
         } catch (e) {
-            console.log(`[ttyd] fetch ${this.props.tokenUrl}: ${e.message}`);
+            console.error(`[ttyd] fetch ${this.props.tokenUrl}: `, e);
         }
     }
 
@@ -139,7 +140,7 @@ export class Xterm extends Component<Props> {
         this.socket = new WebSocket(this.props.wsUrl, ['tty']);
         this.terminal = new Terminal(this.props.options);
         const { socket, terminal, container, fitAddon, overlayAddon } = this;
-        window.term = terminal as TerminalExtended;
+        window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
         };

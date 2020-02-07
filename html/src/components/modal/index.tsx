@@ -8,7 +8,7 @@ interface Props {
 }
 
 export class Modal extends Component<Props> {
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
     }
 
