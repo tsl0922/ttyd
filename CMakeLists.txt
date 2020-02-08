@@ -55,7 +55,7 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Libwebsockets 1.7.0 QUIET)
 
-if(NOT Libwebsockets_FOUND)
+if(NOT Libwebsockets_FOUND) # for libwebsockets-dev on ubuntu 16.04
     find_path(LIBWEBSOCKETS_INCLUDE_DIR NAMES libwebsockets.h)
     find_library(LIBWEBSOCKETS_LIBRARY NAMES websockets)
     find_package_handle_standard_args(Libwebsockets REQUIRED_VARS LIBWEBSOCKETS_LIBRARY LIBWEBSOCKETS_INCLUDE_DIR)
@@ -69,17 +69,10 @@ endif()
 set(INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
 set(LINK_LIBS ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
 
-if(APPLE)
-    # required for the new homebrew version of libwebsockets
-    find_path(LIBUV_INCLUDE_DIR NAMES uv.h)
-    find_path(LIBEVENT_INCLUDE_DIR NAMES event2/event.h)
-    list(APPEND INCLUDE_DIRS ${LIBUV_INCLUDE_DIR} ${LIBEVENT_INCLUDE_DIR})
-else()
-    list(APPEND LINK_LIBS util)
-endif()
-
 if(WIN32)
     list(APPEND LINK_LIBS shell32)
+elseif(NOT APPLE)
+    list(APPEND LINK_LIBS util)
 endif()
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
