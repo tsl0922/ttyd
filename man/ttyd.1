@@ -14,7 +14,7 @@ ttyd \- Share your terminal over the web
 .PP
 ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 .IP \(bu 2
-Built on top of Libwebsockets with C for speed
+Built on top of Libwebsockets with libuv for speed
 .IP \(bu 2
 Fully\-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
 .IP \(bu 2
@@ -162,7 +162,7 @@ openssl req \-new \-x509 \-days 365 \-key ca.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme
 
 # server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
 openssl req \-newkey rsa:2048 \-nodes \-keyout server.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" \-out server.csr
-openssl x509 \-req \-extfile <(printf "subjectAltName=DNS:localhost") \-days 365 \-in server.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out server.crt
+openssl x509 \-sha256 \-req \-extfile <(printf "subjectAltName=DNS:localhost") \-days 365 \-in server.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out server.crt
 
 # client certificate (the p12/pem format may be useful for some clients)
 openssl req \-newkey rsa:2048 \-nodes \-keyout client.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" \-out client.csr
@@ -208,6 +208,28 @@ Docker containers are jailed environments which are more secure, this is useful 
 Sharing single docker container with multiple clients: docker run \-it \-\-rm \-p 7681:7681 tsl0922/ttyd.
 .IP \(bu 2
 Creating new docker container for each client: ttyd docker run \-it \-\-rm ubuntu.
+
+
+.SH Nginx reverse proxy
+.PP
+Sample config to proxy ttyd under the \fB\fC/ttyd\fR path:
+
+.PP
+.RS
+
+.nf
+location \~ ^/ttyd(.*)$ {
+    proxy\_http\_version 1.1;
+    proxy\_set\_header Host $host;
+    proxy\_set\_header X\-Forwarded\-Proto $scheme;
+    proxy\_set\_header X\-Forwarded\-For $proxy\_add\_x\_forwarded\_for;
+    proxy\_set\_header Upgrade $http\_upgrade;
+    proxy\_set\_header Connection "upgrade";
+    proxy\_pass http://127.0.0.1:7681/$1;
+}
+
+.fi
+.RE
 
 
 .SH AUTHOR

@@ -10,7 +10,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
 # Description
   ttyd is a command-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 
-  - Built on top of Libwebsockets with C for speed
+  - Built on top of Libwebsockets with libuv for speed
   - Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
   - Graphical ZMODEM integration with lrzsz support 
   - SSL support based on OpenSSL
@@ -111,7 +111,7 @@ openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc
 
 # server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
 openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out server.csr
-openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+openssl x509 -sha256 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
 # client certificate (the p12/pem format may be useful for some clients)
 openssl req -newkey rsa:2048 -nodes -keyout client.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" -out client.csr
@@ -139,6 +139,22 @@ curl --insecure --cert client.p12[:password] -v https://localhost:7681
 
   - Sharing single docker container with multiple clients: docker run -it --rm -p 7681:7681 tsl0922/ttyd.
   - Creating new docker container for each client: ttyd docker run -it --rm ubuntu.
+
+# Nginx reverse proxy
+
+Sample config to proxy ttyd under the `/ttyd` path:
+
+```nginx
+location ~ ^/ttyd(.*)$ {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_pass http://127.0.0.1:7681/$1;
+}
+```
 
 # AUTHOR
   Shuanglei Tao \<tsl0922@gmail.com\> Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
