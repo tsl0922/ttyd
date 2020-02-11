@@ -12,7 +12,7 @@ ttyd is a simple command-line tool for sharing terminal over the web, inspired b
 - SSL support based on [OpenSSL][4]
 - Run any custom command with options
 - Basic authentication support and many other custom options
-- Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt][5]/[LEDE][6], Windows
+- Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt][5], Windows
 
 # Installation
 
@@ -30,7 +30,7 @@ brew install ttyd
 - Build from source (debian/ubuntu):
 
     ```bash
-    sudo apt-get install cmake g++ pkg-config git libjson-c-dev libwebsockets-dev
+    sudo apt-get install build-essential cmake git libjson-c-dev libwebsockets-dev
     git clone https://github.com/tsl0922/ttyd.git
     cd ttyd && mkdir build && cd build
     cmake ..
@@ -38,27 +38,21 @@ brew install ttyd
     ```
 
     You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
-    
-- Install on Gentoo:
 
-clone the repo at [https://bitbucket.org/mgpagano/ttyd/src/master/](https://bitbucket.org/mgpagano/ttyd/src/master/) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository) for creating a local repository.
+- Install on Gentoo: clone the [repo][6] and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
 
 ## Install on Windows
 
-ttyd can be built with [MSYS2][10] on windows, The build instructions is [here][13].
+ttyd can be built with [MSYS2][10] on windows.
 
 > **NOTE:** Native windows console programs may not work correctly due to [pty incompatibility issues][11].
  As a workaround, you can use [winpty][12] as a wrapper to invoke the windows program, eg: `ttyd winpty cmd`.
 
-## Install on OpenWrt/LEDE
-
-[LEDE][6] `17.01.0` and later:
+## Install on OpenWrt
 
 ```bash
 opkg install ttyd
 ```
-
-You may want to [compile it manually][14].
 
 # Usage
 
@@ -153,7 +147,7 @@ curl --insecure --cert client.p12[:password] -v https://localhost:7681
 
 If you don't want to enable client certificate verification, remove the `--ssl-ca` option.
 
-## Docker and ttyd
+## Docker image
 
 Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
 
@@ -162,7 +156,7 @@ Docker containers are jailed environments which are more secure, this is useful 
 
 ## Nginx reverse proxy
 
-Sample config to proxy ttyd under the `/ttyd` path:
+Example [nginx](https://nginx.org) conf to proxy ttyd under the `/ttyd` path:
 
 ```nginx
 location ~ ^/ttyd(.*)$ {
@@ -176,6 +170,8 @@ location ~ ^/ttyd(.*)$ {
 }
 ```
 
+This conf won't work fully with ttyd < 1.6.0, please use the latest version.
+
 # Credits
 
 - [GoTTY][1]: ttyd is a port of GoTTY to `C` language with many improvements.
@@ -187,15 +183,13 @@ location ~ ^/ttyd(.*)$ {
   [3]: https://github.com/xtermjs/xterm.js
   [4]: https://www.openssl.org
   [5]: https://openwrt.org
-  [6]: https://www.lede-project.org
+  [6]: https://bitbucket.org/mgpagano/ttyd/src/master
   [7]: http://brew.sh
   [8]: https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm
   [9]: https://github.com/tsl0922/ttyd/issues/6
   [10]: http://msys2.github.io
   [11]: https://github.com/mintty/mintty/blob/master/wiki/Tips.md#inputoutput-interaction-with-alien-programs
   [12]: https://github.com/rprichard/winpty
-  [13]: https://github.com/tsl0922/ttyd/tree/master/msys2
-  [14]: https://github.com/tsl0922/ttyd/tree/master/openwrt
   [15]: https://github.com/xtermjs/xterm.js#browser-support
   [16]: https://en.wikipedia.org/wiki/ZMODEM
   [17]: https://ohse.de/uwe/software/lrzsz.html
