@@ -12,16 +12,16 @@ BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.13.1}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2t}"
-LIBUV_VERSION="${LIBUV_VERSION:-1.34.0}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-3.2.0}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2u}"
+LIBUV_VERSION="${LIBUV_VERSION:-1.34.2}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-3.2.2}"
 
 build_zlib() {
 	echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
 	curl -sLo- https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
 	pushd ${BUILD_DIR}/zlib-${ZLIB_VERSION}
 		env CHOST=${TARGET} ./configure --static --archs="-fPIC" --prefix=${STAGE_DIR}
-		make install
+		make -j4 install
 	popd
 }
 
@@ -30,7 +30,7 @@ build_json-c() {
 	curl -sLo- https://s3.amazonaws.com/json-c_releases/releases/json-c-${JSON_C_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
 	pushd ${BUILD_DIR}/json-c-${JSON_C_VERSION}
 		env CFLAGS=-fPIC ./configure --disable-shared --enable-static --prefix=${STAGE_DIR} --host=${TARGET}
-		make install
+		make -j4 install
 	popd
 }
 
@@ -40,18 +40,18 @@ build_openssl() {
 	pushd ${BUILD_DIR}/openssl-${OPENSSL_VERSION}
 		env CC=${TARGET}-gcc AR=${TARGET}-ar RANLIB=${TARGET}-ranlib C_INCLUDE_PATH=${STAGE_DIR}/include \
 			./Configure dist -fPIC --prefix=/ --install_prefix=${STAGE_DIR}
-		make > /dev/null
+		make -j4 > /dev/null
 		make install_sw
 	popd
 }
 
 build_libuv() {
   echo "=== Building libuv-${LIBUV_VERSION} (${TARGET})..."
-	curl -sLo- https://dist.libuv.org/dist/v1.34.0/libuv-v${LIBUV_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
+	curl -sLo- https://dist.libuv.org/dist/v${LIBUV_VERSION}/libuv-v${LIBUV_VERSION}.tar.gz | tar xz -C ${BUILD_DIR}
 	pushd ${BUILD_DIR}/libuv-v${LIBUV_VERSION}
 	  ./autogen.sh
 		env CFLAGS=-fPIC ./configure --disable-shared --enable-static --prefix=${STAGE_DIR} --host=${TARGET}
-		make install
+		make -j4 install
 	popd
 }
 
