@@ -109,6 +109,7 @@ Then open <http://localhost:8080> with a browser, you will get a bash shell with
 - If you want to login with your system accounts on the web browser, run `ttyd login`.
 - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
 - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
+- [httpsh](https://github.com/leshniak/httpsh) 🔒🐚 – secure shell in your browser
 
 ## Browser Support
 
