@@ -26,7 +26,7 @@ brew install ttyd
 
 ## Install on Linux
 
-- Binary version: download from the [releases](https://github.com/tsl0922/ttyd/releases) page.
+- Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page.
 - Build from source (debian/ubuntu):
 
     ```bash
