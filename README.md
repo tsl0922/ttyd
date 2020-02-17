@@ -1,24 +1,24 @@
 # ttyd - Share your terminal over the web [![](https://github.com/tsl0922/ttyd/workflows/frontend/badge.svg)](https://github.com/tsl0922/ttyd/actions?workflow=frontend) [![](https://github.com/tsl0922/ttyd/workflows/backend/badge.svg)](https://github.com/tsl0922/ttyd/actions?workflow=backend)
 
-ttyd is a simple command-line tool for sharing terminal over the web, inspired by [GoTTY][1].
+ttyd is a simple command-line tool for sharing terminal over the web.
 
 ![screenshot](https://github.com/tsl0922/ttyd/raw/master/screenshot.gif)
 
 # Features
 
-- Built on top of [Libwebsockets][2] with [libuv][20] for speed
-- Fully-featured terminal based on [Xterm.js][3] with [CJK][18] and IME support
-- Graphical [ZMODEM][16] integration with [lrzsz][17] support
-- SSL support based on [OpenSSL][4]
+- Built on top of [Libwebsockets](https://libwebsockets.org) with [libuv](https://libuv.org) for speed
+- Fully-featured terminal based on [Xterm.js](https://xtermjs.org) with [CJK](https://en.wikipedia.org/wiki/CJK_characters) and IME support
+- Graphical [ZMODEM](https://en.wikipedia.org/wiki/ZMODEM) integration with [lrzsz](https://ohse.de/uwe/software/lrzsz.html) support
+- SSL support based on [OpenSSL](https://www.openssl.org)
 - Run any custom command with options
 - Basic authentication support and many other custom options
-- Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt][5], Windows
+- Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt](https://openwrt.org), Windows
 
 # Installation
 
 ## Install on macOS
 
-Install with [homebrew][7]:
+Install with [homebrew](http://brew.sh):
 
 ```bash
 brew install ttyd
@@ -37,16 +37,13 @@ brew install ttyd
     make && make install
     ```
 
-    You may also need to compile/install [libwebsockets][2] from source if the `libwebsockets-dev` package is outdated.
+    You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
 
-- Install on Gentoo: clone the [repo][6] and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
+- Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
 
 ## Install on Windows
 
-ttyd can be built with [MSYS2][10] on windows.
-
-> **NOTE:** Native windows console programs may not work correctly due to [pty incompatibility issues][11].
- As a workaround, you can use [winpty][12] as a wrapper to invoke the windows program, eg: `ttyd winpty cmd`.
+[Compile on Windows](https://github.com/tsl0922/ttyd/wiki/Compile-on-Windows).
 
 ## Install on OpenWrt
 
@@ -95,105 +92,13 @@ OPTIONS:
 Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
 ```
 
-## Example Usage
-
-ttyd starts web server at port `7681` by default, you can use the `-p` option to change it, the `command` will be started with `arguments` as options. For example, run:
-
-```bash
-ttyd -p 8080 bash -x
-```
-Then open <http://localhost:8080> with a browser, you will get a bash shell with debug mode enabled.
-
-**More Examples:**
-
-- If you want to login with your system accounts on the web browser, run `ttyd login`.
-- You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
-- Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
-- [httpsh](https://github.com/leshniak/httpsh) 🔒🐚 – secure shell in your browser
+Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Example-Usage).
 
 ## Browser Support
 
-Modern browsers, See [Browser Support][15].
+Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#browser-support).
 
-## SSL how-to
+## Alternatives
 
-Generate SSL CA and self signed server/client certificates:
-
-```bash
-# CA certificate (FQDN must be different from server/client)
-openssl genrsa -out ca.key 2048
-openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out ca.crt
-
-# server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
-openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out server.csr
-openssl x509 -sha256 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
-
-# client certificate (the p12/pem format may be useful for some clients)
-openssl req -newkey rsa:2048 -nodes -keyout client.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" -out client.csr
-openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt
-openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
-openssl pkcs12 -in client.p12 -out client.pem -clcerts
-```
-
-Then start ttyd:
-
-```bash
-ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
-```
-You may want to test the client certificate verification with `curl`:
-
-```bash
-curl --insecure --cert client.p12[:password] -v https://localhost:7681
-```
-
-If you don't want to enable client certificate verification, remove the `--ssl-ca` option.
-
-## Docker image
-
-Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
-
-- Sharing single docker container with multiple clients: `docker run -it --rm -p 7681:7681 tsl0922/ttyd`.
-- Creating new docker container for each client: `ttyd docker run -it --rm ubuntu`.
-
-## Nginx reverse proxy
-
-Example [nginx](https://nginx.org) conf to proxy ttyd under the `/ttyd` path:
-
-```nginx
-location ~ ^/ttyd(.*)$ {
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_pass http://127.0.0.1:7681/$1;
-}
-```
-
-This conf won't work fully with ttyd < 1.6.0, please use the latest version.
-
-# Credits
-
-- [GoTTY][1]: ttyd is a port of GoTTY to `C` language with many improvements.
-- [Libwebsockets][2]: is used to build the websocket server.
-- [Xterm.js][3]: is used to run the terminal emulator on the web, [hterm][8] is used previously.
-
-  [1]: https://github.com/yudai/gotty
-  [2]: https://libwebsockets.org
-  [3]: https://github.com/xtermjs/xterm.js
-  [4]: https://www.openssl.org
-  [5]: https://openwrt.org
-  [6]: https://bitbucket.org/mgpagano/ttyd/src/master
-  [7]: http://brew.sh
-  [8]: https://chromium.googlesource.com/apps/libapps/+/HEAD/hterm
-  [9]: https://github.com/tsl0922/ttyd/issues/6
-  [10]: http://msys2.github.io
-  [11]: https://github.com/mintty/mintty/blob/master/wiki/Tips.md#inputoutput-interaction-with-alien-programs
-  [12]: https://github.com/rprichard/winpty
-  [15]: https://github.com/xtermjs/xterm.js#browser-support
-  [16]: https://en.wikipedia.org/wiki/ZMODEM
-  [17]: https://ohse.de/uwe/software/lrzsz.html
-  [18]: https://en.wikipedia.org/wiki/CJK_characters
-  [19]: https://cmake.org/
-  [20]: https://libuv.org/
+* [Wetty](https://github.com/krishnasrinivas/wetty): [Node](https://nodejs.org) based web terminal (SSH/login)
+* [GoTTY](https://github.com/yudai/gotty): [Go](https://golang.org) based web terminal
