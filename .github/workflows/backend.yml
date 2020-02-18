@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        arch: [i386, x86_64, arm, armhf, mips, mipsel]
+        arch: [i386, x86_64, arm, armhf, aarch64, mips, mipsel]
     steps:
       - uses: actions/checkout@v1
       - name: Cross build (${{ matrix.arch }})
