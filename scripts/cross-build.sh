@@ -125,7 +125,7 @@ build() {
 }
 
 case $1 in
-  i386|x86_64|mips|mipsel)
+  i386|x86_64|aarch64|mips|mipsel)
     build $1-linux-musl $1
     ;;
   arm)
@@ -135,6 +135,5 @@ case $1 in
     build arm-linux-musleabihf $1
     ;;
   *)
-    echo "usage: $0 i386|x86_64|arm|armhf|mips|mipsel" && exit 1
+    echo "usage: $0 i386|x86_64|arm|armhf|aarch64|mips|mipsel" && exit 1
 esac
-
