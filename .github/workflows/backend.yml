@@ -5,10 +5,12 @@ on:
     paths:
     - "CMakeLists.txt"
     - "src/*"
+    - "scripts/*"
   pull_request:
     paths:
     - "CMakeLists.txt"
     - "src/*"
+    - "scripts/*"
 
 jobs:
   build:
