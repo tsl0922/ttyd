@@ -233,6 +233,13 @@ kill_process(struct pty_proc *proc) {
     }
 }
 
+static void
+write_cb(uv_write_t* req, int status)
+{
+    free(req->data);
+    free(req);
+}
+
 int
 callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
              void *user, void *in, size_t len) {
@@ -370,10 +377,17 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
                         break;
                     if (server->readonly)
                         return 0;
-                    uv_buf_t b = { pss->buffer + 1, pss->len - 1 };
-                    int err = uv_try_write((uv_stream_t *) &proc->pipe, &b, 1);
+
+                    char* base = malloc(pss->len - 1);
+                    memcpy(base, pss->buffer + 1, pss->len - 1);
+                    uv_buf_t b = { base, pss->len - 1 };
+                    uv_write_t* req = malloc(sizeof(*req));
+                    req->data = base;
+
+                    int err =
+                      uv_write(req, (uv_stream_t*)&proc->pipe, &b, 1, write_cb);
                     if (err < 0) {
-                        lwsl_err("uv_try_write: %s\n", uv_err_name(err));
+                        lwsl_err("uv_write: %s\n", uv_err_name(err));
                         return -1;
                     }
                     break;
