@@ -20,6 +20,7 @@
 volatile bool force_exit = false;
 struct lws_context *context;
 struct server *server;
+struct endpoints endpoints = {"/ws", "/", "/token"};
 
 // websocket protocols
 static const struct lws_protocols protocols[] = {
@@ -44,6 +45,7 @@ static const struct option options[] = {
         {"gid",           required_argument, NULL, 'g'},
         {"signal",        required_argument, NULL, 's'},
         {"index",         required_argument, NULL, 'I'},
+        {"base-path",     required_argument, NULL, 'b'},
         {"ipv6",          no_argument,       NULL, '6'},
         {"ssl",           no_argument,       NULL, 'S'},
         {"ssl-cert",      required_argument, NULL, 'C'},
@@ -62,7 +64,7 @@ static const struct option options[] = {
         {"help",          no_argument,       NULL, 'h'},
         {NULL, 0, 0,                               0}
 };
-static const char *opt_string = "p:i:c:u:g:s:I:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
 
 void print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
@@ -86,6 +88,7 @@ void print_help() {
                     "    -o, --once              Accept only one client and exit on disconnection\n"
                     "    -B, --browser           Open terminal with the default system browser\n"
                     "    -I, --index             Custom index.html path\n"
+                    "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)\n"
 #ifdef LWS_WITH_IPV6
                     "    -6, --ipv6              Enable IPv6 support\n"
 #endif
@@ -358,6 +361,17 @@ main(int argc, char **argv) {
                     fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
                     return -1;
                 }
+                break;
+            case 'b': {
+                char path[128];
+                strncpy(path, optarg, 128);
+                int len = strlen(path);
+                #define sc(f) \
+                  strncpy(path + len, endpoints.f, 128 - len); \
+                  endpoints.f = strdup(path);
+                sc(ws) sc(index) sc(token)
+                #undef sc
+            }
                 break;
             case '6':
                 info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);

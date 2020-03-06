@@ -149,7 +149,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
             p = buffer + LWS_PRE;
             end = p + sizeof(buffer) - LWS_PRE;
 
-            if (strncmp(pss->path, "/token", 6) == 0) {
+            if (strcmp(pss->path, endpoints.token) == 0) {
                 const char *credential = server->credential != NULL ? server->credential : "";
                 size_t n = sprintf(buf, "{\"token\": \"%s\"}", credential);
                 if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
@@ -171,7 +171,7 @@ callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, voi
                 break;
             }
 
-            if (strcmp(pss->path, "/") != 0) {
+            if (strcmp(pss->path, endpoints.index) != 0) {
                 lws_return_http_status(wsi, HTTP_STATUS_NOT_FOUND, NULL);
                 goto try_to_reuse;
             }
