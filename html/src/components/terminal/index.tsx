@@ -53,6 +53,7 @@ export class Xterm extends Component<Props> {
     private resizeTimeout: number;
     private backoff: backoff.Backoff;
     private backoffLock = false;
+    private reconnect = false;
 
     constructor(props: Props) {
         super(props);
@@ -65,19 +66,27 @@ export class Xterm extends Component<Props> {
             initialDelay: 100,
             maxDelay: 10000,
         });
+        this.backoff.failAfter(15);
         this.backoff.on('ready', () => {
             this.backoffLock = false;
-            this.refreshToken().then(this.openTerminal);
+            this.refreshToken().then(this.connect);
         });
         this.backoff.on('backoff', (_, delay: number) => {
             console.log(`[ttyd] will attempt to reconnect websocket in ${delay}ms`);
             this.backoffLock = true;
+        });
+        this.backoff.on('fail', () => {
+            this.backoffLock = true; // break backoff
         });
     }
 
     async componentDidMount() {
         await this.refreshToken();
         this.openTerminal();
+        this.connect();
+
+        window.addEventListener('resize', this.onWindowResize);
+        window.addEventListener('beforeunload', this.onWindowUnload);
     }
 
     componentWillUnmount() {
@@ -125,31 +134,25 @@ export class Xterm extends Component<Props> {
         this.resizeTimeout = setTimeout(() => fitAddon.fit(), 250) as any;
     }
 
-    private onWindowUnload(event: BeforeUnloadEvent): string {
-        const message = 'Close terminal? this will also terminate the command.';
-        event.returnValue = message;
-        return message;
+    @bind
+    private onWindowUnload(event: BeforeUnloadEvent): any {
+        const { socket } = this;
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const message = 'Close terminal? this will also terminate the command.';
+            event.returnValue = message;
+            return message;
+        }
+        event.preventDefault();
     }
 
     @bind
     private openTerminal() {
-        if (this.terminal) {
-            this.terminal.dispose();
-        }
-
-        this.socket = new WebSocket(this.props.wsUrl, ['tty']);
         this.terminal = new Terminal(this.props.options);
-        const { socket, terminal, container, fitAddon, overlayAddon } = this;
+        const { terminal, container, fitAddon, overlayAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
         };
-
-        socket.binaryType = 'arraybuffer';
-        socket.onopen = this.onSocketOpen;
-        socket.onmessage = this.onSocketData;
-        socket.onclose = this.onSocketClose;
-        socket.onerror = this.onSocketError;
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
@@ -171,46 +174,61 @@ export class Xterm extends Component<Props> {
             });
         }
         terminal.open(container);
-        terminal.focus();
-
-        window.addEventListener('resize', this.onWindowResize);
-        window.addEventListener('beforeunload', this.onWindowUnload);
     }
 
     @bind
-    private reconnect() {
-        if (!this.backoffLock) {
-            this.backoff.backoff();
-        }
+    private connect() {
+        this.socket = new WebSocket(this.props.wsUrl, ['tty']);
+        const { socket } = this;
+
+        socket.binaryType = 'arraybuffer';
+        socket.onopen = this.onSocketOpen;
+        socket.onmessage = this.onSocketData;
+        socket.onclose = this.onSocketClose;
+        socket.onerror = this.onSocketError;
     }
 
     @bind
     private onSocketOpen() {
-        console.log('[ttyd] Websocket connection opened');
+        console.log('[ttyd] websocket connection opened');
         this.backoff.reset();
 
-        const { socket, textEncoder, fitAddon } = this;
+        const { socket, textEncoder, terminal, fitAddon } = this;
         socket.send(textEncoder.encode(JSON.stringify({ AuthToken: this.token })));
-        fitAddon.fit();
+
+        if (this.reconnect) {
+            const dims = fitAddon.proposeDimensions();
+            terminal.reset();
+            terminal.resize(dims.cols, dims.rows);
+            this.onTerminalResize(dims); // may not be triggered by terminal.resize
+        } else {
+            this.reconnect = true;
+            fitAddon.fit();
+        }
+
+        terminal.focus();
     }
 
     @bind
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { overlayAddon } = this;
+        const { backoff, backoffLock, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
-        window.removeEventListener('beforeunload', this.onWindowUnload);
 
         // 1000: CLOSE_NORMAL
-        if (event.code !== 1000) {
-            this.reconnect();
+        if (event.code !== 1000 && !backoffLock) {
+            backoff.backoff();
         }
     }
 
     @bind
-    private onSocketError() {
-        this.reconnect();
+    private onSocketError(event: Event) {
+        console.error('[ttyd] websocket connection error: ', event);
+        const { backoff, backoffLock } = this;
+        if (!backoffLock) {
+            backoff.backoff();
+        }
     }
 
     @bind
