@@ -419,6 +419,9 @@ callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_CLOSED:
+            if (pss->wsi == NULL)
+                break;
+
             server->client_count--;
             lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
             if (pss->buffer != NULL) {
