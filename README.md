@@ -1,4 +1,4 @@
-# ttyd - Share your terminal over the web [![](https://github.com/tsl0922/ttyd/workflows/frontend/badge.svg)](https://github.com/tsl0922/ttyd/actions?workflow=frontend) [![](https://github.com/tsl0922/ttyd/workflows/backend/badge.svg)](https://github.com/tsl0922/ttyd/actions?workflow=backend)
+# ttyd - Share your terminal over the web ![backend](https://github.com/tsl0922/ttyd/workflows/backend/badge.svg) ![frontend](https://github.com/tsl0922/ttyd/workflows/frontend/badge.svg)
 
 ttyd is a simple command-line tool for sharing terminal over the web.
 
