@@ -13,12 +13,17 @@
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
 
-// websocket url path
-#define WS_PATH "/ws"
+// url paths
+struct endpoints {
+    char *ws;
+    char *index;
+    char *token;
+};
 
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct server *server;
+extern struct endpoints endpoints;
 
 typedef enum {
     STATE_INIT, STATE_KILL, STATE_EXIT

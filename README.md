@@ -80,6 +80,7 @@ OPTIONS:
     -o, --once              Accept only one client and exit on disconnection
     -B, --browser           Open terminal with the default system browser
     -I, --index             Custom index.html path
+    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
     -6, --ipv6              Enable IPv6 support
     -S, --ssl               Enable SSL
     -C, --ssl-cert          SSL certificate file path
