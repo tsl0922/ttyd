@@ -28,12 +28,14 @@ static const struct lws_protocols protocols[] = {
         {NULL, NULL,                 0,                       0}
 };
 
+#ifndef LWS_WITHOUT_EXTENSIONS
 // websocket extensions
 static const struct lws_extension extensions[] = {
         {"permessage-deflate", lws_extension_callback_pm_deflate, "permessage-deflate"},
         {"deflate-frame",      lws_extension_callback_pm_deflate, "deflate_frame"},
         {NULL, NULL, NULL}
 };
+#endif
 
 // command line options
 static const struct option options[] = {
@@ -262,7 +264,9 @@ main(int argc, char **argv) {
     info.uid = -1;
     info.max_http_header_pool = 16;
     info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
+#ifndef LWS_WITHOUT_EXTENSIONS
     info.extensions = extensions;
+#endif
     info.max_http_header_data = 20480;
 
     int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
