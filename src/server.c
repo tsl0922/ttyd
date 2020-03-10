@@ -68,7 +68,8 @@ static const struct option options[] = {
 };
 static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
 
-void print_help() {
+static void
+print_help() {
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
                     "USAGE:\n"
                     "    ttyd [options] <command> [<arguments...>]\n\n"
@@ -106,7 +107,7 @@ void print_help() {
     );
 }
 
-struct server *
+static struct server *
 server_new(int argc, char **argv, int start) {
     struct server *ts;
     size_t cmd_len = 0;
@@ -153,7 +154,7 @@ server_new(int argc, char **argv, int start) {
     return ts;
 }
 
-void
+static void
 server_free(struct server *ts) {
     if (ts == NULL)
         return;
@@ -180,7 +181,7 @@ server_free(struct server *ts) {
     free(ts);
 }
 
-void
+static void
 signal_cb(uv_signal_t *watcher, int signum) {
     char sig_name[20];
 
@@ -208,7 +209,7 @@ signal_cb(uv_signal_t *watcher, int signum) {
 #endif
 }
 
-int
+static int
 calc_command_start(int argc, char **argv) {
     // make a copy of argc and argv
     int argc_copy = argc;

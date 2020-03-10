@@ -11,10 +11,10 @@ enum {
     AUTH_OK, AUTH_FAIL, AUTH_ERROR
 };
 
-char * html_cache = NULL;
-size_t html_cache_len = 0;
+static char * html_cache = NULL;
+static size_t html_cache_len = 0;
 
-int
+static int
 check_auth(struct lws *wsi, struct pss_http *pss) {
     if (server->credential == NULL)
         return AUTH_OK;
@@ -67,14 +67,15 @@ check_auth(struct lws *wsi, struct pss_http *pss) {
     return AUTH_FAIL;
 }
 
-bool accept_gzip(struct lws *wsi) {
+static bool
+accept_gzip(struct lws *wsi) {
     int hdr_length = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_ACCEPT_ENCODING);
     char buf[hdr_length + 1];
     int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_ACCEPT_ENCODING);
     return len > 0 && strstr(buf, "gzip") != NULL;
 }
 
-bool
+static bool
 uncompress_html(char **output, size_t *output_len) {
     if (html_cache == NULL || html_cache_len == 0) {
         z_stream stream;
@@ -106,13 +107,13 @@ uncompress_html(char **output, size_t *output_len) {
     return true;
 }
 
-void
+static void
 pss_buffer_free(struct pss_http *pss) {
     if (pss->buffer != (char *) index_html && pss->buffer != html_cache)
         free(pss->buffer);
 }
 
-void
+static void
 access_log(struct lws *wsi, const char *path) {
     char rip[50];
 

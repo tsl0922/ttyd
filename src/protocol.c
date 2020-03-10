@@ -14,12 +14,12 @@
 #include "utils.h"
 
 // initial message list
-char initial_cmds[] = {
+static char initial_cmds[] = {
         SET_WINDOW_TITLE,
         SET_PREFERENCES
 };
 
-int
+static int
 send_initial_message(struct lws *wsi, int index) {
     unsigned char message[LWS_PRE + 1 + 4096];
     unsigned char *p = &message[LWS_PRE];
@@ -42,7 +42,7 @@ send_initial_message(struct lws *wsi, int index) {
     return lws_write(wsi, p, (size_t) n, LWS_WRITE_BINARY);
 }
 
-bool
+static bool
 parse_window_size(struct pss_tty *pss, int *cols, int *rows) {
     char json[pss->len];
     strncpy(json, pss->buffer + 1, pss->len - 1);
@@ -66,7 +66,7 @@ parse_window_size(struct pss_tty *pss, int *cols, int *rows) {
     return true;
 }
 
-bool
+static bool
 check_host_origin(struct lws *wsi) {
     int origin_length = lws_hdr_total_length(wsi, WSI_TOKEN_ORIGIN);
     char buf[origin_length + 1];
@@ -96,7 +96,7 @@ check_host_origin(struct lws *wsi) {
     return len > 0 && strcasecmp(buf, host_buf) == 0;
 }
 
-void
+static void
 pty_proc_free(struct pty_proc *proc) {
     uv_read_stop((uv_stream_t *) &proc->pipe);
     uv_close((uv_handle_t*) &proc->pipe, NULL);
@@ -115,13 +115,13 @@ pty_proc_free(struct pty_proc *proc) {
     free(proc);
 }
 
-void
+static void
 alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     buf->base = xmalloc(suggested_size);
     buf->len = suggested_size;
 }
 
-void
+static void
 read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     struct pss_tty *pss = (struct pss_tty *) stream->data;
     struct pty_proc *proc = pss->proc;
@@ -146,7 +146,7 @@ read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     lws_callback_on_writable(pss->wsi);
 }
 
-void
+static void
 child_cb(uv_signal_t *handle, int signum) {
     pid_t pid;
     int stat;
@@ -182,7 +182,7 @@ child_cb(uv_signal_t *handle, int signum) {
     }
 }
 
-int
+static int
 spawn_process(struct pss_tty *pss) {
     struct pty_proc *proc = pss->proc;
     // append url args to arguments
@@ -218,7 +218,7 @@ spawn_process(struct pss_tty *pss) {
     return 0;
 }
 
-void
+static void
 kill_process(struct pty_proc *proc) {
     if (proc->pid <= 0) return;
 
@@ -233,7 +233,7 @@ kill_process(struct pty_proc *proc) {
     }
 }
 
-void
+static void
 write_cb(uv_write_t* req, int status) {
     if (status != 0)
         lwsl_warn("uv_write callback returned status: %d\n", status);
