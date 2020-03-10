@@ -365,7 +365,7 @@ main(int argc, char **argv) {
             case 'b': {
                 char path[128];
                 strncpy(path, optarg, 128);
-                int len = strlen(path);
+                size_t len = strlen(path);
                 #define sc(f) \
                   strncpy(path + len, endpoints.f, 128 - len); \
                   endpoints.f = strdup(path);
