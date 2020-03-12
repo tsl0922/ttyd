@@ -18,17 +18,12 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private terminal: Terminal | undefined;
     private keyDispose: IDisposable | undefined;
     private sentry: Zmodem.Sentry;
-    private session: Zmodem.Session | undefined;
+    private session: Zmodem.Session;
 
     constructor(props: Props) {
         super(props);
 
-        this.sentry = new Zmodem.Sentry({
-            to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
-            sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
-            on_retract: () => this.zmodemReset(),
-            on_detect: (detection: Zmodem.Detection) => this.zmodemDetect(detection),
-        });
+        this.zmodemInit();
     }
 
     render(_, { modal }: State) {
@@ -64,6 +59,17 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     }
 
     @bind
+    private zmodemInit() {
+        this.session = null;
+        this.sentry = new Zmodem.Sentry({
+            to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
+            sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
+            on_retract: () => this.zmodemReset(),
+            on_detect: (detection: Zmodem.Detection) => this.zmodemDetect(detection),
+        });
+    }
+
+    @bind
     private zmodemReset() {
         this.terminal.setOption('disableStdin', false);
 
@@ -71,6 +77,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
             this.keyDispose.dispose();
             this.keyDispose = null;
         }
+        this.zmodemInit();
 
         this.terminal.focus();
     }
