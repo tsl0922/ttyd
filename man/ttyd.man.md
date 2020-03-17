@@ -63,6 +63,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
 
   -I, --index <index file>
       Custom index.html path
+  
+  -b, --base-path
+      Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
 
   -6, --ipv6
       Enable IPv6 support
