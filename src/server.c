@@ -20,7 +20,7 @@
 volatile bool force_exit = false;
 struct lws_context *context;
 struct server *server;
-struct endpoints endpoints = {"/ws", "/", "/token"};
+struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                          void *user, void *in, size_t len);
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
 #define sc(f)                                  \
   strncpy(path + len, endpoints.f, 128 - len); \
   endpoints.f = strdup(path);
-        sc(ws) sc(index) sc(token)
+        sc(ws) sc(index) sc(token) sc(parent)
 #undef sc
       } break;
       case '6':
