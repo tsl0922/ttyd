@@ -370,6 +370,8 @@ int main(int argc, char **argv) {
         char path[128];
         strncpy(path, optarg, 128);
         size_t len = strlen(path);
+        while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
+        if (!len) break;
 #define sc(f)                                  \
   strncpy(path + len, endpoints.f, 128 - len); \
   endpoints.f = strdup(path);
