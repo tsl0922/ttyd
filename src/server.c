@@ -486,6 +486,13 @@ int main(int argc, char **argv) {
   lwsl_notice("  start command: %s\n", server->command);
   lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
   lwsl_notice("  terminal type: %s\n", server->terminal_type);
+  if (endpoints.parent[0]) {
+    lwsl_notice("endpoints:\n");
+    lwsl_notice("  base-path: %s\n", endpoints.parent);
+    lwsl_notice("  index    : %s\n", endpoints.index);
+    lwsl_notice("  token    : %s\n", endpoints.token);
+    lwsl_notice("  websocket: %s\n", endpoints.ws);
+  }
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
   if (server->readonly) lwsl_notice("  readonly: true\n");
