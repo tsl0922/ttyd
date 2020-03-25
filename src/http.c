@@ -163,8 +163,9 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       // accessing `/base-path` redirects to `/base-path/`
       if (strcmp(pss->path, endpoints.parent) == 0) {
         if (lws_add_http_header_status(wsi, HTTP_STATUS_FOUND, &p, end)
-            || lws_add_http_header_by_name(wsi, "location:", endpoints.index,
-                                           strlen(endpoints.index), &p, end)
+            || lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_LOCATION,
+                                            endpoints.index,
+                                            strlen(endpoints.index), &p, end)
             || lws_add_http_header_content_length(wsi, 0, &p, end)
             || lws_finalize_http_header(wsi, &p, end)
             || lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE),
