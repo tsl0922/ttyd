@@ -20,7 +20,7 @@
 volatile bool force_exit = false;
 struct lws_context *context;
 struct server *server;
-struct endpoints endpoints = {"/ws", "/", "/token"};
+struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                          void *user, void *in, size_t len);
@@ -370,10 +370,12 @@ int main(int argc, char **argv) {
         char path[128];
         strncpy(path, optarg, 128);
         size_t len = strlen(path);
+        while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
+        if (!len) break;
 #define sc(f)                                  \
   strncpy(path + len, endpoints.f, 128 - len); \
   endpoints.f = strdup(path);
-        sc(ws) sc(index) sc(token)
+        sc(ws) sc(index) sc(token) sc(parent)
 #undef sc
       } break;
       case '6':
@@ -484,6 +486,13 @@ int main(int argc, char **argv) {
   lwsl_notice("  start command: %s\n", server->command);
   lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
   lwsl_notice("  terminal type: %s\n", server->terminal_type);
+  if (endpoints.parent[0]) {
+    lwsl_notice("endpoints:\n");
+    lwsl_notice("  base-path: %s\n", endpoints.parent);
+    lwsl_notice("  index    : %s\n", endpoints.index);
+    lwsl_notice("  token    : %s\n", endpoints.token);
+    lwsl_notice("  websocket: %s\n", endpoints.ws);
+  }
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
   if (server->readonly) lwsl_notice("  readonly: true\n");
