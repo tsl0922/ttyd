@@ -74,38 +74,38 @@ static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
 static void print_help() {
   // clang-format off
   fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-                  "USAGE:\n"
-                  "    ttyd [options] <command> [<arguments...>]\n\n"
-                  "VERSION:\n"
-                  "    %s\n\n"
-                  "OPTIONS:\n"
-                  "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
-                  "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
-                  "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
-                  "    -u, --uid               User id to run with\n"
-                  "    -g, --gid               Group id to run with\n"
-                  "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
-                  "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
-                  "    -R, --readonly          Do not allow clients to write to the TTY\n"
-                  "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
-                  "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
-                  "    -O, --check-origin      Do not allow websocket connection from different origin\n"
-                  "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
-                  "    -o, --once              Accept only one client and exit on disconnection\n"
-                  "    -B, --browser           Open terminal with the default system browser\n"
-                  "    -I, --index             Custom index.html path\n"
-                  "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)\n"
+          "USAGE:\n"
+          "    ttyd [options] <command> [<arguments...>]\n\n"
+          "VERSION:\n"
+          "    %s\n\n"
+          "OPTIONS:\n"
+          "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
+          "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
+          "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
+          "    -u, --uid               User id to run with\n"
+          "    -g, --gid               Group id to run with\n"
+          "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
+          "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
+          "    -R, --readonly          Do not allow clients to write to the TTY\n"
+          "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
+          "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
+          "    -O, --check-origin      Do not allow websocket connection from different origin\n"
+          "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
+          "    -o, --once              Accept only one client and exit on disconnection\n"
+          "    -B, --browser           Open terminal with the default system browser\n"
+          "    -I, --index             Custom index.html path\n"
+          "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)\n"
 #ifdef LWS_WITH_IPV6
-                  "    -6, --ipv6              Enable IPv6 support\n"
+          "    -6, --ipv6              Enable IPv6 support\n"
 #endif
-                  "    -S, --ssl               Enable SSL\n"
-                  "    -C, --ssl-cert          SSL certificate file path\n"
-                  "    -K, --ssl-key           SSL key file path\n"
-                  "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
-                  "    -d, --debug             Set log level (default: 7)\n"
-                  "    -v, --version           Print the version and exit\n"
-                  "    -h, --help              Print this text and exit\n\n"
-                  "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
+          "    -S, --ssl               Enable SSL\n"
+          "    -C, --ssl-cert          SSL certificate file path\n"
+          "    -K, --ssl-key           SSL key file path\n"
+          "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
+          "    -d, --debug             Set log level (default: 7)\n"
+          "    -v, --version           Print the version and exit\n"
+          "    -h, --help              Print this text and exit\n\n"
+          "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
           TTYD_VERSION
   );
   // clang-format on
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
         char path[128];
         strncpy(path, optarg, 128);
         size_t len = strlen(path);
-        while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
+        while (len && path[len - 1] == '/') path[--len] = 0;  // trim trailing /
         if (!len) break;
 #define sc(f)                                  \
   strncpy(path + len, endpoints.f, 128 - len); \

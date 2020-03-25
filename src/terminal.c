@@ -16,8 +16,7 @@
 
 #include "utils.h"
 
-pid_t pty_fork(int *pty, const char *file, char *const argv[],
-               const char *term) {
+pid_t pty_fork(int *pty, const char *file, char *const argv[], const char *term) {
   pid_t pid = forkpty(pty, NULL, NULL, NULL);
 
   if (pid < 0) {

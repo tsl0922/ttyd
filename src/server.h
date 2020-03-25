@@ -66,21 +66,20 @@ struct pss_tty {
 };
 
 struct server {
-  int client_count;   // client count
-  char *prefs_json;   // client preferences
-  char *credential;   // encoded basic auth credential
-  char *index;        // custom index.html
-  char *command;      // full command line
-  char **argv;        // command with arguments
-  int argc;           // command + arguments count
-  int sig_code;       // close signal
-  char sig_name[20];  // human readable signal string
-  bool url_arg;       // allow client to send cli arguments in URL
-  bool readonly;      // whether not allow clients to write to the TTY
-  bool
-      check_origin;  // whether allow websocket connection from different origin
-  int max_clients;   // maximum clients to support
-  bool once;         // whether accept only one client and exit on disconnection
+  int client_count;        // client count
+  char *prefs_json;        // client preferences
+  char *credential;        // encoded basic auth credential
+  char *index;             // custom index.html
+  char *command;           // full command line
+  char **argv;             // command with arguments
+  int argc;                // command + arguments count
+  int sig_code;            // close signal
+  char sig_name[20];       // human readable signal string
+  bool url_arg;            // allow client to send cli arguments in URL
+  bool readonly;           // whether not allow clients to write to the TTY
+  bool check_origin;       // whether allow websocket connection from different origin
+  int max_clients;         // maximum clients to support
+  bool once;               // whether accept only one client and exit on disconnection
   char socket_path[255];   // UNIX domain socket path
   char terminal_type[30];  // terminal type to report
 

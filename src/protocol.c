@@ -105,8 +105,7 @@ static void pty_proc_free(struct pty_proc *proc) {
   free(proc);
 }
 
-static void alloc_cb(uv_handle_t *handle, size_t suggested_size,
-                     uv_buf_t *buf) {
+static void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
   buf->base = xmalloc(suggested_size);
   buf->len = suggested_size;
 }
@@ -149,16 +148,14 @@ static void child_cb(uv_signal_t *handle, int signum) {
 
     if (WIFEXITED(stat)) {
       proc->status = WEXITSTATUS(stat);
-      lwsl_notice("process exited with code %d, pid: %d\n", proc->status,
-                  proc->pid);
+      lwsl_notice("process exited with code %d, pid: %d\n", proc->status, proc->pid);
     } else if (WIFSIGNALED(stat)) {
       int sig = WTERMSIG(stat);
       char sig_name[20];
 
       proc->status = 128 + sig;
       get_sig_name(sig, sig_name, sizeof(sig_name));
-      lwsl_notice("process killed with signal %d (%s), pid: %d\n", sig,
-                  sig_name, proc->pid);
+      lwsl_notice("process killed with signal %d (%s), pid: %d\n", sig, sig_name, proc->pid);
     }
 
     LIST_REMOVE(proc, entry);
@@ -225,8 +222,8 @@ static void write_cb(uv_write_t *req, int status) {
   free(req);
 }
 
-int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
-                 void *in, size_t len) {
+int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,
+                 size_t len) {
   struct pss_tty *pss = (struct pss_tty *)user;
   struct pty_proc *proc;
   char buf[256];
@@ -238,10 +235,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         lwsl_warn("refuse to serve WS client due to the --once option.\n");
         return 1;
       }
-      if (server->max_clients > 0 &&
-          server->client_count == server->max_clients) {
-        lwsl_warn(
-            "refuse to serve WS client due to the --max-clients option.\n");
+      if (server->max_clients > 0 && server->client_count == server->max_clients) {
+        lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
       if (lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI) <= 0 ||
@@ -272,11 +267,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       uv_pipe_init(server->loop, &proc->pipe, 0);
 
       if (server->url_arg) {
-        while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf),
-                                     WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
+        while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
           if (strncmp(buf, "arg=", 4) == 0) {
-            proc->args =
-                xrealloc(proc->args, (proc->argc + 1) * sizeof(char *));
+            proc->args = xrealloc(proc->args, (proc->argc + 1) * sizeof(char *));
             proc->args[proc->argc] = strdup(&buf[4]);
             proc->argc++;
           }
@@ -289,15 +282,13 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
 
 #if LWS_LIBRARY_VERSION_NUMBER >= 2004000
-      lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address,
-                          sizeof(pss->address));
+      lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address, sizeof(pss->address));
 #else
       char name[100];
-      lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name),
-                             pss->address, sizeof(pss->address));
+      lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), pss->address,
+                             sizeof(pss->address));
 #endif
-      lwsl_notice("WS   %s - %s, clients: %d\n", buf, pss->address,
-                  server->client_count);
+      lwsl_notice("WS   %s - %s, clients: %d\n", buf, pss->address, server->client_count);
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -309,8 +300,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
           break;
         }
         if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
-          lwsl_err("failed to send initial message, index: %d\n",
-                   pss->initial_cmd_index);
+          lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
           lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
           return -1;
         }
@@ -332,8 +322,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
       proc->pty_buffer[LWS_PRE] = OUTPUT;
       n = (size_t)(proc->pty_len + 1);
-      if (lws_write(wsi, (unsigned char *)proc->pty_buffer + LWS_PRE, n,
-                    LWS_WRITE_BINARY) < n) {
+      if (lws_write(wsi, (unsigned char *)proc->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
         lwsl_err("write OUTPUT to WS\n");
       }
       free(proc->pty_buffer);
@@ -355,15 +344,13 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       const char command = pss->buffer[0];
 
       // check auth
-      if (server->credential != NULL && !pss->authenticated &&
-          command != JSON_DATA) {
+      if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
         lwsl_warn("WS client not authenticated\n");
         return 1;
       }
 
       // check if there are more fragmented messages
-      if (lws_remaining_packet_payload(wsi) > 0 ||
-          !lws_is_final_fragment(wsi)) {
+      if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
         return 0;
       }
 
@@ -428,8 +415,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       if (pss->wsi == NULL) break;
 
       server->client_count--;
-      lwsl_notice("WS closed from %s, clients: %d\n", pss->address,
-                  server->client_count);
+      lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
       if (pss->buffer != NULL) {
         free(pss->buffer);
       }
