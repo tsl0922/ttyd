@@ -3,18 +3,20 @@ cmake_minimum_required(VERSION 2.8)
 project(ttyd)
 set(PROJECT_VERSION "1.6.0")
 
-find_package(Git)
-if(GIT_FOUND)
-    execute_process(
-            COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            RESULT_VARIABLE GIT_RET
-            OUTPUT_VARIABLE GIT_COMMIT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-    )
-    if("${GIT_RET}" STREQUAL "0")
-        set(PROJECT_VERSION "${PROJECT_VERSION}-${GIT_COMMIT}")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    find_package(Git)
+    if(GIT_FOUND)
+        execute_process(
+                COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                RESULT_VARIABLE GIT_RET
+                OUTPUT_VARIABLE GIT_COMMIT
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+        )
+        if("${GIT_RET}" STREQUAL "0")
+            set(PROJECT_VERSION "${PROJECT_VERSION}-${GIT_COMMIT}")
+        endif()
     endif()
 endif()
 
