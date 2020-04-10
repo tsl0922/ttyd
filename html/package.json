@@ -68,7 +68,7 @@
     "whatwg-fetch": "^3.0.0",
     "xterm": "^4.4.0",
     "xterm-addon-fit": "^0.3.0",
-    "xterm-addon-web-links": "^0.2.1",
+    "xterm-addon-web-links": "^0.3.0",
     "xterm-addon-webgl": "^0.5.1",
     "zmodem.js": "^0.1.9"
   }
