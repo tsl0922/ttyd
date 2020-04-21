@@ -64,7 +64,7 @@
     "backoff": "^2.5.0",
     "decko": "^1.2.0",
     "file-saver": "^2.0.2",
-    "preact": "^10.3.4",
+    "preact": "^10.4.1",
     "whatwg-fetch": "^3.0.0",
     "xterm": "^4.5.0",
     "xterm-addon-fit": "^0.3.0",
