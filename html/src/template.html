@@ -6,7 +6,7 @@
     <title><%= htmlWebpackPlugin.options.title %></title>
     <link inline rel="icon" type="image/png" href="favicon.png">
     <% for (const css in htmlWebpackPlugin.files.css) { %>
-    <link inline rel="stylesheet" src="<%= htmlWebpackPlugin.files.css[css] %>">
+    <link inline rel="stylesheet" type="text/css" href="<%= htmlWebpackPlugin.files.css[css] %>">
     <% } %>
 </head>
 <body>
