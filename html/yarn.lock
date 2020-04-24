@@ -4293,6 +4293,13 @@ json5@^1.0.1:
   dependencies:
     minimist "^1.2.0"
 
+json5@^2.1.2:
+  version "2.1.3"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-2.1.3.tgz#c9b0f7fa9233bfe5807fe66fcf3a5617ed597d43"
+  integrity sha512-KXPvOm8K9IJKFM0bmdn8QXh7udDh1g/giieX0NLCaMnb4hEiVFqnop2ImTXCc5e0/oHz3LTqmHGtExn5hfMkOA==
+  dependencies:
+    minimist "^1.2.5"
+
 jsprim@^1.2.2:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/jsprim/-/jsprim-1.4.1.tgz#313e66bc1e5cc06e438bc1b7499c2e5c56acb6a2"
@@ -4525,6 +4532,15 @@ loader-utils@^1.0.2, loader-utils@^1.1.0, loader-utils@^1.2.3:
     big.js "^5.2.2"
     emojis-list "^3.0.0"
     json5 "^1.0.1"
+
+loader-utils@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-2.0.0.tgz#e4cace5b816d425a166b5f097e10cd12b36064b0"
+  integrity sha512-rP4F0h2RaWSvPEkD7BLDFQnvSf+nK+wr3ESUjNTyAGobqrijmW92zc+SO6d4p4B1wh7+B/Jg1mkQe5NYUEHtHQ==
+  dependencies:
+    big.js "^5.2.2"
+    emojis-list "^3.0.0"
+    json5 "^2.1.2"
 
 locate-path@^2.0.0:
   version "2.0.0"
@@ -7482,13 +7498,13 @@ strip-json-comments@~2.0.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha1-PFMZQukIwml8DsNEhYwobHygpgo=
 
-style-loader@^1.1.3:
-  version "1.1.3"
-  resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-1.1.3.tgz#9e826e69c683c4d9bf9db924f85e9abb30d5e200"
-  integrity sha512-rlkH7X/22yuwFYK357fMN/BxYOorfnfq0eD7+vqlemSK4wEcejFF1dg4zxP0euBW8NrYx2WZzZ8PPFevr7D+Kw==
+style-loader@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-1.1.4.tgz#1ad81283cefe51096756fd62697258edad933230"
+  integrity sha512-SbBHRD8fwK3pX+4UDF4ETxUF0+rCvk29LWTTI7Rt0cgsDjAj3SWM76ByTe6u2+4IlJ/WwluB7wuslWETCoPQdg==
   dependencies:
-    loader-utils "^1.2.3"
-    schema-utils "^2.6.4"
+    loader-utils "^2.0.0"
+    schema-utils "^2.6.5"
 
 stylehacks@^4.0.0:
   version "4.0.3"
