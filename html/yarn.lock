@@ -7890,10 +7890,10 @@ tslint@^5.12.0:
     tslib "^1.8.0"
     tsutils "^2.29.0"
 
-tslint@^6.1.1:
-  version "6.1.1"
-  resolved "https://registry.yarnpkg.com/tslint/-/tslint-6.1.1.tgz#ac03fbd17f85bfefaae348b353b25a88efe10cde"
-  integrity sha512-kd6AQ/IgPRpLn6g5TozqzPdGNZ0q0jtXW4//hRcj10qLYBaa3mTUU2y2MCG+RXZm8Zx+KZi0eA+YCrMyNlF4UA==
+tslint@^6.1.2:
+  version "6.1.2"
+  resolved "https://registry.yarnpkg.com/tslint/-/tslint-6.1.2.tgz#2433c248512cc5a7b2ab88ad44a6b1b34c6911cf"
+  integrity sha512-UyNrLdK3E0fQG/xWNqAFAC5ugtFyPO4JJR1KyyfQAyzR8W0fTRrC91A8Wej4BntFzcvETdCSDa/4PnNYJQLYiA==
   dependencies:
     "@babel/code-frame" "^7.0.0"
     builtin-modules "^1.1.1"
