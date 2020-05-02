@@ -448,9 +448,9 @@ int main(int argc, char **argv) {
   sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION,
           LWS_LIBRARY_VERSION);
   info.server_string = server_hdr;
-#if LWS_LIBRARY_VERSION_MINOR >= 1
-  info.ws_ping_pong_interval = 5;
 #endif
+#if LWS_LIBRARY_VERSION_NUMBER >= 2001000
+  info.ws_ping_pong_interval = 5;
 #endif
 
   if (strlen(iface) > 0) {
