@@ -41,7 +41,7 @@ pid_t pty_fork(int *pty, const char *file, char *const argv[], const char *term)
   return pid;
 }
 
-int pty_resize(pid_t pty, int cols, int rows) {
+int pty_resize(int pty, int cols, int rows) {
   struct winsize size;
 
   size.ws_col = (unsigned short)cols;
