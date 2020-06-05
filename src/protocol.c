@@ -358,7 +358,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       switch (command) {
         case INPUT:
           if (proc->pty == 0) break;
-          if (server->readonly) return 0;
+          if (server->readonly) break;
 
           char *data = xmalloc(pss->len - 1);
           memcpy(data, pss->buffer + 1, pss->len - 1);
