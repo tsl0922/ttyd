@@ -7,6 +7,10 @@
 #include "server.h"
 #include "utils.h"
 
+#if LWS_LIBRARY_VERSION_MAJOR < 2
+#define HTTP_STATUS_FOUND 302
+#endif
+
 enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 
 static char *html_cache = NULL;
