@@ -66,10 +66,10 @@
     "file-saver": "^2.0.2",
     "preact": "^10.4.4",
     "whatwg-fetch": "^3.0.0",
-    "xterm": "^4.6.0",
+    "xterm": "^4.7.0",
     "xterm-addon-fit": "^0.4.0",
     "xterm-addon-web-links": "^0.4.0",
-    "xterm-addon-webgl": "^0.7.0",
+    "xterm-addon-webgl": "^0.8.0",
     "zmodem.js": "^0.1.9"
   }
 }
