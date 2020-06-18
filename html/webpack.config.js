@@ -43,9 +43,11 @@ const baseConfig = {
         extensions: [ '.tsx', '.ts', '.js' ]
     },
     plugins: [
-        new CopyWebpackPlugin([
-            { from: './favicon.png', to: '.' }
-        ], {}),
+        new CopyWebpackPlugin({
+            patterns:[
+                { from: './favicon.png', to: '.' }
+            ],
+        }),
         new MiniCssExtractPlugin({
             filename: devMode ? '[name].css' : '[name].[hash].css',
             chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
