@@ -212,7 +212,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       break;
 
     case LWS_CALLBACK_HTTP_WRITEABLE:
-      if (!pss->buffer || pss->len <= 0) {
+      if (!pss->buffer || pss->len == 0) {
         goto try_to_reuse;
       }
 
