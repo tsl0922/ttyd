@@ -249,12 +249,23 @@ export class Xterm extends Component<Props> {
             case Command.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(key => {
-                    if (key === 'rendererType' && preferences[key] === 'webgl') {
-                        terminal.loadAddon(new WebglAddon());
-                        console.log(`[ttyd] WebGL renderer enabled`);
-                    } else {
-                        console.log(`[ttyd] option: ${key}=${preferences[key]}`);
-                        terminal.setOption(key, preferences[key]);
+                    switch (key) {
+                        case 'rendererType':
+                            if (preferences[key] === 'webgl') {
+                                terminal.loadAddon(new WebglAddon());
+                                console.log(`[ttyd] WebGL renderer enabled`);
+                            }
+                            break;
+                        case 'disableLeaveAlert':
+                            if (preferences[key]) {
+                                window.removeEventListener('beforeunload', this.onWindowUnload);
+                                console.log('[ttyd] Leave site alert disabled');
+                            }
+                            break;
+                        default:
+                            console.log(`[ttyd] option: ${key}=${preferences[key]}`);
+                            terminal.setOption(key, preferences[key]);
+                            break;
                     }
                 });
                 break;
