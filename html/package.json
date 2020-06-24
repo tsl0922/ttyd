@@ -50,7 +50,7 @@
     "scssfmt": "^1.0.7",
     "style-loader": "^1.2.1",
     "terser-webpack-plugin": "^3.0.6",
-    "through2": "^3.0.1",
+    "through2": "^3.0.2",
     "ts-loader": "^7.0.5",
     "tslint": "^6.1.2",
     "tslint-loader": "^3.5.4",
