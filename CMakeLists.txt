@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(ttyd C)
-set(PROJECT_VERSION "1.6.0")
+set(PROJECT_VERSION "1.6.1")
 
 find_package(Git)
 if(GIT_FOUND)
