@@ -233,7 +233,7 @@ export class Xterm extends Component<Props> {
 
     @bind
     private onSocketData(event: MessageEvent) {
-        const { terminal, textDecoder, zmodemAddon } = this;
+        const { terminal, textDecoder, zmodemAddon, fitAddon } = this;
         const rawData = event.data as ArrayBuffer;
         const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
         const data = rawData.slice(1);
@@ -262,6 +262,12 @@ export class Xterm extends Component<Props> {
                                 console.log('[ttyd] Leave site alert disabled');
                             }
                             break;
+                        case 'fontSize':
+                            console.log(`[ttyd] setting font size to ${preferences[key]}`);
+                            terminal.setOption(key, preferences[key]);
+                            fitAddon.fit();
+                            break;
+
                         default:
                             console.log(`[ttyd] option: ${key}=${preferences[key]}`);
                             terminal.setOption(key, preferences[key]);
