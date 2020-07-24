@@ -51,7 +51,7 @@
     "style-loader": "^1.2.1",
     "terser-webpack-plugin": "^3.0.6",
     "through2": "^4.0.2",
-    "ts-loader": "^7.0.5",
+    "ts-loader": "^8.0.1",
     "tslint": "^6.1.2",
     "tslint-loader": "^3.5.4",
     "typescript": "^3.9.7",
