@@ -50,6 +50,7 @@ export class Xterm extends Component<Props> {
     private socket: WebSocket;
     private token: string;
     private title: string;
+    private titleFixed: string;
     private resizeTimeout: number;
     private backoff: backoff.Backoff;
     private backoffLock = false;
@@ -160,7 +161,7 @@ export class Xterm extends Component<Props> {
         terminal.loadAddon(this.zmodemAddon);
 
         terminal.onTitleChange(data => {
-            if (data && data !== '') {
+            if (data && data !== '' && !this.titleFixed) {
                 document.title = data + ' | ' + this.title;
             }
         });
@@ -249,6 +250,7 @@ export class Xterm extends Component<Props> {
             case Command.SET_PREFERENCES:
                 const preferences = JSON.parse(textDecoder.decode(data));
                 Object.keys(preferences).forEach(key => {
+                    const value = preferences[key];
                     switch (key) {
                         case 'rendererType':
                             if (preferences[key] === 'webgl') {
@@ -263,14 +265,18 @@ export class Xterm extends Component<Props> {
                             }
                             break;
                         case 'fontSize':
-                            console.log(`[ttyd] setting font size to ${preferences[key]}`);
-                            terminal.setOption(key, preferences[key]);
+                            console.log(`[ttyd] setting font size to ${value}`);
+                            terminal.setOption(key, value);
                             fitAddon.fit();
                             break;
-
+                        case 'titleFixed':
+                            console.log(`[ttyd] setting fixed title: ${value}`);
+                            this.titleFixed = value;
+                            document.title = value;
+                            break;
                         default:
-                            console.log(`[ttyd] option: ${key}=${preferences[key]}`);
-                            terminal.setOption(key, preferences[key]);
+                            console.log(`[ttyd] option: ${key}=${value}`);
+                            terminal.setOption(key, value);
                             break;
                     }
                 });
