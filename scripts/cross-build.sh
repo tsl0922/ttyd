@@ -5,10 +5,11 @@ set -eo pipefail
 CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
+BUILD_TARGET="$1"
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.14}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2u}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-1.1.1g}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.38.0}"
 LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.0.20}"
 
@@ -35,14 +36,26 @@ build_json-c() {
     popd
 }
 
+map_openssl_target() {
+    case $1 in
+        i686) echo linux-generic32 ;;
+        x86_64) echo linux-x86_64 ;;
+        arm|armhf) echo linux-armv4 ;;
+        aarch64) echo linux-aarch64 ;;
+        mips|mipsel) echo linux-mips32 ;;
+        mips64|mips64el) echo linux64-mips64 ;;
+        *) echo "unsupported target: $1" && exit 1
+    esac
+}
+
 build_openssl() {
-    echo "=== Building openssl-${OPENSSL_VERSION} (${TARGET})..."
+    local openssl_target=$(map_openssl_target "${BUILD_TARGET}")
+    echo "=== Building openssl-${OPENSSL_VERSION} (${openssl_target})..."
     curl -sLo- "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/openssl-${OPENSSL_VERSION}"
-        env CC="${TARGET}-gcc" AR="${TARGET}-ar" RANLIB="${TARGET}-ranlib" C_INCLUDE_PATH="${STAGE_DIR}/include" \
-            ./Configure dist -fPIC --prefix=/ --install_prefix="${STAGE_DIR}"
-        make -j"$(nproc)" > /dev/null
-        make install_sw
+        env CC=gcc CROSS_COMPILE="${TARGET}-" CFLAGS="-fPIC -latomic" \
+            ./Configure "${openssl_target}" no-ssl3 no-err -DOPENSSL_SMALL_FOOTPRINT --prefix="${STAGE_DIR}" \
+        && make -j"$(nproc)" all > /dev/null && make install_sw
     popd
 }
 
@@ -74,7 +87,7 @@ EOF
 
 build_libwebsockets() {
     echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
-    curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C ${BUILD_DIR}
+    curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
         sed -i '/PC_OPENSSL/d' CMakeLists.txt
@@ -100,7 +113,8 @@ build_ttyd() {
     cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
         -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
         -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
-        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -s" \
+        -DCMAKE_C_FLAGS="-Os -ffunction-sections -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -flto" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections" \
         -DCMAKE_BUILD_TYPE=RELEASE \
         ..
     make install
