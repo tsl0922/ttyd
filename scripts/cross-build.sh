@@ -1,9 +1,5 @@
 #!/bin/bash
-#
-# This script should be run inside the tsl0922/musl-cross docker image
-# Example:
-#         docker run --rm -v $(pwd):/ttyd -w /ttyd tsl0922/musl-cross ./scripts/cross-build.sh mips
-#
+
 set -eo pipefail
 
 CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
@@ -14,7 +10,7 @@ ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.14}"
 OPENSSL_VERSION="${OPENSSL_VERSION:-1.0.2u}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.38.0}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.0.19}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.0.20}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -51,7 +47,7 @@ build_openssl() {
 }
 
 build_libuv() {
-  echo "=== Building libuv-${LIBUV_VERSION} (${TARGET})..."
+    echo "=== Building libuv-${LIBUV_VERSION} (${TARGET})..."
     curl -sLo- "https://dist.libuv.org/dist/v${LIBUV_VERSION}/libuv-v${LIBUV_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libuv-v${LIBUV_VERSION}"
         ./autogen.sh
@@ -71,17 +67,19 @@ set(CMAKE_FIND_ROOT_PATH "${STAGE_DIR}")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 EOF
 }
 
 build_libwebsockets() {
     echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
-    curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C ${BUILD_DIR}
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
+        sed -i '/PC_OPENSSL/d' CMakeLists.txt
         mkdir build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
-            -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
@@ -93,20 +91,19 @@ build_libwebsockets() {
             -DLWS_IPV6=ON \
             ..
         make -j"$(nproc)" install
-        sed -i 's/ssl;crypto;//g' "${STAGE_DIR}/lib/cmake/libwebsockets/LibwebsocketsTargets-release.cmake"
     popd
 }
 
 build_ttyd() {
     echo "=== Building ttyd (${TARGET})..."
     rm -rf build && mkdir -p build && cd build
-  cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
-      -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
-      -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
-      -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -s" \
-      -DCMAKE_BUILD_TYPE=RELEASE \
-      ..
-  make install
+    cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
+        -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
+        -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -s" \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        ..
+    make install
 }
 
 build() {
@@ -114,6 +111,11 @@ build() {
     ALIAS="$2"
     STAGE_DIR="${STAGE_ROOT}/${TARGET}"
     BUILD_DIR="${BUILD_ROOT}/${TARGET}"
+
+    echo "=== Installing toolchain ${ALIAS} (${TARGET})..."
+
+    mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:/opt/cross/bin"
+    curl -sLo- "http://musl.cc/${TARGET}-cross.tgz" | tar xz -C ${CROSS_ROOT} --strip-components 1
 
     echo "=== Building target ${ALIAS} (${TARGET})..."
 
@@ -132,15 +134,15 @@ build() {
 }
 
 case $1 in
-  i386|x86_64|aarch64|mips|mipsel)
-    build "$1-linux-musl" "$1"
-    ;;
-  arm)
-    build arm-linux-musleabi "$1"
-    ;;
-  armhf)
-    build arm-linux-musleabihf "$1"
-    ;;
-  *)
-    echo "usage: $0 i386|x86_64|arm|armhf|aarch64|mips|mipsel" && exit 1
+    i686|x86_64|aarch64|mips|mipsel|mips64|mips64el)
+        build "$1-linux-musl" "$1"
+        ;;
+    arm)
+        build arm-linux-musleabi "$1"
+        ;;
+    armhf)
+        build arm-linux-musleabihf "$1"
+        ;;
+    *)
+        echo "usage: $0 i686|x86_64|arm|armhf|aarch64|mips|mipsel|mips64|mips64el" && exit 1
 esac

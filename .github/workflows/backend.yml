@@ -34,7 +34,7 @@ jobs:
           cd libwebsockets-${LWS_VERSION}
           cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
           make && sudo make install && sudo ldconfig
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Build ttyd
         run: |
           cmake -DCMAKE_BUILD_TYPE=RELEASE .
@@ -44,13 +44,17 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        arch: [i386, x86_64, arm, armhf, aarch64, mips, mipsel]
+        arch: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake build-essential cmake curl file libtool
       - name: Cross build (${{ matrix.arch }})
         env:
           ARCH: ${{ matrix.arch }}
-        run: docker run --rm -v $(pwd):/ttyd -w /ttyd tsl0922/musl-cross ./scripts/cross-build.sh $ARCH
+        run: ./scripts/cross-build.sh $ARCH
       - uses: actions/upload-artifact@v1
         with:
           name: ttyd.${{ matrix.arch }}
