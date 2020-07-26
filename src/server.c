@@ -98,10 +98,12 @@ static void print_help() {
 #ifdef LWS_WITH_IPV6
           "    -6, --ipv6              Enable IPv6 support\n"
 #endif
+#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
           "    -S, --ssl               Enable SSL\n"
           "    -C, --ssl-cert          SSL certificate file path\n"
           "    -K, --ssl-key           SSL key file path\n"
           "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
+#endif
           "    -d, --debug             Set log level (default: 7)\n"
           "    -v, --version           Print the version and exit\n"
           "    -h, --help              Print this text and exit\n\n"
@@ -381,6 +383,7 @@ int main(int argc, char **argv) {
       case '6':
         info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);
         break;
+#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
       case 'S':
         ssl = true;
         break;
@@ -396,6 +399,7 @@ int main(int argc, char **argv) {
         strncpy(ca_path, optarg, sizeof(ca_path) - 1);
         ca_path[sizeof(ca_path) - 1] = '\0';
         break;
+#endif
       case 'T':
         strncpy(server->terminal_type, optarg,
                 sizeof(server->terminal_type) - 1);
@@ -468,6 +472,7 @@ int main(int argc, char **argv) {
     }
   }
 
+#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
   if (ssl) {
     info.ssl_cert_filepath = cert_path;
     info.ssl_private_key_filepath = key_path;
@@ -478,6 +483,7 @@ int main(int argc, char **argv) {
     info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
 #endif
   }
+#endif
 
   lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION,
               LWS_LIBRARY_VERSION);
