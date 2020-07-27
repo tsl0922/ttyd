@@ -5,6 +5,7 @@ set -eo pipefail
 CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
+WITH_SSL="${WITH_SSL:-}"
 BUILD_TARGET="$1"
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
@@ -49,7 +50,7 @@ map_openssl_target() {
 }
 
 build_openssl() {
-    local openssl_target=$(map_openssl_target "${BUILD_TARGET}")
+    openssl_target=$(map_openssl_target "${BUILD_TARGET}")
     echo "=== Building openssl-${OPENSSL_VERSION} (${openssl_target})..."
     curl -sLo- "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/openssl-${OPENSSL_VERSION}"
@@ -92,7 +93,8 @@ build_libwebsockets() {
         sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
         sed -i '/PC_OPENSSL/d' CMakeLists.txt
         mkdir build && cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
+        [ -z "${WITH_SSL}" ] && CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
+        cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" "${CMAKE_OPTIONS}" \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
@@ -142,7 +144,7 @@ build() {
     build_zlib
     build_json-c
     build_libuv
-    build_openssl
+    [ -n "${WITH_SSL}" ] && build_openssl
     build_libwebsockets
     build_ttyd
 }
