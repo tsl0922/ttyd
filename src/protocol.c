@@ -120,10 +120,7 @@ static void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
   if (nread <= 0) {
     if (nread == UV_ENOBUFS || nread == 0) return;
     proc->pty_buffer = NULL;
-    if (nread == UV_EOF)
-      proc->pty_len = 0;
-    else
-      lwsl_err("read_cb: %s\n", uv_err_name(nread));
+    lwsl_err("read_cb: %s (%s)\n", uv_err_name(nread), uv_strerror(nread));
   } else {
     proc->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t)nread);
     memcpy(proc->pty_buffer + LWS_PRE + 1, buf->base, (size_t)nread);
@@ -310,7 +307,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       }
 
       // read error or client exited, close connection
-      if (proc->status == 0 || proc->pty_len == 0) {
+      if (proc->status == 0 || proc->pty_len == UV_EOF) {
         lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
         return 1;
       } else if (proc->status > 0 || proc->pty_len < 0) {
@@ -318,7 +315,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         return -1;
       }
 
-      if (proc->pty_buffer == NULL) break;
+      if (proc->pty_buffer == NULL || proc->pty_len == 0) break;
 
       proc->pty_buffer[LWS_PRE] = OUTPUT;
       n = (size_t)(proc->pty_len + 1);
@@ -369,7 +366,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
           int err = uv_write(req, (uv_stream_t *)&proc->pipe, &b, 1, write_cb);
           if (err) {
-            lwsl_err("uv_write: %s\n", uv_err_name(err));
+            lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
             return -1;
           }
           break;
