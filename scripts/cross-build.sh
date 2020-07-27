@@ -104,6 +104,16 @@ build_libwebsockets() {
             -DLWS_WITH_SHARED=OFF \
             -DLWS_UNIX_SOCK=ON \
             -DLWS_IPV6=ON \
+            -DLWS_ROLE_RAW_FILE=OFF \
+            -DLWS_WITH_HTTP2=OFF \
+            -DLWS_WITH_HTTP_BASIC_AUTH=OFF \
+            -DLWS_WITH_UDP=OFF \
+            -DLWS_WITHOUT_CLIENT=ON \
+            -DLWS_WITH_LEJP=OFF \
+            -DLWS_WITH_LEJP_CONF=OFF \
+            -DLWS_WITH_LWSAC=OFF \
+            -DLWS_WITH_CUSTOM_HEADERS=OFF \
+            -DLWS_WITH_SEQUENCER=OFF \
             ..
         make -j"$(nproc)" install
     popd
