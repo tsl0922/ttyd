@@ -57,6 +57,7 @@ struct pss_tty {
   int initial_cmd_index;
   bool authenticated;
   char address[50];
+  char path[20];
 
   struct lws *wsi;
   char *buffer;

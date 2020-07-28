@@ -236,8 +236,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
-      if (lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI) <= 0 ||
-          strcmp(buf, endpoints.ws) != 0) {
+
+      n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
+#if defined(LWS_ROLE_H2)
+      if (n <= 0) n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_HTTP_COLON_PATH);
+#endif
+      if (strncmp(pss->path, endpoints.ws, n) != 0) {
         lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", buf);
         return 1;
       }
@@ -276,8 +280,6 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       LIST_INSERT_HEAD(&server->procs, proc, entry);
       server->client_count++;
 
-      lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_GET_URI);
-
 #if LWS_LIBRARY_VERSION_NUMBER >= 2004000
       lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address, sizeof(pss->address));
 #else
@@ -285,7 +287,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), pss->address,
                              sizeof(pss->address));
 #endif
-      lwsl_notice("WS   %s - %s, clients: %d\n", buf, pss->address, server->client_count);
+      lwsl_notice("WS   %s - %s, clients: %d\n", pss->path, pss->address, server->client_count);
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
