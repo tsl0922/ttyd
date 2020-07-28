@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "es6",
+    "target": "es2015",
+    "module": "es2015",
     "lib": [
-      "es2017",
+      "es2015",
       "dom"
     ],
     "allowJs": true,
