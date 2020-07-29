@@ -1,12 +1,15 @@
 #!/bin/bash
-
+#
+# Example:
+#         env BUILD_TARGET=mips WITH_SSL=true ./scripts/cross-build.sh
+#
 set -eo pipefail
 
 CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
-WITH_SSL="${WITH_SSL:-}"
-BUILD_TARGET="$1"
+BUILD_TARGET="${BUILD_TARGET:-x86_64}"
+WITH_SSL=${WITH_SSL:-false}
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.14}"
@@ -45,7 +48,7 @@ map_openssl_target() {
         aarch64) echo linux-aarch64 ;;
         mips|mipsel) echo linux-mips32 ;;
         mips64|mips64el) echo linux64-mips64 ;;
-        *) echo "unsupported target: $1" && exit 1
+        *) echo "unknown openssl target: $1" && exit 1
     esac
 }
 
@@ -93,7 +96,7 @@ build_libwebsockets() {
         sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
         sed -i '/PC_OPENSSL/d' CMakeLists.txt
         mkdir build && cd build
-        [ -z "${WITH_SSL}" ] && CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
+        [ "${WITH_SSL}" = true ] || CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" "${CMAKE_OPTIONS}" \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
@@ -154,21 +157,21 @@ build() {
     build_zlib
     build_json-c
     build_libuv
-    [ -n "${WITH_SSL}" ] && build_openssl
+    [ "${WITH_SSL}" = true ] && build_openssl
     build_libwebsockets
     build_ttyd
 }
 
-case $1 in
+case ${BUILD_TARGET} in
     i686|x86_64|aarch64|mips|mipsel|mips64|mips64el)
-        build "$1-linux-musl" "$1"
+        build "${BUILD_TARGET}-linux-musl" "${BUILD_TARGET}"
         ;;
     arm)
-        build arm-linux-musleabi "$1"
+        build arm-linux-musleabi "${BUILD_TARGET}"
         ;;
     armhf)
-        build arm-linux-musleabihf "$1"
+        build arm-linux-musleabihf "${BUILD_TARGET}"
         ;;
     *)
-        echo "usage: $0 i686|x86_64|arm|armhf|aarch64|mips|mipsel|mips64|mips64el" && exit 1
+        echo "unknown cross target: ${BUILD_TARGET}" && exit 1
 esac

@@ -44,18 +44,18 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        arch: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
     steps:
       - uses: actions/checkout@v2
       - name: Install packages
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake build-essential cmake curl file libtool
-      - name: Cross build (${{ matrix.arch }})
+      - name: Cross build (${{ matrix.target }})
         env:
-          ARCH: ${{ matrix.arch }}
-        run: ./scripts/cross-build.sh $ARCH
+          BUILD_TARGET: ${{ matrix.target }}
+        run: ./scripts/cross-build.sh
       - uses: actions/upload-artifact@v1
         with:
-          name: ttyd.${{ matrix.arch }}
+          name: ttyd.${{ matrix.target }}
           path: build/ttyd

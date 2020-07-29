@@ -6,23 +6,45 @@ on:
     - "*"
 
 jobs:
+  release:
+    runs-on: ubuntu-16.04
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }} 
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: true
+          prerelease: false
+
   build:
     runs-on: ubuntu-16.04
+    needs: release
+    strategy:
+      matrix:
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
     steps:
       - uses: actions/checkout@v2
       - name: Install packages
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake build-essential cmake curl file libtool
-      - name: Build Release
-        run: |
-          mkdir -p bin
-          for arch in i686 x86_64 arm armhf aarch64 mips mipsel mips64 mips64el; do
-            ./scripts/cross-build.sh $arch
-            cp build/ttyd bin/ttyd_linux.$arch
-            sha256sum bin/ttyd_linux.$arch >> bin/SHA256SUMS
-          done
-      - uses: ncipollo/release-action@v1
+      - name: Cross build (${{ matrix.target }})
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+        run: ./scripts/cross-build.sh
+      - name: Upload assets
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          artifact: "bin/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: build/ttyd
+          asset_name: ttyd.${{ matrix.target }}
+          asset_content_type: application/octet-stream
