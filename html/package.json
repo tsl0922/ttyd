@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "copy-webpack-plugin": "^6.0.3",
-    "css-loader": "^4.1.0",
+    "css-loader": "^4.1.1",
     "gts": "^1.1.2",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
