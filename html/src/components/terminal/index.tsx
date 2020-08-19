@@ -52,6 +52,7 @@ export class Xterm extends Component<Props> {
     private title: string;
     private titleFixed: string;
     private resizeTimeout: number;
+    private resizeOverlay = true;
     private backoff: backoff.Backoff;
     private backoffLock = false;
     private reconnect = false;
@@ -264,6 +265,12 @@ export class Xterm extends Component<Props> {
                                 console.log('[ttyd] Leave site alert disabled');
                             }
                             break;
+                        case 'disableResizeOverlay':
+                            if (preferences[key]) {
+                                console.log(`[ttyd] disabled resize overlay`);
+                                this.resizeOverlay = false;
+                            }
+                            break;
                         case 'fontSize':
                             console.log(`[ttyd] setting font size to ${value}`);
                             terminal.setOption(key, value);
@@ -289,14 +296,16 @@ export class Xterm extends Component<Props> {
 
     @bind
     private onTerminalResize(size: { cols: number; rows: number }) {
-        const { overlayAddon, socket, textEncoder } = this;
+        const { overlayAddon, socket, textEncoder, resizeOverlay } = this;
         if (socket.readyState === WebSocket.OPEN) {
             const msg = JSON.stringify({ columns: size.cols, rows: size.rows });
             socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
         }
-        setTimeout(() => {
-            overlayAddon.showOverlay(`${size.cols}x${size.rows}`);
-        }, 500);
+        if (resizeOverlay) {
+            setTimeout(() => {
+                overlayAddon.showOverlay(`${size.cols}x${size.rows}`);
+            }, 500);
+        }
     }
 
     @bind
