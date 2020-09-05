@@ -45,7 +45,7 @@
     "lint-staged": "^10.2.11",
     "mini-css-extract-plugin": "^0.10.0",
     "node-sass": "^4.14.1",
-    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "optimize-css-assets-webpack-plugin": "^5.0.4",
     "sass-loader": "^10.0.1",
     "scssfmt": "^1.0.7",
     "style-loader": "^1.2.1",
