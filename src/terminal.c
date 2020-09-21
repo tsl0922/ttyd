@@ -16,13 +16,14 @@
 
 #include "utils.h"
 
-pid_t pty_fork(int *pty, const char *file, char *const argv[], const char *term) {
+pid_t pty_fork(int *pty, const char *file, char *const argv[], const char *term, const char *authHeader) {
   pid_t pid = forkpty(pty, NULL, NULL, NULL);
 
   if (pid < 0) {
     return pid;
   } else if (pid == 0) {
     setenv("TERM", term, true);
+    if (authHeader != NULL) setenv("HTTP_AUTHORIZATION", authHeader, true);
     int ret = execvp(file, argv);
     if (ret < 0) {
       perror("execvp failed\n");

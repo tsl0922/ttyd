@@ -38,6 +38,7 @@ struct pss_http {
 struct pty_proc {
   char **args;
   int argc;
+  char *authHeader;
 
   pid_t pid;
   int status;

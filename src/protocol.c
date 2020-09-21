@@ -101,6 +101,11 @@ static void pty_proc_free(struct pty_proc *proc) {
   for (int i = 0; i < proc->argc; i++) {
     free(proc->args[i]);
   }
+  
+  if (proc->authHeader != NULL) {
+    free(proc->authHeader);
+    proc->authHeader = NULL;
+  }
 
   free(proc);
 }
@@ -183,7 +188,7 @@ static int spawn_process(struct pss_tty *pss) {
   fd_set_cloexec(lws_get_socket_fd(pss->wsi));
 
   // create process with pseudo-tty
-  proc->pid = pty_fork(&proc->pty, argv[0], argv, server->terminal_type);
+  proc->pid = pty_fork(&proc->pty, argv[0], argv, server->terminal_type, proc->authHeader);
   if (proc->pid < 0) {
     lwsl_err("pty_fork: %d (%s)\n", errno, strerror(errno));
     return 1;
@@ -275,6 +280,13 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
             proc->argc++;
           }
         }
+      }
+
+      // Save the Authorization header
+      int buf_len = 1 + lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
+      if (buf_len > 1) {
+        proc->authHeader = xmalloc(buf_len);
+        lws_hdr_copy(wsi, proc->authHeader, buf_len, WSI_TOKEN_HTTP_AUTHORIZATION);
       }
 
       LIST_INSERT_HEAD(&server->procs, proc, entry);
