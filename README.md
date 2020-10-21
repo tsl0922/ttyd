@@ -38,7 +38,7 @@ brew install ttyd
     cmake ..
     make && make install
     ```
-    If make && make intsall gives you an error(permission denied). Try this
+    If make && make intsall gives you an error(permission denied). Try this out
     ```
     sudo make install
     ```
