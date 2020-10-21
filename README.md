@@ -36,7 +36,7 @@ brew install ttyd
     git clone https://github.com/tsl0922/ttyd.git
     cd ttyd && mkdir build && cd build
     cmake ..
-    make && make install
+    make && sudo make install
     ```
 
     You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
