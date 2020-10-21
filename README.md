@@ -38,7 +38,10 @@ brew install ttyd
     cmake ..
     make && make install
     ```
-
+    If make && make intsall gives you an error(permission denied). Try this
+    ```
+    sudo make install
+    ```
     You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
 
 - Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
