@@ -48,7 +48,7 @@
     "optimize-css-assets-webpack-plugin": "^5.0.4",
     "sass-loader": "^10.0.2",
     "scssfmt": "^1.0.7",
-    "style-loader": "^1.2.1",
+    "style-loader": "^2.0.0",
     "terser-webpack-plugin": "^4.2.3",
     "through2": "^4.0.2",
     "ts-loader": "^8.0.3",
