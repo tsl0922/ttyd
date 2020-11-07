@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }} 
     steps:
@@ -23,7 +23,7 @@ jobs:
           prerelease: false
 
   build:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     needs: release
     strategy:
       matrix:
