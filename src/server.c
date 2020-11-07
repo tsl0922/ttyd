@@ -283,8 +283,6 @@ int main(int argc, char **argv) {
   info.port = 7681;
   info.iface = NULL;
   info.protocols = protocols;
-  info.ssl_cert_filepath = NULL;
-  info.ssl_private_key_filepath = NULL;
   info.gid = -1;
   info.uid = -1;
   info.max_http_header_pool = 16;
