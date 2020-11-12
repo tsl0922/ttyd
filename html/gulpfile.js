@@ -1,4 +1,4 @@
-const { src, dest, task } = require("gulp");
+const { src, dest, task, series } = require("gulp");
 const clean = require('gulp-clean');
 const gzip = require('gulp-gzip');
 const inlineSource = require('gulp-inline-source');
@@ -33,13 +33,19 @@ const genHeader = (size, buf, len) => {
 let fileSize = 0;
 
 task('clean', () => {
-    return src('dist', {read: false, allowEmpty: true})
+    return src('dist', { read: false, allowEmpty: true })
         .pipe(clean());
 });
 
-task('default', () => {
+task('inline', () => {
     return src('dist/index.html')
         .pipe(inlineSource())
+        .pipe(rename("inline.html"))
+        .pipe(dest('dist/'));
+});
+
+task('default', series('inline', () => {
+    return src('dist/inline.html')
         .pipe(through2.obj((file, enc, cb) => {
             fileSize = file.contents.length;
             return cb(null, file);
@@ -52,4 +58,5 @@ task('default', () => {
         }))
         .pipe(rename("html.h"))
         .pipe(dest('../src/'));
-});
+}));
+

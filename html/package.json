@@ -13,6 +13,7 @@
     "prestart": "gulp clean",
     "start": "webpack serve",
     "build": "NODE_ENV=production webpack && gulp",
+    "inline": "NODE_ENV=production webpack && gulp inline",
     "check": "gts check",
     "fix": "gts fix"
   },
