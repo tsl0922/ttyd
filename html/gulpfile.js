@@ -53,3 +53,11 @@ task('default', () => {
         .pipe(rename("html.h"))
         .pipe(dest('../src/'));
 });
+
+task('customHTML', () => {
+    return src('dist/index.html')
+        .pipe(inlineSource())
+	.pipe(rename("html_inline.html"))
+        .pipe(dest('dist/'));
+});
+

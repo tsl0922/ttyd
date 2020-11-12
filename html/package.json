@@ -14,7 +14,8 @@
     "start": "webpack-dev-server",
     "build": "NODE_ENV=production webpack && gulp",
     "check": "gts check",
-    "fix": "gts fix"
+    "fix": "gts fix",
+    "customHTML": "NODE_ENV=production webpack && gulp customHTML"
   },
   "husky": {
     "hooks": {
