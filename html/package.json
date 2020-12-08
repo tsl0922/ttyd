@@ -32,7 +32,7 @@
     ]
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^6.3.0",
+    "copy-webpack-plugin": "^6.4.0",
     "css-loader": "^5.0.1",
     "gts": "^1.1.2",
     "gulp": "^4.0.2",
