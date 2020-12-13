@@ -67,6 +67,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -b, --base-path
       Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
 
+  -P, --ping-interval
+      Websocket ping interval(sec) (default: 300)
+
   -6, --ipv6
       Enable IPv6 support
 
