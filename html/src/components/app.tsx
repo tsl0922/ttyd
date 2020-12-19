@@ -1,7 +1,7 @@
 import { h, Component } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
-import { Xterm } from './terminal';
+import { ClientOptions, Xterm } from './terminal';
 
 if ((module as any).hot) {
     // tslint:disable-next-line:no-var-requires
@@ -12,6 +12,12 @@ const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const path = window.location.pathname.replace(/[\/]+$/, '');
 const wsUrl = [protocol, '//', window.location.host, path, '/ws', window.location.search].join('');
 const tokenUrl = [window.location.protocol, '//', window.location.host, path, '/token'].join('');
+const clientOptions = {
+    rendererType: 'webgl',
+    disableLeaveAlert: false,
+    disableResizeOverlay: false,
+    titleFixed: null,
+} as ClientOptions;
 const termOptions = {
     fontSize: 13,
     fontFamily: 'Menlo For Powerline,Consolas,Liberation Mono,Menlo,Courier,monospace',
@@ -40,6 +46,14 @@ const termOptions = {
 
 export class App extends Component {
     render() {
-        return <Xterm id="terminal-container" wsUrl={wsUrl} tokenUrl={tokenUrl} options={termOptions} />;
+        return (
+            <Xterm
+                id="terminal-container"
+                wsUrl={wsUrl}
+                tokenUrl={tokenUrl}
+                clientOptions={clientOptions}
+                termOptions={termOptions}
+            />
+        );
     }
 }
