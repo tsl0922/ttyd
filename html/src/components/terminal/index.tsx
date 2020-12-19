@@ -253,7 +253,7 @@ export class Xterm extends Component<Props> {
         console.log('[ttyd] websocket connection opened');
         this.backoff.reset();
 
-        const { socket, textEncoder, terminal, fitAddon } = this;
+        const { socket, textEncoder, terminal, fitAddon, overlayAddon } = this;
         socket.send(textEncoder.encode(JSON.stringify({ AuthToken: this.token })));
 
         if (this.reconnect) {
@@ -261,6 +261,7 @@ export class Xterm extends Component<Props> {
             terminal.reset();
             terminal.resize(dims.cols, dims.rows);
             this.onTerminalResize(dims); // may not be triggered by terminal.resize
+            overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.reconnect = true;
             fitAddon.fit();
