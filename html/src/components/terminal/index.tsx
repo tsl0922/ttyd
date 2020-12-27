@@ -7,7 +7,7 @@ import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import { OverlayAddon } from './overlay';
-import { ZmodemAddon } from '../zmodem';
+import { ZmodemAddon, FlowControl } from '../zmodem';
 
 import 'xterm/css/xterm.css';
 
@@ -30,6 +30,8 @@ const enum Command {
     // client side
     INPUT = '0',
     RESIZE_TERMINAL = '1',
+    PAUSE = '2',
+    RESUME = '3',
 }
 
 export interface ClientOptions {
@@ -112,11 +114,31 @@ export class Xterm extends Component<Props> {
     }
 
     render({ id }: Props) {
+        const control = {
+            limit: 100000,
+            highWater: 10,
+            lowWater: 4,
+            pause: () => this.pause(),
+            resume: () => this.resume(),
+        } as FlowControl;
+
         return (
             <div id={id} ref={c => (this.container = c)}>
-                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} />
+                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} control={control} />
             </div>
         );
+    }
+
+    @bind
+    private pause() {
+        const { textEncoder, socket } = this;
+        socket.send(textEncoder.encode(Command.PAUSE));
+    }
+
+    @bind
+    private resume() {
+        const { textEncoder, socket } = this;
+        socket.send(textEncoder.encode(Command.RESUME));
     }
 
     @bind

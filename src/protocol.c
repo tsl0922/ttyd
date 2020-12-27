@@ -383,6 +383,18 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
             }
           }
         } break;
+        case PAUSE:
+          if (proc->state == STATE_INIT) {
+            uv_read_stop((uv_stream_t *)&proc->pipe);
+            proc->state = STATE_PAUSE;
+          }
+          break;
+        case RESUME:
+          if (proc->state == STATE_PAUSE) {
+            uv_read_start((uv_stream_t *)&proc->pipe, alloc_cb, read_cb);
+            proc->state = STATE_INIT;
+          }
+          break;
         case JSON_DATA:
           if (proc->pid > 0) break;
           if (server->credential != NULL) {
