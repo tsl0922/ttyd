@@ -94,18 +94,15 @@ static void close_cb(uv_handle_t *handle) {
 
 static void pty_proc_free(struct pty_proc *proc) {
   uv_read_stop((uv_stream_t *)&proc->pipe);
-  uv_close((uv_handle_t *)&proc->pipe, close_cb);
-
   close(proc->pty);
-
   if (proc->pty_buffer != NULL) {
     free(proc->pty_buffer);
     proc->pty_buffer = NULL;
   }
-
   for (int i = 0; i < proc->argc; i++) {
     free(proc->args[i]);
   }
+  uv_close((uv_handle_t *)&proc->pipe, close_cb);
 }
 
 static void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
@@ -120,13 +117,15 @@ static void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 
   uv_read_stop(stream);
 
-  if (nread <= 0) {
-    if (nread == UV_ENOBUFS || nread == 0) return;
-    proc->pty_buffer = NULL;
-    lwsl_err("read_cb: %s (%s)\n", uv_err_name(nread), uv_strerror(nread));
-  } else {
+  if (nread == UV_ENOBUFS || nread == 0) return;
+  if (nread > 0) {
     proc->pty_buffer = xmalloc(LWS_PRE + 1 + (size_t)nread);
     memcpy(proc->pty_buffer + LWS_PRE + 1, buf->base, (size_t)nread);
+  } else {
+    proc->pty_buffer = NULL;
+    if (nread != UV_EOF) {
+      lwsl_err("read_cb: %s (%s)\n", uv_err_name(nread), uv_strerror(nread));
+    }
   }
   free(buf->base);
 
