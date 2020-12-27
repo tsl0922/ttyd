@@ -87,9 +87,14 @@ static bool check_host_origin(struct lws *wsi) {
   return len > 0 && strcasecmp(buf, host_buf) == 0;
 }
 
+static void close_cb(uv_handle_t *handle) {
+  struct pty_proc *proc = container_of((uv_pipe_t *)handle, struct pty_proc, pipe);
+  free(proc);
+}
+
 static void pty_proc_free(struct pty_proc *proc) {
   uv_read_stop((uv_stream_t *)&proc->pipe);
-  uv_close((uv_handle_t *)&proc->pipe, NULL);
+  uv_close((uv_handle_t *)&proc->pipe, close_cb);
 
   close(proc->pty);
 
@@ -101,8 +106,6 @@ static void pty_proc_free(struct pty_proc *proc) {
   for (int i = 0; i < proc->argc; i++) {
     free(proc->args[i]);
   }
-
-  free(proc);
 }
 
 static void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
