@@ -63,8 +63,10 @@ export class Xterm extends Component<Props> {
     private titleFixed: string;
     private resizeTimeout: number;
     private resizeOverlay = true;
+
     private backoff: backoff.Backoff;
     private backoffLock = false;
+    private doBackoff = true;
     private reconnect = false;
 
     constructor(props: Props) {
@@ -233,6 +235,12 @@ export class Xterm extends Component<Props> {
                         this.resizeOverlay = false;
                     }
                     break;
+                case 'disableReconnect':
+                    if (value) {
+                        console.log(`[ttyd] Reconnect disabled`);
+                        this.doBackoff = false;
+                    }
+                    break;
                 case 'titleFixed':
                     if (!value || value === '') return;
                     console.log(`[ttyd] setting fixed title: ${value}`);
@@ -276,11 +284,11 @@ export class Xterm extends Component<Props> {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { backoff, backoffLock, overlayAddon } = this;
+        const { backoff, doBackoff, backoffLock, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
 
         // 1000: CLOSE_NORMAL
-        if (event.code !== 1000 && !backoffLock) {
+        if (event.code !== 1000 && doBackoff && !backoffLock) {
             backoff.backoff();
         }
     }
@@ -288,8 +296,8 @@ export class Xterm extends Component<Props> {
     @bind
     private onSocketError(event: Event) {
         console.error('[ttyd] websocket connection error: ', event);
-        const { backoff, backoffLock } = this;
-        if (!backoffLock) {
+        const { backoff, doBackoff, backoffLock } = this;
+        if (doBackoff && !backoffLock) {
             backoff.backoff();
         }
     }
