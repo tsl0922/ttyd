@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Example:
-#         env BUILD_TARGET=mips WITH_SSL=true ./scripts/cross-build.sh
+#         env BUILD_TARGET=mips ./scripts/cross-build.sh
 #
 set -eo pipefail
 
@@ -9,11 +9,10 @@ CROSS_ROOT="${CROSS_ROOT:-/opt/cross}"
 STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 BUILD_TARGET="${BUILD_TARGET:-x86_64}"
-WITH_SSL=${WITH_SSL:-false}
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.15}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-1.1.1i}"
+MBEDTLS_VERSION="${MBEDTLS_VERSION:-2.16.8}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.40.0}"
 LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.1.6}"
 
@@ -40,26 +39,17 @@ build_json-c() {
     popd
 }
 
-map_openssl_target() {
-    case $1 in
-        i686) echo linux-generic32 ;;
-        x86_64) echo linux-x86_64 ;;
-        arm|armhf) echo linux-armv4 ;;
-        aarch64) echo linux-aarch64 ;;
-        mips|mipsel) echo linux-mips32 ;;
-        mips64|mips64el) echo linux64-mips64 ;;
-        *) echo "unknown openssl target: $1" && exit 1
-    esac
-}
-
-build_openssl() {
-    openssl_target=$(map_openssl_target "${BUILD_TARGET}")
-    echo "=== Building openssl-${OPENSSL_VERSION} (${openssl_target})..."
-    curl -sLo- "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
-    pushd "${BUILD_DIR}/openssl-${OPENSSL_VERSION}"
-        env CC=gcc CROSS_COMPILE="${TARGET}-" CFLAGS="-fPIC -latomic" \
-            ./Configure "${openssl_target}" no-ssl3 no-err -DOPENSSL_SMALL_FOOTPRINT --prefix="${STAGE_DIR}" \
-        && make -j"$(nproc)" all > /dev/null && make install_sw
+build_mbedtls() {
+    echo "=== Building mbedtls-${MBEDTLS_VERSION} (${TARGET})..."
+    curl -sLo- "https://github.com/ARMmbed/mbedtls/archive/v${MBEDTLS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    pushd "${BUILD_DIR}/mbedtls-${MBEDTLS_VERSION}"
+        rm -rf build && mkdir -p build && cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
+            -DCMAKE_BUILD_TYPE=RELEASE \
+            -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
+            -DENABLE_TESTING=OFF \
+            ..
+        make -j"$(nproc)" install
     popd
 }
 
@@ -96,13 +86,13 @@ build_libwebsockets() {
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         sed -i '/PC_OPENSSL/d' lib/tls/CMakeLists.txt
         rm -rf build && mkdir -p build && cd build
-        [ "${WITH_SSL}" = true ] || CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
-        cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" "${CMAKE_OPTIONS}" \
+        cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
             -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
             -DLWS_WITHOUT_TESTAPPS=ON \
+            -DLWS_WITH_MBEDTLS=ON \
             -DLWS_WITH_LIBUV=ON \
             -DLWS_STATIC_PIC=ON \
             -DLWS_WITH_SHARED=OFF \
@@ -158,7 +148,7 @@ build() {
     build_zlib
     build_json-c
     build_libuv
-    [ "${WITH_SSL}" = true ] && build_openssl
+    build_mbedtls
     build_libwebsockets
     build_ttyd
 }
