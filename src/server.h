@@ -6,6 +6,8 @@
 // client message
 #define INPUT '0'
 #define RESIZE_TERMINAL '1'
+#define PAUSE '2'
+#define RESUME '3'
 #define JSON_DATA '{'
 
 // server message
@@ -26,7 +28,7 @@ extern struct lws_context *context;
 extern struct server *server;
 extern struct endpoints endpoints;
 
-typedef enum { STATE_INIT, STATE_KILL, STATE_EXIT } proc_state;
+typedef enum { STATE_INIT, STATE_PAUSE, STATE_KILL, STATE_EXIT } proc_state;
 
 struct pss_http {
   char path[128];

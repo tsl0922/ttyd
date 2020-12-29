@@ -36,7 +36,7 @@ brew install ttyd
     git clone https://github.com/tsl0922/ttyd.git
     cd ttyd && mkdir build && cd build
     cmake ..
-    make && make install
+    make && sudo make install
     ```
 
     You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
@@ -64,7 +64,7 @@ USAGE:
     ttyd [options] <command> [<arguments...>]
 
 VERSION:
-    1.6.1
+    1.6.2
 
 OPTIONS:
     -p, --port              Port to listen (default: 7681, use `0` for random port)
@@ -83,6 +83,7 @@ OPTIONS:
     -B, --browser           Open terminal with the default system browser
     -I, --index             Custom index.html path
     -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
+    -P, --ping-interval     Websocket ping interval(sec) (default: 300)
     -6, --ipv6              Enable IPv6 support
     -S, --ssl               Enable SSL
     -C, --ssl-cert          SSL certificate file path

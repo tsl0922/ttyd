@@ -1,6 +1,12 @@
 #ifndef TTYD_UTIL_H
 #define TTYD_UTIL_H
 
+#define container_of(ptr, type, member)                \
+  ({                                                   \
+    const typeof(((type *)0)->member) *__mptr = (ptr); \
+    (type *)((char *)__mptr - offsetof(type, member)); \
+  })
+
 // malloc with NULL check
 void *xmalloc(size_t size);
 

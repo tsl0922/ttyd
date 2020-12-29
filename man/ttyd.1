@@ -13,6 +13,8 @@ ttyd \- Share your terminal over the web
 .SH Description
 .PP
 ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
+
+.RS
 .IP \(bu 2
 Built on top of Libwebsockets with libuv for speed
 .IP \(bu 2
@@ -27,6 +29,8 @@ Run any custom command with options
 Basic authentication support and many other custom options
 .IP \(bu 2
 Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
+
+.RE
 
 
 .SH OPTIONS
@@ -96,6 +100,10 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
       Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
 
 .PP
+\-P, \-\-ping\-interval
+      Websocket ping interval(sec) (default: 300)
+
+.PP
 \-6, \-\-ipv6
       Enable IPv6 support
 
@@ -144,12 +152,16 @@ ttyd \-p 8080 bash \-x
 .PP
 Then open 
 \[la]http://localhost:8080\[ra] with a browser, you will get a bash shell with debug mode enabled. More examples:
+
+.RS
 .IP \(bu 2
 If you want to login with your system accounts on the web browser, run \fB\fCttyd login\fR\&.
 .IP \(bu 2
 You can even run a none shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
 .IP \(bu 2
 Sharing single process with multiple clients: \fB\fCttyd tmux new \-A \-s ttyd vim\fR, run \fB\fCtmux new \-A \-s ttyd\fR to connect to the tmux session from terminal.
+
+.RE
 
 
 .SH SSL how\-to
@@ -208,10 +220,14 @@ If you don't want to enable client certificate verification, remove the \fB\fC\-
 .SH Docker and ttyd
 .PP
 Docker containers are jailed environments which are more secure, this is useful for protecting the host system, you may use ttyd with docker like this:
+
+.RS
 .IP \(bu 2
 Sharing single docker container with multiple clients: docker run \-it \-\-rm \-p 7681:7681 tsl0922/ttyd.
 .IP \(bu 2
 Creating new docker container for each client: ttyd docker run \-it \-\-rm ubuntu.
+
+.RE
 
 
 .SH Nginx reverse proxy

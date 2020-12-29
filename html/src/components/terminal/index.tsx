@@ -7,7 +7,7 @@ import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import { OverlayAddon } from './overlay';
-import { ZmodemAddon } from '../zmodem';
+import { ZmodemAddon, FlowControl } from '../zmodem';
 
 import 'xterm/css/xterm.css';
 
@@ -30,13 +30,23 @@ const enum Command {
     // client side
     INPUT = '0',
     RESIZE_TERMINAL = '1',
+    PAUSE = '2',
+    RESUME = '3',
+}
+
+export interface ClientOptions {
+    rendererType: 'dom' | 'canvas' | 'webgl';
+    disableLeaveAlert: boolean;
+    disableResizeOverlay: boolean;
+    titleFixed: string;
 }
 
 interface Props {
     id: string;
     wsUrl: string;
     tokenUrl: string;
-    options: ITerminalOptions;
+    clientOptions: ClientOptions;
+    termOptions: ITerminalOptions;
 }
 
 export class Xterm extends Component<Props> {
@@ -44,17 +54,21 @@ export class Xterm extends Component<Props> {
     private textDecoder: TextDecoder;
     private container: HTMLElement;
     private terminal: Terminal;
+
     private fitAddon: FitAddon;
     private overlayAddon: OverlayAddon;
     private zmodemAddon: ZmodemAddon;
+
     private socket: WebSocket;
     private token: string;
     private title: string;
     private titleFixed: string;
     private resizeTimeout: number;
     private resizeOverlay = true;
+
     private backoff: backoff.Backoff;
     private backoffLock = false;
+    private doBackoff = true;
     private reconnect = false;
 
     constructor(props: Props) {
@@ -100,11 +114,31 @@ export class Xterm extends Component<Props> {
     }
 
     render({ id }: Props) {
+        const control = {
+            limit: 100000,
+            highWater: 10,
+            lowWater: 4,
+            pause: () => this.pause(),
+            resume: () => this.resume(),
+        } as FlowControl;
+
         return (
             <div id={id} ref={c => (this.container = c)}>
-                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} />
+                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} control={control} />
             </div>
         );
+    }
+
+    @bind
+    private pause() {
+        const { textEncoder, socket } = this;
+        socket.send(textEncoder.encode(Command.PAUSE));
+    }
+
+    @bind
+    private resume() {
+        const { textEncoder, socket } = this;
+        socket.send(textEncoder.encode(Command.RESUME));
     }
 
     @bind
@@ -149,7 +183,7 @@ export class Xterm extends Component<Props> {
 
     @bind
     private openTerminal() {
-        this.terminal = new Terminal(this.props.options);
+        this.terminal = new Terminal(this.props.termOptions);
         const { terminal, container, fitAddon, overlayAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
@@ -191,11 +225,65 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
+    private applyOptions(options: any) {
+        const { terminal, fitAddon } = this;
+        const isWebGL2Available = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+            } catch (e) {
+                return false;
+            }
+        };
+
+        Object.keys(options).forEach(key => {
+            const value = options[key];
+            switch (key) {
+                case 'rendererType':
+                    if (value === 'webgl' && isWebGL2Available()) {
+                        terminal.loadAddon(new WebglAddon());
+                        console.log(`[ttyd] WebGL renderer enabled`);
+                    }
+                    break;
+                case 'disableLeaveAlert':
+                    if (value) {
+                        window.removeEventListener('beforeunload', this.onWindowUnload);
+                        console.log('[ttyd] Leave site alert disabled');
+                    }
+                    break;
+                case 'disableResizeOverlay':
+                    if (value) {
+                        console.log(`[ttyd] Resize overlay disabled`);
+                        this.resizeOverlay = false;
+                    }
+                    break;
+                case 'disableReconnect':
+                    if (value) {
+                        console.log(`[ttyd] Reconnect disabled`);
+                        this.doBackoff = false;
+                    }
+                    break;
+                case 'titleFixed':
+                    if (!value || value === '') return;
+                    console.log(`[ttyd] setting fixed title: ${value}`);
+                    this.titleFixed = value;
+                    document.title = value;
+                    break;
+                default:
+                    console.log(`[ttyd] option: ${key}=${value}`);
+                    terminal.setOption(key, value);
+                    if (key.indexOf('font') === 0) fitAddon.fit();
+                    break;
+            }
+        });
+    }
+
+    @bind
     private onSocketOpen() {
         console.log('[ttyd] websocket connection opened');
         this.backoff.reset();
 
-        const { socket, textEncoder, terminal, fitAddon } = this;
+        const { socket, textEncoder, terminal, fitAddon, overlayAddon } = this;
         socket.send(textEncoder.encode(JSON.stringify({ AuthToken: this.token })));
 
         if (this.reconnect) {
@@ -203,10 +291,13 @@ export class Xterm extends Component<Props> {
             terminal.reset();
             terminal.resize(dims.cols, dims.rows);
             this.onTerminalResize(dims); // may not be triggered by terminal.resize
+            overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.reconnect = true;
             fitAddon.fit();
         }
+
+        this.applyOptions(this.props.clientOptions);
 
         terminal.focus();
     }
@@ -215,11 +306,11 @@ export class Xterm extends Component<Props> {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { backoff, backoffLock, overlayAddon } = this;
+        const { backoff, doBackoff, backoffLock, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
 
         // 1000: CLOSE_NORMAL
-        if (event.code !== 1000 && !backoffLock) {
+        if (event.code !== 1000 && doBackoff && !backoffLock) {
             backoff.backoff();
         }
     }
@@ -227,15 +318,15 @@ export class Xterm extends Component<Props> {
     @bind
     private onSocketError(event: Event) {
         console.error('[ttyd] websocket connection error: ', event);
-        const { backoff, backoffLock } = this;
-        if (!backoffLock) {
+        const { backoff, doBackoff, backoffLock } = this;
+        if (doBackoff && !backoffLock) {
             backoff.backoff();
         }
     }
 
     @bind
     private onSocketData(event: MessageEvent) {
-        const { terminal, textDecoder, zmodemAddon, fitAddon } = this;
+        const { textDecoder, zmodemAddon } = this;
         const rawData = event.data as ArrayBuffer;
         const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
         const data = rawData.slice(1);
@@ -249,44 +340,7 @@ export class Xterm extends Component<Props> {
                 document.title = this.title;
                 break;
             case Command.SET_PREFERENCES:
-                const preferences = JSON.parse(textDecoder.decode(data));
-                Object.keys(preferences).forEach(key => {
-                    const value = preferences[key];
-                    switch (key) {
-                        case 'rendererType':
-                            if (preferences[key] === 'webgl') {
-                                terminal.loadAddon(new WebglAddon());
-                                console.log(`[ttyd] WebGL renderer enabled`);
-                            }
-                            break;
-                        case 'disableLeaveAlert':
-                            if (preferences[key]) {
-                                window.removeEventListener('beforeunload', this.onWindowUnload);
-                                console.log('[ttyd] Leave site alert disabled');
-                            }
-                            break;
-                        case 'disableResizeOverlay':
-                            if (preferences[key]) {
-                                console.log(`[ttyd] disabled resize overlay`);
-                                this.resizeOverlay = false;
-                            }
-                            break;
-                        case 'fontSize':
-                            console.log(`[ttyd] setting font size to ${value}`);
-                            terminal.setOption(key, value);
-                            fitAddon.fit();
-                            break;
-                        case 'titleFixed':
-                            console.log(`[ttyd] setting fixed title: ${value}`);
-                            this.titleFixed = value;
-                            document.title = value;
-                            break;
-                        default:
-                            console.log(`[ttyd] option: ${key}=${value}`);
-                            terminal.setOption(key, value);
-                            break;
-                    }
-                });
+                this.applyOptions(JSON.parse(textDecoder.decode(data)));
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);

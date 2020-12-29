@@ -15,7 +15,7 @@ ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.14}"
 OPENSSL_VERSION="${OPENSSL_VERSION:-1.1.1g}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.38.0}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.0.20}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.1.6}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -93,7 +93,7 @@ build_libwebsockets() {
     echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
     curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
-        sed -i 's/ websockets_shared//g' cmake/LibwebsocketsConfig.cmake.in
+        sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         sed -i '/PC_OPENSSL/d' CMakeLists.txt
         mkdir build && cd build
         [ "${WITH_SSL}" = true ] || CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
