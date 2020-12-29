@@ -67,23 +67,6 @@ endif()
 set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
 set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
 
-set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
-include(CheckCSourceCompiles)
-check_c_source_compiles("#include <lws_config.h>
-int main(void) {
-#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
-    return 0;
-#else
-    return error;
-#endif
-}" LWS_SSL_ENABLED)
-
-if(LWS_SSL_ENABLED)
-    find_package(OpenSSL REQUIRED)
-    list(APPEND INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
-    list(APPEND LINK_LIBS ${OPENSSL_LIBRARIES})
-endif()
-
 if(WIN32)
     list(APPEND LINK_LIBS shell32)
 elseif(NOT APPLE)
