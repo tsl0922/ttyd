@@ -12,9 +12,9 @@ BUILD_TARGET="${BUILD_TARGET:-x86_64}"
 WITH_SSL=${WITH_SSL:-false}
 
 ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
-JSON_C_VERSION="${JSON_C_VERSION:-0.14}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-1.1.1g}"
-LIBUV_VERSION="${LIBUV_VERSION:-1.38.0}"
+JSON_C_VERSION="${JSON_C_VERSION:-0.15}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-1.1.1i}"
+LIBUV_VERSION="${LIBUV_VERSION:-1.40.0}"
 LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.1.6}"
 
 build_zlib() {
@@ -30,7 +30,7 @@ build_json-c() {
     echo "=== Building json-c-${JSON_C_VERSION} (${TARGET})..."
     curl -sLo- "https://s3.amazonaws.com/json-c_releases/releases/json-c-${JSON_C_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/json-c-${JSON_C_VERSION}"
-        mkdir build && cd build
+        rm -rf build && mkdir -p build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
             -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
@@ -94,10 +94,11 @@ build_libwebsockets() {
     curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
-        sed -i '/PC_OPENSSL/d' CMakeLists.txt
-        mkdir build && cd build
+        sed -i '/PC_OPENSSL/d' lib/tls/CMakeLists.txt
+        rm -rf build && mkdir -p build && cd build
         [ "${WITH_SSL}" = true ] || CMAKE_OPTIONS="-DLWS_WITH_SSL=OFF"
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" "${CMAKE_OPTIONS}" \
+            -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
