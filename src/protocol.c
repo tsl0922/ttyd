@@ -124,6 +124,7 @@ static void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
   } else {
     proc->pty_buffer = NULL;
     if (nread != UV_EOF) {
+      proc->err_count++;
       lwsl_err("read_cb: %s (%s)\n", uv_err_name(nread), uv_strerror(nread));
     }
   }
@@ -314,20 +315,21 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (proc->status == 0 || proc->pty_len == UV_EOF) {
         lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
         return 1;
-      } else if (proc->status > 0 || proc->pty_len < 0) {
+      } else if (proc->status > 0 || (proc->pty_len < 0 && proc->err_count == MAX_READ_RETRY)) {
         lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
         return -1;
       }
 
-      if (proc->pty_buffer == NULL || proc->pty_len == 0) break;
-
-      proc->pty_buffer[LWS_PRE] = OUTPUT;
-      n = (size_t)(proc->pty_len + 1);
-      if (lws_write(wsi, (unsigned char *)proc->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
-        lwsl_err("write OUTPUT to WS\n");
+      if (proc->pty_buffer != NULL && proc->pty_len > 0) {
+        proc->pty_buffer[LWS_PRE] = OUTPUT;
+        n = (size_t)(proc->pty_len + 1);
+        if (lws_write(wsi, (unsigned char *)proc->pty_buffer + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
+          lwsl_err("write OUTPUT to WS\n");
+        }
+        free(proc->pty_buffer);
+        proc->pty_buffer = NULL;
       }
-      free(proc->pty_buffer);
-      proc->pty_buffer = NULL;
+
       uv_read_start((uv_stream_t *)&proc->pipe, alloc_cb, read_cb);
       break;
 

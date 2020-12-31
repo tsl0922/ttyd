@@ -15,6 +15,8 @@
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
 
+#define MAX_READ_RETRY 2
+
 // url paths
 struct endpoints {
   char *ws;
@@ -48,6 +50,7 @@ struct pty_proc {
   int pty;
   char *pty_buffer;
   ssize_t pty_len;
+  int err_count;
 
   uv_pipe_t pipe;
 
