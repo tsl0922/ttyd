@@ -245,7 +245,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (n <= 0) n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_HTTP_COLON_PATH);
 #endif
       if (strncmp(pss->path, endpoints.ws, n) != 0) {
-        lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", buf);
+        lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", pss->path);
         return 1;
       }
 
