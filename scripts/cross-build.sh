@@ -153,6 +153,9 @@ build() {
     build_ttyd
 }
 
+[ "${BUILD_TARGET}" = "amd64" ] && BUILD_TARGET="x86_64"
+[ "${BUILD_TARGET}" = "arm64" ] && BUILD_TARGET="aarch64"
+
 case ${BUILD_TARGET} in
     i686|x86_64|aarch64|mips|mipsel|mips64|mips64el)
         build "${BUILD_TARGET}-linux-musl" "${BUILD_TARGET}"
