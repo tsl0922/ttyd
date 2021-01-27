@@ -3,9 +3,10 @@ name: docker
 on:
   push:
     branches: master
+    tags: "*"
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -25,6 +26,19 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Determine docker tags
+        id: docker_tag
+        run: |
+          case $GITHUB_REF in
+            refs/tags/*)
+              TAG_NAME=${GITHUB_REF#refs/tags/}
+              echo ::set-output name=DOCKER_TAG::tsl0922/ttyd:${TAG_NAME}
+              echo ::set-output name=ALPINE_TAG::tsl0922/ttyd:${TAG_NAME}-alpine
+              ;;
+            *)
+              echo ::set-output name=DOCKER_TAG::tsl0922/ttyd:latest
+              echo ::set-output name=ALPINE_TAG::tsl0922/ttyd:alpine
+          esac
       - name: build/push docker image
         uses: docker/build-push-action@v2
         with:
@@ -32,8 +46,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            tsl0922/ttyd:latest
+          tags: ${{ steps.docker_tag.outputs.DOCKER_TAG }}
       - name: build/push docker image (alpine)
         uses: docker/build-push-action@v2
         with:
@@ -41,5 +54,4 @@ jobs:
           file: ./Dockerfile.alpine
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            tsl0922/ttyd:alpine
+          tags: ${{ steps.docker_tag.outputs.ALPINE_TAG }}
