@@ -65,7 +65,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
       Custom index.html path
   
   -b, --base-path
-      Expected base path for requests coming from a reverse proxy (eg: /mounted/here)
+      Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)
 
   -P, --ping-interval
       Websocket ping interval(sec) (default: 300)

@@ -115,7 +115,7 @@ static void print_help() {
           "    -o, --once              Accept only one client and exit on disconnection\n"
           "    -B, --browser           Open terminal with the default system browser\n"
           "    -I, --index             Custom index.html path\n"
-          "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here)\n"
+          "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
           "    -P, --ping-interval     Websocket ping interval(sec) (default: 300)\n"
 #endif
