@@ -153,18 +153,24 @@ build() {
     build_ttyd
 }
 
-[ "${BUILD_TARGET}" = "amd64" ] && BUILD_TARGET="x86_64"
-[ "${BUILD_TARGET}" = "arm64" ] && BUILD_TARGET="aarch64"
+case ${BUILD_TARGET} in
+    amd64) BUILD_TARGET="x86_64" ;;
+    arm64) BUILD_TARGET="aarch64" ;;
+    armv7) BUILD_TARGET="armv7l" ;;
+esac
 
 case ${BUILD_TARGET} in
-    i686|x86_64|aarch64|mips|mipsel|mips64|mips64el)
+    i686|x86_64|aarch64|mips|mipsel|mips64|mips64el|s390x)
         build "${BUILD_TARGET}-linux-musl" "${BUILD_TARGET}"
         ;;
     arm)
-        build arm-linux-musleabi "${BUILD_TARGET}"
+        build "${BUILD_TARGET}-linux-musleabi" "${BUILD_TARGET}"
         ;;
     armhf)
         build arm-linux-musleabihf "${BUILD_TARGET}"
+        ;;
+    armv7l)
+        build armv7l-linux-musleabihf "${BUILD_TARGET}"
         ;;
     *)
         echo "unknown cross target: ${BUILD_TARGET}" && exit 1

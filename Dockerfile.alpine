@@ -1,7 +1,7 @@
 FROM alpine
 
 ARG TARGETARCH
-COPY ./ttyd.${TARGETARCH} /usr/bin/ttyd
+COPY ./dist/${TARGETARCH}/ttyd /usr/bin/ttyd
 RUN apk add --no-cache bash tini
 
 EXPOSE 7681

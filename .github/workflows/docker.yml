@@ -14,11 +14,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake build-essential cmake curl file libtool
-      - name: Cross build amd64/arm64 binary
+      - name: Cross build multi-arch binary
         run: |
-          for arch in amd64 arm64; do
+          mkdir dist
+          for arch in amd64 armv7 arm64 s390x; do
             env BUILD_TARGET=$arch ./scripts/cross-build.sh
-            cp build/ttyd ttyd.$arch
+            [ "$arch" = "armv7" ] && arch="arm" 
+            mkdir -p dist/$arch && cp build/ttyd dist/$arch/ttyd
           done
       - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v1
@@ -44,7 +46,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/s390x
           push: true
           tags: ${{ steps.docker_tag.outputs.DOCKER_TAG }}
       - name: build/push docker image (alpine)
@@ -52,6 +54,6 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.alpine
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/s390x
           push: true
           tags: ${{ steps.docker_tag.outputs.ALPINE_TAG }}
