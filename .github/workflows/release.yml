@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }} 
     steps:
@@ -23,11 +23,11 @@ jobs:
           prerelease: false
 
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: release
     strategy:
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x]
     steps:
       - uses: actions/checkout@v2
       - name: Install packages

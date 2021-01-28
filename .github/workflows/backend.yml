@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         lws-version: [4.1.6, 3.2.3, 2.4.2]
@@ -41,10 +41,10 @@ jobs:
           make && sudo make install
           ttyd -v
   cross:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x]
     steps:
       - uses: actions/checkout@v2
       - name: Install packages
