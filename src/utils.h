@@ -25,9 +25,6 @@ int get_sig_name(int sig, char *buf, size_t len);
 // Get signal code from string like SIGHUP
 int get_sig(const char *sig_name);
 
-// Set the given file descriptor close-on-exec
-bool fd_set_cloexec(const int fd);
-
 // Open uri with the default application of system
 int open_uri(char *uri);
 
