@@ -52,8 +52,8 @@ struct pty_proc {
   ssize_t pty_len;
   int err_count;
 
-  uv_pipe_t in_pipe;
-  uv_pipe_t out_pipe;
+  uv_pipe_t *in_pipe;
+  uv_pipe_t *out_pipe;
 
   LIST_ENTRY(pty_proc) entry;
 };

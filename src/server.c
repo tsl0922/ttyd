@@ -200,6 +200,7 @@ static void server_free(struct server *ts) {
     }
   }
   uv_signal_stop(&ts->watcher);
+  uv_close((uv_handle_t *)&server->watcher, NULL);
   uv_loop_close(ts->loop);
   free(ts->loop);
   free(ts);
