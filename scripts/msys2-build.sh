@@ -23,6 +23,7 @@ build_libwebsockets() {
       cmake -DCMAKE_BUILD_TYPE=RELEASE \
           -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
           -DCMAKE_EXE_LINKER_FLAGS="-static" \
+          -DLWS_WITH_SSL=OFF \
           -DLWS_WITH_BUNDLED_ZLIB=OFF \
           -DLWS_WITHOUT_TESTAPPS=ON \
           -DLWS_WITH_LIBUV=ON \
