@@ -16,7 +16,6 @@ const char *sys_signame[NSIG] = {
 #endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#include <shellapi.h>
 #include <windows.h>
 // https://github.com/mirror/newlib-cygwin/blob/master/winsup/cygwin/strsig.cc
 #ifndef NSIG
