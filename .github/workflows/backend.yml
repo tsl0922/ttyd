@@ -55,7 +55,27 @@ jobs:
         env:
           BUILD_TARGET: ${{ matrix.target }}
         run: ./scripts/cross-build.sh
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd
+  msys2:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          install: gcc cmake make libuv-devel zlib-devel openssl-devel
+          update: true
+      - name: Build ttyd
+        shell: msys2 {0}
+        run: |
+          ./scripts/msys2-build.sh
+          cp /usr/bin/msys-2.0.dll build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ttyd.msys2
+          path: |
+            build/ttyd.exe
+            build/msys-2.0.dll
