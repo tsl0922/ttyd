@@ -31,4 +31,9 @@ int open_uri(char *uri);
 // Encode text to base64, the caller should free the returned string
 char *base64_encode(const unsigned char *buffer, size_t length);
 
+#ifdef _WIN32
+char *strsep(char **sp, char *sep);
+const char *quote_arg(const char *arg);
+void print_error(char *func);
+#endif
 #endif  // TTYD_UTIL_H

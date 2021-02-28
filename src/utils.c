@@ -18,9 +18,8 @@ const char *sys_signame[NSIG] = {
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 // https://github.com/mirror/newlib-cygwin/blob/master/winsup/cygwin/strsig.cc
-#ifndef NSIG
+#undef NSIG
 #define NSIG 33
-#endif
 const char *sys_signame[NSIG] = {
     "zero", "HUP",   "INT",  "QUIT", "ILL",  "TRAP", "IOT",  "EMT",  "FPE",
     "KILL", "BUS",   "SEGV", "SYS",  "PIPE", "ALRM", "TERM", "URG",  "STOP",
@@ -79,7 +78,7 @@ int open_uri(char *uri) {
   sprintf(command, "open %s > /dev/null 2>&1", uri);
   return system(command);
 #elif defined(_WIN32) || defined(__CYGWIN__)
-  return ShellExecute(0, 0, uri, 0, 0, SW_SHOW) > 32 ? 0 : 1;
+  return ShellExecute(0, 0, uri, 0, 0, SW_SHOW) > (HINSTANCE) 32 ? 0 : 1;
 #else
   // check if X server is running
   if (system("xset -q > /dev/null 2>&1")) return 1;
@@ -114,3 +113,86 @@ char *base64_encode(const unsigned char *buffer, size_t length) {
 
   return ret;
 }
+
+#ifdef _WIN32
+char *strsep(char **sp, char *sep) {
+  char *p, *s;
+  if (sp == NULL || *sp == NULL || **sp == '\0') return(NULL);
+  s = *sp;
+  p = s + strcspn(s, sep);
+  if (*p != '\0') *p++ = '\0';
+  *sp = p;
+  return(s);
+}
+
+// https://github.com/git/git/blob/306ee63a703ad67c54ba1209dc11dd9ea500dc1f/compat/mingw.c#L1111
+const char *quote_arg(const char *arg) {
+	int len = 0, n = 0;
+	int force_quotes = 0;
+	char *q, *d;
+	const char *p = arg;
+	if (!*p) force_quotes = 1;
+	while (*p) {
+		if (isspace(*p) || *p == '*' || *p == '?' || *p == '{' || *p == '\'')
+			force_quotes = 1;
+		else if (*p == '"')
+			n++;
+		else if (*p == '\\') {
+			int count = 0;
+			while (*p == '\\') {
+				count++;
+				p++;
+				len++;
+			}
+			if (*p == '"' || !*p)
+				n += count*2 + 1;
+			continue;
+		}
+		len++;
+		p++;
+	}
+	if (!force_quotes && n == 0)
+		return arg;
+
+	d = q = xmalloc(len + n + 3);
+	*d++ = '"';
+	while (*arg) {
+		if (*arg == '"')
+			*d++ = '\\';
+		else if (*arg == '\\') {
+			int count = 0;
+			while (*arg == '\\') {
+				count++;
+				*d++ = *arg++;
+			}
+			if (*arg == '"' || !*arg) {
+				while (count-- > 0)
+					*d++ = '\\';
+				if (!*arg)
+					break;
+				*d++ = '\\';
+			}
+		}
+		*d++ = *arg++;
+	}
+	*d++ = '"';
+	*d++ = '\0';
+	return q;
+}
+
+void print_error(char *func) { 
+    LPVOID buffer;
+    DWORD dw = GetLastError(); 
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &buffer,
+        0, NULL );
+    wprintf(L"== %s failed with error %d: %s", func, dw, buffer);
+    LocalFree(buffer);
+}
+#endif

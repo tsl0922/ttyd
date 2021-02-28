@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <uv.h>
 
-#include "queue.h"
+#include "pty.h"
 
 // client message
 #define INPUT '0'
@@ -30,32 +30,11 @@ extern struct lws_context *context;
 extern struct server *server;
 extern struct endpoints endpoints;
 
-typedef enum { STATE_INIT, STATE_PAUSE, STATE_KILL, STATE_EXIT } proc_state;
-
 struct pss_http {
   char path[128];
   char *buffer;
   char *ptr;
   size_t len;
-};
-
-struct pty_proc {
-  char **args;
-  int argc;
-
-  pid_t pid;
-  int status;
-  proc_state state;
-
-  int pty_fd;
-  char *pty_buffer;
-  ssize_t pty_len;
-  int err_count;
-
-  uv_pipe_t *in_pipe;
-  uv_pipe_t *out_pipe;
-
-  LIST_ENTRY(pty_proc) entry;
 };
 
 struct pss_tty {
@@ -64,12 +43,16 @@ struct pss_tty {
   bool authenticated;
   char address[50];
   char path[128];
+  char **args;
+  int argc;
 
   struct lws *wsi;
   char *buffer;
   size_t len;
 
-  struct pty_proc *proc;
+  pty_process *process;
+  pty_buf_t *pty_buf;
+  bool pty_eof;
 };
 
 struct server {
@@ -91,7 +74,4 @@ struct server {
   char terminal_type[30];  // terminal type to report
 
   uv_loop_t *loop;      // the libuv event loop
-  uv_signal_t watcher;  // SIGCHLD watcher
-
-  LIST_HEAD(proc, pty_proc) procs;  // started process list
 };

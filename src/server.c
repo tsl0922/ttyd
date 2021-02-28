@@ -144,7 +144,6 @@ static struct server *server_new(int argc, char **argv, int start) {
   ts = xmalloc(sizeof(struct server));
 
   memset(ts, 0, sizeof(struct server));
-  LIST_INIT(&ts->procs);
   ts->client_count = 0;
   ts->sig_code = SIGHUP;
   sprintf(ts->terminal_type, "%s", "xterm-256color");
@@ -167,7 +166,8 @@ static struct server *server_new(int argc, char **argv, int start) {
   ts->command = xmalloc(cmd_len + 1);
   char *ptr = ts->command;
   for (int i = 0; i < cmd_argc; i++) {
-    ptr = stpcpy(ptr, ts->argv[i]);
+    size_t len = strlen(ts->argv[i]);
+    ptr = memcpy (ptr, ts->argv[i], len + 1) + len;
     if (i != cmd_argc - 1) {
       *ptr++ = ' ';
     }
@@ -176,8 +176,6 @@ static struct server *server_new(int argc, char **argv, int start) {
 
   ts->loop = xmalloc(sizeof *ts->loop);
   uv_loop_init(ts->loop);
-  uv_signal_init(ts->loop, &ts->watcher);
-  ts->watcher.data = &ts->procs;
 
   return ts;
 }
@@ -199,8 +197,6 @@ static void server_free(struct server *ts) {
       unlink(ts->socket_path);
     }
   }
-  uv_signal_stop(&ts->watcher);
-  uv_close((uv_handle_t *)&server->watcher, NULL);
   uv_loop_close(ts->loop);
   free(ts->loop);
   free(ts);
@@ -275,6 +271,12 @@ int main(int argc, char **argv) {
     print_help();
     return 0;
   }
+#ifdef _WIN32
+  if (!conpty_init()) {
+    fprintf(stderr, "ERROR: ConPTY init failed! Make sure you are on Windows 10 1809 or later.");
+    return 1;
+  }
+#endif
 
   int start = calc_command_start(argc, argv);
   server = server_new(argc, argv, start);
@@ -444,7 +446,7 @@ int main(int argc, char **argv) {
       case 't':
         optind--;
         for (; optind < start && *argv[optind] != '-'; optind++) {
-          char *option = strdup(optarg);
+          char *option = optarg;
           char *key = strsep(&option, "=");
           if (key == NULL) {
             fprintf(stderr,
@@ -459,7 +461,6 @@ int main(int argc, char **argv) {
                     optarg);
             return -1;
           }
-          free(option);
           struct json_object *obj = json_tokener_parse(value);
           json_object_object_add(
               client_prefs, key,
