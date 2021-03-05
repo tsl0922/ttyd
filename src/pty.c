@@ -126,26 +126,22 @@ int pty_write(pty_process *process, pty_buf_t *buf) {
   return uv_write(req, (uv_stream_t *) io->in, &b, 1, write_cb);
 }
 
-int pty_resize(pty_process *process, int width, int height) {
+bool pty_resize(pty_process *process, uint16_t width, uint16_t height) {
 #ifdef _WIN32
-  COORD size = { height, width };
-  return pResizePseudoConsole(process->pty, size) == S_OK ? 0 : -1;
+  COORD size = { (int16_t) width, (int16_t) height };
+  return pResizePseudoConsole(process->pty, size) == S_OK;
 #else
-  struct winsize size;
-  size.ws_col = (unsigned short) height;
-  size.ws_row = (unsigned short) width;
-  size.ws_xpixel = 0;
-  size.ws_ypixel = 0;
-  return ioctl(process->pty, TIOCSWINSZ, &size);
+  struct winsize size = { height, width, 0, 0 };
+  return ioctl(process->pty, TIOCSWINSZ, &size) == 0;
 #endif
 }
 
-int pty_close(pty_process *process, int sig) {
+bool pty_close(pty_process *process, int sig) {
   process->killed = true;
 #ifdef _WIN32
-  return TerminateProcess(process->handle, 1) ? 0 : 1;
+  return TerminateProcess(process->handle, 1) != 0;
 #else
-  return uv_kill(-process->pid, sig);
+  return uv_kill(-process->pid, sig) == 0;
 #endif
 }
 
@@ -325,7 +321,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     goto cleanup;
   }
 
-  process->pid = GetProcessId(pi.hProcess);
+  process->pid = pi.dwProcessId;
   process->handle = pi.hProcess;
 
   process->exit_cb = exit_cb;

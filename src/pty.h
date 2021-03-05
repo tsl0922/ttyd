@@ -2,6 +2,7 @@
 #define TTYD_PTY_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <uv.h>
 
 #ifdef _WIN32
@@ -65,7 +66,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb);
 void pty_pause(pty_process *process);
 void pty_resume(pty_process *process);
 int pty_write(pty_process *process, pty_buf_t *buf);
-int pty_resize(pty_process *process, int width, int height);
-int pty_close(pty_process *process, int sig);
+bool pty_resize(pty_process *process, uint16_t width, uint16_t height);
+bool pty_close(pty_process *process, int sig);
 
 #endif  // TTYD_PTY_H

@@ -35,7 +35,7 @@ static int send_initial_message(struct lws *wsi, int index) {
   return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
 }
 
-static bool parse_window_size(struct pss_tty *pss, int *cols, int *rows) {
+static bool parse_window_size(struct pss_tty *pss, uint16_t *cols, uint16_t *rows) {
   char json[pss->len];
   strncpy(json, pss->buffer + 1, pss->len - 1);
   json[pss->len - 1] = '\0';
@@ -47,12 +47,12 @@ static bool parse_window_size(struct pss_tty *pss, int *cols, int *rows) {
     lwsl_err("columns field not exists, json: %s\n", json);
     return false;
   }
-  *cols = json_object_get_int(o);
+  *cols = (uint16_t) json_object_get_int(o);
   if (!json_object_object_get_ex(obj, "rows", &o)) {
     lwsl_err("rows field not exists, json: %s\n", json);
     return false;
   }
-  *rows = json_object_get_int(o);
+  *rows = (uint16_t) json_object_get_int(o);
   json_object_put(obj);
 
   return true;
@@ -276,11 +276,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           }
           break;
         case RESIZE_TERMINAL: {
-          int cols, rows;
+          uint16_t cols, rows;
           if (parse_window_size(pss, &cols, &rows)) {
-            if (pty_resize(pss->process, rows, cols) < 0) {
-              lwsl_err("pty_resize: %d (%s)\n", errno, strerror(errno));
-            }
+            pty_resize(pss->process, cols, rows);
           }
         } break;
         case PAUSE:
