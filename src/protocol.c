@@ -326,7 +326,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (process_running(pss->process)) {
         pty_pause(pss->process);
         lwsl_notice("killing process, pid: %d\n", pss->process->pid);
-        pty_close(pss->process, server->sig_code);
+        pty_kill(pss->process, server->sig_code);
       }
 
       if (server->once && server->client_count == 0) {

@@ -68,6 +68,6 @@ void pty_pause(pty_process *process);
 void pty_resume(pty_process *process);
 int pty_write(pty_process *process, pty_buf_t *buf);
 bool pty_resize(pty_process *process);
-bool pty_close(pty_process *process, int sig);
+bool pty_kill(pty_process *process, int sig);
 
 #endif  // TTYD_PTY_H

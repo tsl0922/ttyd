@@ -151,7 +151,7 @@ bool pty_resize(pty_process *process) {
 #endif
 }
 
-bool pty_close(pty_process *process, int sig) {
+bool pty_kill(pty_process *process, int sig) {
   process->killed = true;
 #ifdef _WIN32
   return TerminateProcess(process->handle, 1) != 0;
