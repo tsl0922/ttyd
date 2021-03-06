@@ -35,27 +35,18 @@ static int send_initial_message(struct lws *wsi, int index) {
   return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
 }
 
-static bool parse_window_size(struct pss_tty *pss, uint16_t *cols, uint16_t *rows) {
-  char json[pss->len];
-  strncpy(json, pss->buffer + 1, pss->len - 1);
-  json[pss->len - 1] = '\0';
-
-  json_object *obj = json_tokener_parse(json);
+static json_object* parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
+  json_tokener *tok = json_tokener_new();
+  json_object *obj = json_tokener_parse_ex(tok, buf, len);
   struct json_object *o = NULL;
 
-  if (!json_object_object_get_ex(obj, "columns", &o)) {
-    lwsl_err("columns field not exists, json: %s\n", json);
-    return false;
-  }
-  *cols = (uint16_t) json_object_get_int(o);
-  if (!json_object_object_get_ex(obj, "rows", &o)) {
-    lwsl_err("rows field not exists, json: %s\n", json);
-    return false;
-  }
-  *rows = (uint16_t) json_object_get_int(o);
-  json_object_put(obj);
-
-  return true;
+  if (json_object_object_get_ex(obj, "columns", &o))
+    *cols = (uint16_t) json_object_get_int(o);
+  if (json_object_object_get_ex(obj, "rows", &o))
+    *rows = (uint16_t) json_object_get_int(o);
+  
+  json_tokener_free(tok);
+  return obj;
 }
 
 static bool check_host_origin(struct lws *wsi) {
@@ -103,7 +94,7 @@ static void process_exit_cb(void *ctx, pty_process *process) {
   }
 }
 
-static bool spawn_process(struct pss_tty *pss) {
+static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
   // append url args to arguments
   char *argv[server->argc + pss->argc + 1];
   int i, n = 0;
@@ -116,6 +107,8 @@ static bool spawn_process(struct pss_tty *pss) {
   argv[n] = NULL;
 
   pty_process *process = process_init((void *) pss, server->loop, argv);
+  if (columns > 0) process->columns = columns;
+  if (rows > 0) process->rows = rows;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
     lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
     process_free(process);
@@ -275,12 +268,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
             return -1;
           }
           break;
-        case RESIZE_TERMINAL: {
-          uint16_t cols, rows;
-          if (parse_window_size(pss, &cols, &rows)) {
-            pty_resize(pss->process, cols, rows);
-          }
-        } break;
+        case RESIZE_TERMINAL:
+          if (pss->process == NULL) break;
+          json_object_put(parse_window_size(pss->buffer + 1, pss->len - 1,
+                          &pss->process->columns, &pss->process->rows));
+          pty_resize(pss->process);
+          break;
         case PAUSE:
           pty_pause(pss->process);
           break;
@@ -289,22 +282,25 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           break;
         case JSON_DATA:
           if (pss->process != NULL) break;
+          uint16_t columns = 0;
+          uint16_t rows = 0;
+          char *token = NULL;
+          json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
           if (server->credential != NULL) {
-            json_object *obj = json_tokener_parse(pss->buffer);
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
               const char *token = json_object_get_string(o);
-              if (token != NULL && !strcmp(token, server->credential))
-                pss->authenticated = true;
-              else
-                lwsl_warn("WS authentication failed with token: %s\n", token);
+              pss->authenticated = token != NULL && !strcmp(token, server->credential);
             }
             if (!pss->authenticated) {
+              lwsl_warn("WS authentication failed with token: %s\n", token);
+              json_object_put(obj);
               lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
               return -1;
             }
           }
-          if (!spawn_process(pss)) return 1;
+          json_object_put(obj);
+          if (!spawn_process(pss, columns, rows)) return 1;
           break;
         default:
           lwsl_warn("ignored unknown message type: %c\n", command);

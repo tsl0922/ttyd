@@ -284,13 +284,16 @@ export class Xterm extends Component<Props> {
         this.backoff.reset();
 
         const { socket, textEncoder, terminal, fitAddon, overlayAddon } = this;
-        socket.send(textEncoder.encode(JSON.stringify({ AuthToken: this.token })));
+        const dims = fitAddon.proposeDimensions();
+        socket.send(textEncoder.encode(JSON.stringify({
+            AuthToken: this.token,
+            columns: dims.cols,
+            rows: dims.rows,
+        })));
 
         if (this.reconnect) {
-            const dims = fitAddon.proposeDimensions();
             terminal.reset();
             terminal.resize(dims.cols, dims.rows);
-            this.onTerminalResize(dims); // may not be triggered by terminal.resize
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.reconnect = true;

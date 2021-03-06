@@ -38,6 +38,7 @@ typedef void (*pty_exit_cb)(void *, pty_process *);
 
 struct pty_process_ {
   int pid, exit_code, exit_signal;
+  uint16_t columns, rows;
   bool killed;
 #ifdef _WIN32
   STARTUPINFOEXW si;
@@ -66,7 +67,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb);
 void pty_pause(pty_process *process);
 void pty_resume(pty_process *process);
 int pty_write(pty_process *process, pty_buf_t *buf);
-bool pty_resize(pty_process *process, uint16_t width, uint16_t height);
+bool pty_resize(pty_process *process);
 bool pty_close(pty_process *process, int sig);
 
 #endif  // TTYD_PTY_H

@@ -93,6 +93,8 @@ pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv) {
   process->ctx = ctx;
   process->loop = loop;
   process->argv = argv;
+  process->columns = 80;
+  process->rows = 24;
   process->exit_code = -1;
   return process;
 }
@@ -138,12 +140,13 @@ int pty_write(pty_process *process, pty_buf_t *buf) {
   return uv_write(req, (uv_stream_t *) io->in, &b, 1, write_cb);
 }
 
-bool pty_resize(pty_process *process, uint16_t width, uint16_t height) {
+bool pty_resize(pty_process *process) {
+  if (process->columns <= 0 || process->rows <= 0) return false;
 #ifdef _WIN32
-  COORD size = { (int16_t) width, (int16_t) height };
+  COORD size = { (int16_t) process->columns, (int16_t) process->rows };
   return pResizePseudoConsole(process->pty, size) == S_OK;
 #else
-  struct winsize size = { height, width, 0, 0 };
+  struct winsize size = { process->rows, process->columns, 0, 0 };
   return ioctl(process->pty, TIOCSWINSZ, &size) == 0;
 #endif
 }
@@ -303,7 +306,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   char *in_name = NULL;
   char *out_name = NULL;
   DWORD flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-  COORD size = { 80, 24 };
+  COORD size = { (int16_t) process->columns, (int16_t) process->rows };
 
   if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name)) return 1;
 
@@ -401,7 +404,8 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_disable_stdio_inheritance();
 
   int master, pid;
-  pid = forkpty(&master, NULL, NULL, NULL);
+  struct winsize size = { process->rows, process->columns, 0, 0 };
+  pid = forkpty(&master, NULL, NULL, &size);
   if (pid < 0) {
     status = -errno;
     goto error;
