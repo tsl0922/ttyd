@@ -49,12 +49,6 @@ void pty_buf_free(pty_buf_t *buf) {
   free(buf);
 }
 
-static void pty_io_free(pty_io_t *io) {
-  uv_close((uv_handle_t *) io->in, close_cb);
-  uv_close((uv_handle_t *) io->out, close_cb);
-  free(io);
-}
-
 static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
   uv_read_stop(stream);
   pty_io_t *io = (pty_io_t *) stream->data;
@@ -73,6 +67,24 @@ static void write_cb(uv_write_t *req, int unused) {
   pty_buf_t *buf = (pty_buf_t *)req->data;
   pty_buf_free(buf);
   free(req);
+}
+
+static pty_io_t *pty_io_init(pty_process *process, pty_read_cb read_cb) {
+  pty_io_t *io = xmalloc(sizeof(pty_io_t));
+  io->in = xmalloc(sizeof(uv_pipe_t));
+  io->out = xmalloc(sizeof(uv_pipe_t));
+  uv_pipe_init(process->loop, io->in, 0);
+  uv_pipe_init(process->loop, io->out, 0);
+  io->paused = true;
+  io->read_cb = read_cb;
+  io->ctx = process->ctx;
+  return io;
+}
+
+static void pty_io_free(pty_io_t *io) {
+  uv_close((uv_handle_t *) io->in, close_cb);
+  uv_close((uv_handle_t *) io->out, close_cb);
+  free(io);
 }
 
 pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv) {
@@ -281,6 +293,7 @@ static void async_cb(uv_async_t *async) {
   process->exit_code = (int) exit_code;
   process->exit_signal = 1;
   process->exit_cb(process->ctx, process);
+
   uv_close((uv_handle_t *) async, NULL);
   process_free(process);
 }
@@ -297,15 +310,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   SetConsoleCtrlHandler(NULL, FALSE);
 
   int status = 1;
-  pty_io_t *io = xmalloc(sizeof(pty_io_t));
-  io->in = xmalloc(sizeof(uv_pipe_t));
-  io->out = xmalloc(sizeof(uv_pipe_t));
-  uv_pipe_init(process->loop, io->in, 0);
-  uv_pipe_init(process->loop, io->out, 0);
-  io->paused = true;
-  io->read_cb = read_cb;
-  io->ctx = process->ctx;
-  process->io = io;
+  pty_io_t *io = pty_io_init(process, read_cb);
 
   uv_connect_t *in_req = xmalloc(sizeof(uv_connect_t));
   uv_connect_t *out_req = xmalloc(sizeof(uv_connect_t));
@@ -323,13 +328,14 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
 
   process->pid = pi.dwProcessId;
   process->handle = pi.hProcess;
-
+  process->io = io;
   process->exit_cb = exit_cb;
   process->async.data = process;
   uv_async_init(process->loop, &process->async, async_cb);
 
   if(!RegisterWaitForSingleObject(&process->wait, pi.hProcess, conpty_exit, process, INFINITE, WT_EXECUTEONLYONCE)) {
     print_error("RegisterWaitForSingleObject");
+    pty_io_free(io);
     goto cleanup;
   }
 
@@ -384,6 +390,7 @@ static void wait_cb(void *arg) {
 static void async_cb(uv_async_t *async) {
   pty_process *process = (pty_process *) async->data;
   process->exit_cb(process->ctx, process);
+
   uv_close((uv_handle_t *) async, NULL);
   process_free(process);
 }
@@ -421,14 +428,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     goto error;
   }
 
-  pty_io_t *io = xmalloc(sizeof(pty_io_t));
-  io->in = xmalloc(sizeof(uv_pipe_t));
-  io->out = xmalloc(sizeof(uv_pipe_t));
-  uv_pipe_init(process->loop, io->in, 0);
-  uv_pipe_init(process->loop, io->out, 0);
-  io->paused = true;
-  io->read_cb = read_cb;
-  io->ctx = process->ctx;
+  pty_io_t *io = pty_io_init(process, read_cb);
   if (!fd_duplicate(master, io->in) || !fd_duplicate(master, io->out)) {
     status = -errno;
     pty_io_free(io);
@@ -438,7 +438,6 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   process->pty = master;
   process->pid = pid;
   process->io = io;
-  
   process->exit_cb = exit_cb;
   process->async.data = process;
   uv_async_init(process->loop, &process->async, async_cb);
