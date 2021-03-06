@@ -284,16 +284,17 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           if (pss->process != NULL) break;
           uint16_t columns = 0;
           uint16_t rows = 0;
-          char *token = NULL;
           json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
           if (server->credential != NULL) {
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
               const char *token = json_object_get_string(o);
-              pss->authenticated = token != NULL && !strcmp(token, server->credential);
+              if (token != NULL && !strcmp(token, server->credential))
+                pss->authenticated = true;
+              else
+                lwsl_warn("WS authentication failed with token: %s\n", token);
             }
             if (!pss->authenticated) {
-              lwsl_warn("WS authentication failed with token: %s\n", token);
               json_object_put(obj);
               lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
               return -1;
