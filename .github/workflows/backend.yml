@@ -59,23 +59,26 @@ jobs:
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd
-  msys2:
+  win10:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: MSYS
-          install: gcc cmake make libuv-devel zlib-devel openssl-devel
+          msystem: MINGW64
+          install: >-
+            make
+            mingw64/mingw-w64-x86_64-gcc
+            mingw64/mingw-w64-x86_64-cmake
+            mingw64/mingw-w64-x86_64-zlib
+            mingw64/mingw-w64-x86_64-libuv
+            mingw64/mingw-w64-x86_64-mbedtls
+            mingw64/mingw-w64-x86_64-json-c
           update: true
       - name: Build ttyd
         shell: msys2 {0}
-        run: |
-          ./scripts/msys2-build.sh
-          cp /usr/bin/msys-2.0.dll build
+        run: ./scripts/mingw-build.sh
       - uses: actions/upload-artifact@v2
         with:
-          name: ttyd.msys2
-          path: |
-            build/ttyd.exe
-            build/msys-2.0.dll
+          name: ttyd.win10
+          path: build/ttyd.exe
