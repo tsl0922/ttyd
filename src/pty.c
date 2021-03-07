@@ -54,6 +54,7 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
   pty_io_t *io = (pty_io_t *) stream->data;
   if (n <= 0) {
     if (n == UV_ENOBUFS || n == 0) return;
+    if (n != UV_EOF) printf("== uv_read failed with error %ld: %s\n", n, uv_strerror(n));
     io->read_cb(io->ctx, NULL, true);
     goto done;
   }
@@ -120,12 +121,14 @@ void process_free(pty_process *process) {
 }
 
 void pty_pause(pty_process *process) {
+  if (process == NULL) return;
   pty_io_t *io = process->io;
   if (io->paused) return;
   uv_read_stop((uv_stream_t *) io->out);
 }
 
 void pty_resume(pty_process *process) {
+  if (process == NULL) return;
   pty_io_t *io = process->io;
   if (!io->paused) return;
   io->out->data = io;
@@ -133,6 +136,7 @@ void pty_resume(pty_process *process) {
 }
 
 int pty_write(pty_process *process, pty_buf_t *buf) {
+  if (process == NULL) return UV_ESRCH;
   pty_io_t *io = process->io;
   uv_buf_t b = uv_buf_init(buf->base, buf->len);
   uv_write_t *req = xmalloc(sizeof(uv_write_t));
@@ -141,6 +145,7 @@ int pty_write(pty_process *process, pty_buf_t *buf) {
 }
 
 bool pty_resize(pty_process *process) {
+  if (process == NULL) return false;
   if (process->columns <= 0 || process->rows <= 0) return false;
 #ifdef _WIN32
   COORD size = { (int16_t) process->columns, (int16_t) process->rows };
@@ -152,6 +157,7 @@ bool pty_resize(pty_process *process) {
 }
 
 bool pty_kill(pty_process *process, int sig) {
+  if (process == NULL) return false;
   process->killed = true;
 #ifdef _WIN32
   return TerminateProcess(process->handle, 1) != 0;

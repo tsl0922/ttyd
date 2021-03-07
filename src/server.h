@@ -52,7 +52,8 @@ struct pss_tty {
 
   pty_process *process;
   pty_buf_t *pty_buf;
-  bool pty_eof;
+
+  int lws_close_status;
 };
 
 struct server {

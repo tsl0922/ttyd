@@ -79,17 +79,20 @@ static bool check_host_origin(struct lws *wsi) {
 static void process_read_cb(void *ctx, pty_buf_t *buf, bool eof) {
   struct pss_tty *pss = (struct pss_tty *) ctx;
   pss->pty_buf = buf;
-  pss->pty_eof = eof;
+  if (eof && !process_running(pss->process)) {
+    pss->lws_close_status = pss->process->exit_code == 0 ? 1000 : 1006;
+  }
   lws_callback_on_writable(pss->wsi);
 }
 
 static void process_exit_cb(void *ctx, pty_process *process) {
   struct pss_tty *pss = (struct pss_tty *) ctx;
+  pss->process = NULL;
   if (process->killed) {
     lwsl_notice("process killed with signal %d, pid: %d\n", process->exit_signal, process->pid);
   } else {
     lwsl_notice("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
-    pss->pty_eof = true;
+    pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
     lws_callback_on_writable(pss->wsi);
   }
 }
@@ -175,6 +178,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       pss->wsi = wsi;
       pss->buffer = NULL;
       pss->pty_buf = NULL;
+      pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
 
       if (server->url_arg) {
         while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
@@ -215,9 +219,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         break;
       }
 
-      // read error or client exited, close connection
-      if (pss->pty_eof) {
-        lws_close_reason(wsi, pss->process->exit_code ? LWS_CLOSE_STATUS_UNEXPECTED_CONDITION : LWS_CLOSE_STATUS_NORMAL, NULL, 0);
+      if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
+        lws_close_reason(wsi, pss->lws_close_status, NULL, 0);
         return 1;
       }
 
@@ -269,7 +272,6 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           }
           break;
         case RESIZE_TERMINAL:
-          if (pss->process == NULL) break;
           json_object_put(parse_window_size(pss->buffer + 1, pss->len - 1,
                           &pss->process->columns, &pss->process->rows));
           pty_resize(pss->process);
