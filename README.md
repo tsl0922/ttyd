@@ -100,7 +100,7 @@ Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Exampl
 
 ## Browser Support
 
-Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#browser-support).
+Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#browser-support). Chrome users might be interested in launching chrome as `chrome --app=https://www.example.com/ttyd`, as this allows Ctrl+n, Ctrl+w etc. to be passed to the terminal.
 
 ## Alternatives
 
