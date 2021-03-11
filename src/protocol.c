@@ -258,14 +258,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       switch (command) {
         case INPUT:
           if (server->readonly) break;
-
-          char *data = xmalloc(pss->len - 1);
-          memcpy(data, pss->buffer + 1, pss->len - 1);
-
-          uv_write_t *req = xmalloc(sizeof(uv_write_t));
-          req->data = data;
-
-          int err = pty_write(pss->process, pty_buf_init(data, pss->len - 1));
+          int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
           if (err) {
             lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
             return -1;

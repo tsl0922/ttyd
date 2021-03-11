@@ -136,7 +136,10 @@ void pty_resume(pty_process *process) {
 }
 
 int pty_write(pty_process *process, pty_buf_t *buf) {
-  if (process == NULL) return UV_ESRCH;
+  if (process == NULL) {
+    pty_buf_free(buf);
+    return UV_ESRCH;
+  }
   pty_io_t *io = process->io;
   uv_buf_t b = uv_buf_init(buf->base, buf->len);
   uv_write_t *req = xmalloc(sizeof(uv_write_t));
