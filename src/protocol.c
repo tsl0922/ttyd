@@ -127,14 +127,16 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
 
 static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   if (buf == NULL) return;
-  char *wbuf = xmalloc(LWS_PRE + 1 + buf->len);
-  memcpy(wbuf + LWS_PRE + 1, buf->base, buf->len);
-  wbuf[LWS_PRE] = OUTPUT;
+  char message[LWS_PRE + 1 + buf->len];
+  char *ptr= &message[LWS_PRE];
+
+  *ptr = OUTPUT;
+  memcpy(ptr + 1, buf->base, buf->len);
   size_t n = buf->len + 1;
-  if (lws_write(wsi, (unsigned char *) wbuf + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
+
+  if (lws_write(wsi, (unsigned char *) ptr, n, LWS_WRITE_BINARY) < n) {
     lwsl_err("write OUTPUT to WS\n");
   }
-  free(wbuf);
 }
 
 int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,

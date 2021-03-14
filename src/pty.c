@@ -36,7 +36,7 @@ static void close_cb(uv_handle_t *handle) {
   free(handle);
 }
 
-pty_buf_t *pty_buf_init(char *base, ssize_t len) {
+pty_buf_t *pty_buf_init(char *base, size_t len) {
   pty_buf_t *buf = xmalloc(sizeof(pty_buf_t));
   buf->base = xmalloc(len);
   memcpy(buf->base, base, len);
@@ -58,7 +58,7 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
     io->read_cb(io->ctx, NULL, true);
     goto done;
   }
-  io->read_cb(io->ctx, pty_buf_init(buf->base, n), false);
+  io->read_cb(io->ctx, pty_buf_init(buf->base, (size_t) n), false);
 
 done:
   free(buf->base);

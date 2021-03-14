@@ -18,7 +18,7 @@ bool conpty_init();
 
 typedef struct {
   char *base;
-  ssize_t len;
+  size_t len;
 } pty_buf_t;
 
 typedef void (*pty_read_cb)(void *, pty_buf_t *, bool);
@@ -58,7 +58,7 @@ struct pty_process_ {
   void *ctx;
 };
 
-pty_buf_t *pty_buf_init(char *base, ssize_t len);
+pty_buf_t *pty_buf_init(char *base, size_t len);
 void pty_buf_free(pty_buf_t *buf);
 pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv);
 bool process_running(pty_process *process);
