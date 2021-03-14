@@ -78,10 +78,11 @@ static bool check_host_origin(struct lws *wsi) {
 
 static void process_read_cb(void *ctx, pty_buf_t *buf, bool eof) {
   struct pss_tty *pss = (struct pss_tty *) ctx;
-  pss->pty_buf = buf;
-  if (eof && !process_running(pss->process)) {
+  if (eof && !process_running(pss->process))
     pss->lws_close_status = pss->process->exit_code == 0 ? 1000 : 1006;
-  }
+  else
+    pss->pty_buf = buf;
+  
   lws_callback_on_writable(pss->wsi);
 }
 
@@ -130,7 +131,6 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   memcpy(wbuf + LWS_PRE + 1, buf->base, buf->len);
   wbuf[LWS_PRE] = OUTPUT;
   size_t n = buf->len + 1;
-  pty_buf_free(buf);
   if (lws_write(wsi, (unsigned char *) wbuf + LWS_PRE, n, LWS_WRITE_BINARY) < n) {
     lwsl_err("write OUTPUT to WS\n");
   }
@@ -173,11 +173,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
     case LWS_CALLBACK_ESTABLISHED:
       pss->initialized = false;
-      pss->initial_cmd_index = 0;
       pss->authenticated = false;
       pss->wsi = wsi;
-      pss->buffer = NULL;
-      pss->pty_buf = NULL;
       pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
 
       if (server->url_arg) {
@@ -226,6 +223,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       if (pss->pty_buf != NULL) {
         wsi_output(wsi, pss->pty_buf);
+        pty_buf_free(pss->pty_buf);
         pss->pty_buf = NULL;
         pty_resume(pss->process);
       }
@@ -316,6 +314,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
       if (pss->buffer != NULL) {
         free(pss->buffer);
+      }
+      for (int i = 0; i < pss->argc; i++) {
+        free(pss->args[i]);
       }
 
       if (process_running(pss->process)) {
