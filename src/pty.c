@@ -117,6 +117,7 @@ void process_free(pty_process *process) {
   uv_thread_join(&process->tid);
 #endif
   if (process->io != NULL) pty_io_free(process->io);
+  if (process->argv != NULL) free(process->argv);
   free(process);
 }
 

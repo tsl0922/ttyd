@@ -18,8 +18,7 @@ static size_t html_cache_len = 0;
 static int check_auth(struct lws *wsi, struct pss_http *pss) {
   if (server->credential == NULL) return AUTH_OK;
 
-  int hdr_length = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
-  char buf[hdr_length + 1];
+  char buf[256];
   int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
   if (len > 0) {
     // extract base64 text from authorization header
@@ -59,8 +58,7 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
 }
 
 static bool accept_gzip(struct lws *wsi) {
-  int hdr_length = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_ACCEPT_ENCODING);
-  char buf[hdr_length + 1];
+  char buf[256];
   int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_ACCEPT_ENCODING);
   return len > 0 && strstr(buf, "gzip") != NULL;
 }

@@ -578,19 +578,20 @@ int main(int argc, char **argv) {
   }
 
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
+  #define sig_count 2
   int sig_nums[] = {SIGINT, SIGTERM};
-  int ns = sizeof(sig_nums) / sizeof(sig_nums[0]);
-  uv_signal_t signals[ns];
-  for (int i = 0; i < ns; i++) {
+  uv_signal_t signals[sig_count];
+  for (int i = 0; i < sig_count; i++) {
     uv_signal_init(server->loop, &signals[i]);
     uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
   }
 
   lws_service(context, 0);
 
-  for (int i = 0; i < ns; i++) {
+  for (int i = 0; i < sig_count; i++) {
     uv_signal_stop(&signals[i]);
   }
+  #undef sig_count
 #else
 #if LWS_LIBRARY_VERSION_MAJOR < 2
   lws_uv_initloop(context, server->loop, signal_cb, 0);

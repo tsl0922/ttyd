@@ -50,8 +50,7 @@ static json_object* parse_window_size(const char *buf, size_t len, uint16_t *col
 }
 
 static bool check_host_origin(struct lws *wsi) {
-  int origin_length = lws_hdr_total_length(wsi, WSI_TOKEN_ORIGIN);
-  char buf[origin_length + 1];
+  char buf[256];
   memset(buf, 0, sizeof(buf));
   int len = lws_hdr_copy(wsi, buf, (int) sizeof(buf), WSI_TOKEN_ORIGIN);
   if (len <= 0) {
@@ -67,9 +66,7 @@ static bool check_host_origin(struct lws *wsi) {
     sprintf(buf, "%s:%d", address, port);
   }
 
-  int host_length = lws_hdr_total_length(wsi, WSI_TOKEN_HOST);
-  if (host_length != strlen(buf)) return false;
-  char host_buf[host_length + 1];
+  char host_buf[256];
   memset(host_buf, 0, sizeof(host_buf));
   len = lws_hdr_copy(wsi, host_buf, (int) sizeof(host_buf), WSI_TOKEN_HOST);
 
@@ -100,7 +97,7 @@ static void process_exit_cb(void *ctx, pty_process *process) {
 
 static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
   // append url args to arguments
-  char *argv[server->argc + pss->argc + 1];
+  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
   int i, n = 0;
   for (i = 0; i < server->argc; i++) {
     argv[n++] = server->argv[i];
@@ -127,8 +124,8 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
 
 static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   if (buf == NULL) return;
-  char message[LWS_PRE + 1 + buf->len];
-  char *ptr= &message[LWS_PRE];
+  char *message = xmalloc(LWS_PRE + 1 + buf->len);
+  char *ptr= message + LWS_PRE;
 
   *ptr = OUTPUT;
   memcpy(ptr + 1, buf->base, buf->len);
@@ -137,6 +134,8 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   if (lws_write(wsi, (unsigned char *) ptr, n, LWS_WRITE_BINARY) < n) {
     lwsl_err("write OUTPUT to WS\n");
   }
+
+  free(message);
 }
 
 int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,
