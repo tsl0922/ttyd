@@ -85,6 +85,7 @@ export class Xterm extends Component<Props> {
         this.backoff.failAfter(15);
         this.backoff.on('ready', () => {
             this.backoffLock = false;
+            this.overlayAddon.showOverlay('Reconnecting...', null);
             this.refreshToken().then(this.connect);
         });
         this.backoff.on('backoff', (_, delay: number) => {
@@ -319,6 +320,17 @@ export class Xterm extends Component<Props> {
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && doBackoff && !backoffLock) {
             backoff.backoff();
+        } else if (!doBackoff) {
+            const { terminal, refreshToken, connect } = this;
+            const keyDispose = terminal.onKey(e => {
+                const event = e.domEvent;
+                if (event.key === 'Enter') {
+                    keyDispose.dispose();
+                    overlayAddon.showOverlay('Reconnecting...', null);
+                    refreshToken().then(connect);
+                }
+            });
+            overlayAddon.showOverlay('Press ⏎ to Reconnect', null);
         }
     }
 
