@@ -15,8 +15,6 @@
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
 
-#define MAX_READ_RETRY 2
-
 // url paths
 struct endpoints {
   char *ws;
