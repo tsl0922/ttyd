@@ -350,12 +350,12 @@ int main(int argc, char **argv) {
         break;
       case 'c':
         if (strchr(optarg, ':') == NULL) {
-          fprintf(stderr,
-                  "ttyd: invalid credential, format: username:password\n");
+          fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
           return -1;
         }
-        server->credential =
-            base64_encode((const unsigned char *)optarg, strlen(optarg));
+        char b64_text[256];
+        lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
+        server->credential = strdup(b64_text);
         break;
       case 'u':
         info.uid = atoi(optarg);

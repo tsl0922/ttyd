@@ -7,7 +7,6 @@
 #include <string.h>
 
 #if defined(__linux__) && !defined(__ANDROID__)
-// https://github.com/karelzak/util-linux/blob/master/misc-utils/kill.c
 const char *sys_signame[NSIG] = {
     "zero", "HUP",   "INT",  "QUIT", "ILL",  "TRAP", "ABRT", "UNUSED", "FPE",
     "KILL", "USR1",  "SEGV", "USR2", "PIPE", "ALRM", "TERM", "STKFLT", "CHLD",
@@ -17,7 +16,6 @@ const char *sys_signame[NSIG] = {
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
-// https://github.com/mirror/newlib-cygwin/blob/master/winsup/cygwin/strsig.cc
 #undef NSIG
 #define NSIG 33
 const char *sys_signame[NSIG] = {
@@ -88,32 +86,6 @@ int open_uri(char *uri) {
 #endif
 }
 
-// https://github.com/darkk/redsocks/blob/master/base64.c
-char *base64_encode(const unsigned char *buffer, size_t length) {
-  static const char b64[] =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  char *ret, *dst;
-  unsigned i_bits = 0;
-  int i_shift = 0;
-  int bytes_remaining = (int)length;
-
-  ret = dst = xmalloc((size_t)(((length + 2) / 3 * 4) + 1));
-  while (bytes_remaining) {
-    i_bits = (i_bits << 8) + *buffer++;
-    bytes_remaining--;
-    i_shift += 8;
-
-    do {
-      *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
-      i_shift -= 6;
-    } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
-  }
-  while ((dst - ret) & 3) *dst++ = '=';
-  *dst = '\0';
-
-  return ret;
-}
-
 #ifdef _WIN32
 char *strsep(char **sp, char *sep) {
   char *p, *s;
@@ -125,7 +97,6 @@ char *strsep(char **sp, char *sep) {
   return(s);
 }
 
-// https://github.com/git/git/blob/306ee63a703ad67c54ba1209dc11dd9ea500dc1f/compat/mingw.c#L1111
 const char *quote_arg(const char *arg) {
 	int len = 0, n = 0;
 	int force_quotes = 0;
