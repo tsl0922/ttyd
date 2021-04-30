@@ -1,9 +1,10 @@
 const path = require('path');
+const webpack = require('webpack');
 const { merge } = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const devMode = process.env.NODE_ENV !== 'production';
@@ -15,7 +16,7 @@ const baseConfig = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: devMode ? '[name].js' : '[name].[hash].js',
+        filename: devMode ? '[name].js' : '[name].[contenthash].js',
     },
     module: {
         rules: [
@@ -40,17 +41,21 @@ const baseConfig = {
         ]
     },
     resolve: {
-        extensions: [ '.tsx', '.ts', '.js' ]
+        extensions: [ '.tsx', '.ts', '.js' ],
+        fallback: { "util": require.resolve("util/") }
     },
     plugins: [
+        new webpack.DefinePlugin({
+            "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG), // used by util
+        }),
         new CopyWebpackPlugin({
             patterns:[
                 { from: './favicon.png', to: '.' }
             ],
         }),
         new MiniCssExtractPlugin({
-            filename: devMode ? '[name].css' : '[name].[hash].css',
-            chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
+            filename: devMode ? '[name].css' : '[name].[contenthash].css',
+            chunkFilename: devMode ? '[id].css' : '[id].[contenthash].css',
         }),
         new HtmlWebpackPlugin({
             inject: false,
@@ -86,17 +91,8 @@ const prodConfig = {
     mode: 'production',
     optimization: {
         minimizer: [
-            new TerserPlugin({
-                sourceMap: true
-            }),
-            new OptimizeCSSAssetsPlugin({
-                cssProcessorOptions: {
-                    map: {
-                        inline: false,
-                        annotation: true
-                    }
-                }
-            }),
+            new TerserPlugin(),
+            new CssMinimizerPlugin(),
         ]
     },
     devtool: 'source-map',
