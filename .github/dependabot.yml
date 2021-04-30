@@ -6,24 +6,4 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
   ignore:
-  - dependency-name: ts-loader
-    versions:
-    - 8.0.16
-    - 9.0.0
-    - 9.1.0
-  - dependency-name: husky
-    versions:
-    - 5.1.0
-    - 5.2.0
-  - dependency-name: html-webpack-plugin
-    versions:
-    - 4.5.2
-  - dependency-name: typescript
-    versions:
-    - 3.9.8
-  - dependency-name: mini-css-extract-plugin
-    versions:
-    - 1.3.6
   - dependency-name: gts
-    versions:
-    - 3.1.0
