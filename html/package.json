@@ -36,7 +36,7 @@
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^5.2.4",
     "css-minimizer-webpack-plugin": "^2.0.0",
-    "gts": "^1.1.2",
+    "gts": "^3.0.3",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-gzip": "^1.4.2",
