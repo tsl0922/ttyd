@@ -3,7 +3,7 @@ updates:
 - package-ecosystem: npm
   directory: "/html"
   schedule:
-    interval: daily
+    interval: weekly
   open-pull-requests-limit: 10
   ignore:
   - dependency-name: gts
