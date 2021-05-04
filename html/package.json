@@ -46,7 +46,6 @@
     "webpack-merge": "^5.7.3"
   },
   "dependencies": {
-    "backoff": "^2.5.0",
     "decko": "^1.2.0",
     "file-saver": "^2.0.5",
     "preact": "^10.5.13",

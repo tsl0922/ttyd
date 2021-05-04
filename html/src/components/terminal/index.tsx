@@ -1,5 +1,4 @@
 import { bind } from 'decko';
-import * as backoff from 'backoff';
 import { Component, h } from 'preact';
 import { ITerminalOptions, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -61,15 +60,13 @@ export class Xterm extends Component<Props> {
 
     private socket: WebSocket;
     private token: string;
+    private opened = false;
     private title: string;
     private titleFixed: string;
     private resizeTimeout: number;
     private resizeOverlay = true;
-
-    private backoff: backoff.Backoff;
-    private backoffLock = false;
-    private doBackoff = true;
-    private reconnect = false;
+    private reconnect = true;
+    private doReconnect = true;
 
     constructor(props: Props) {
         super(props);
@@ -78,23 +75,6 @@ export class Xterm extends Component<Props> {
         this.textDecoder = new TextDecoder();
         this.fitAddon = new FitAddon();
         this.overlayAddon = new OverlayAddon();
-        this.backoff = backoff.exponential({
-            initialDelay: 100,
-            maxDelay: 10000,
-        });
-        this.backoff.failAfter(15);
-        this.backoff.on('ready', () => {
-            this.backoffLock = false;
-            this.overlayAddon.showOverlay('Reconnecting...', null);
-            this.refreshToken().then(this.connect);
-        });
-        this.backoff.on('backoff', (_, delay: number) => {
-            console.log(`[ttyd] will attempt to reconnect websocket in ${delay}ms`);
-            this.backoffLock = true;
-        });
-        this.backoff.on('fail', () => {
-            this.backoffLock = true; // break backoff
-        });
     }
 
     async componentDidMount() {
@@ -261,7 +241,7 @@ export class Xterm extends Component<Props> {
                 case 'disableReconnect':
                     if (value) {
                         console.log(`[ttyd] Reconnect disabled`);
-                        this.doBackoff = false;
+                        this.reconnect = false;
                     }
                     break;
                 case 'titleFixed':
@@ -282,7 +262,6 @@ export class Xterm extends Component<Props> {
     @bind
     private onSocketOpen() {
         console.log('[ttyd] websocket connection opened');
-        this.backoff.reset();
 
         const { socket, textEncoder, terminal, fitAddon, overlayAddon } = this;
         const dims = fitAddon.proposeDimensions();
@@ -296,16 +275,17 @@ export class Xterm extends Component<Props> {
             )
         );
 
-        if (this.reconnect) {
+        if (this.opened) {
             terminal.reset();
             terminal.resize(dims.cols, dims.rows);
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
-            this.reconnect = true;
+            this.opened = true;
             fitAddon.fit();
         }
 
         this.applyOptions(this.props.clientOptions);
+        this.doReconnect = this.reconnect;
 
         terminal.focus();
     }
@@ -314,14 +294,15 @@ export class Xterm extends Component<Props> {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { backoff, doBackoff, backoffLock, overlayAddon } = this;
+        const { refreshToken, connect, doReconnect, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
 
         // 1000: CLOSE_NORMAL
-        if (event.code !== 1000 && doBackoff && !backoffLock) {
-            backoff.backoff();
-        } else if (!doBackoff) {
-            const { terminal, refreshToken, connect } = this;
+        if (event.code !== 1000 && doReconnect) {
+            overlayAddon.showOverlay('Reconnecting...', null);
+            refreshToken().then(connect);
+        } else {
+            const { terminal } = this;
             const keyDispose = terminal.onKey(e => {
                 const event = e.domEvent;
                 if (event.key === 'Enter') {
@@ -337,10 +318,7 @@ export class Xterm extends Component<Props> {
     @bind
     private onSocketError(event: Event) {
         console.error('[ttyd] websocket connection error: ', event);
-        const { backoff, doBackoff, backoffLock } = this;
-        if (doBackoff && !backoffLock) {
-            backoff.backoff();
-        }
+        this.doReconnect = false;
     }
 
     @bind

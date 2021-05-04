@@ -1,5 +1,4 @@
 const path = require('path');
-const webpack = require('webpack');
 const { merge } = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -41,13 +40,9 @@ const baseConfig = {
         ]
     },
     resolve: {
-        extensions: [ '.tsx', '.ts', '.js' ],
-        fallback: { "util": require.resolve("util/") }
+        extensions: [ '.tsx', '.ts', '.js' ]
     },
     plugins: [
-        new webpack.DefinePlugin({
-            "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG), // used by util
-        }),
         new CopyWebpackPlugin({
             patterns:[
                 { from: './favicon.png', to: '.' }
