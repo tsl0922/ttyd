@@ -48,8 +48,8 @@ static lws_retry_bo_t retry = {
       .retry_ms_table = backoff_ms,
       .retry_ms_table_count = LWS_ARRAY_SIZE(backoff_ms),
       .conceal_count = LWS_ARRAY_SIZE(backoff_ms),
-      .secs_since_valid_ping = 300,
-      .secs_since_valid_hangup = 300 + 7,
+      .secs_since_valid_ping = 5,
+      .secs_since_valid_hangup = 10,
       .jitter_percent = 0,
     };
 #endif
@@ -117,7 +117,7 @@ static void print_help() {
           "    -I, --index             Custom index.html path\n"
           "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-          "    -P, --ping-interval     Websocket ping interval(sec) (default: 300)\n"
+          "    -P, --ping-interval     Websocket ping interval(sec) (default: 5)\n"
 #endif
 #ifdef LWS_WITH_IPV6
           "    -6, --ipv6              Enable IPv6 support\n"
