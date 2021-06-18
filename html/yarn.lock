@@ -1476,13 +1476,13 @@ css-loader@^5.2.6:
     schema-utils "^3.0.0"
     semver "^7.3.5"
 
-css-minimizer-webpack-plugin@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/css-minimizer-webpack-plugin/-/css-minimizer-webpack-plugin-2.0.0.tgz#3c42f6624ed4cf4780dd963e23ee649e5a25c1a8"
-  integrity sha512-cG/uc94727tx5pBNtb1Sd7gvUPzwmcQi1lkpfqTpdkuNq75hJCw7bIVsCNijLm4dhDcr1atvuysl2rZqOG8Txw==
+css-minimizer-webpack-plugin@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/css-minimizer-webpack-plugin/-/css-minimizer-webpack-plugin-3.0.1.tgz#2f866079411d42309a485512642c0cb08b5468ae"
+  integrity sha512-RGFIv6iZWUPO2T1vE5+5pNCSs2H2xtHYRdfZPiiNH8Of6QOn9BeFnZSoHiQMkmsxOO/JkPe4BpKfs7slFIWcTA==
   dependencies:
     cssnano "^5.0.0"
-    jest-worker "^26.3.0"
+    jest-worker "^27.0.2"
     p-limit "^3.0.2"
     postcss "^8.2.9"
     schema-utils "^3.0.0"
@@ -3910,15 +3910,6 @@ isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha1-R+Y/evVa+m+S4VAOaQ64uFKcCZo=
-
-jest-worker@^26.3.0:
-  version "26.6.2"
-  resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-26.6.2.tgz#7f72cbc4d643c365e27b9fd775f9d0eaa9c7a8ed"
-  integrity sha512-KWYVV1c4i+jbMpaBC+U++4Va0cp8OisU185o73T1vo99hqi7w8tSJfUXYswwqqrjzwxa6KpRK54WhPvwf5w6PQ==
-  dependencies:
-    "@types/node" "*"
-    merge-stream "^2.0.0"
-    supports-color "^7.0.0"
 
 jest-worker@^27.0.2:
   version "27.0.2"
@@ -6754,7 +6745,7 @@ supports-color@^6.1.0:
   dependencies:
     has-flag "^3.0.0"
 
-supports-color@^7.0.0, supports-color@^7.1.0:
+supports-color@^7.1.0:
   version "7.2.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-7.2.0.tgz#1b7dcdcb32b8138801b3e478ba6a51caa89648da"
   integrity sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==
