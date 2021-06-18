@@ -59,6 +59,7 @@ static const struct option options[] = {
     {"port", required_argument, NULL, 'p'},
     {"interface", required_argument, NULL, 'i'},
     {"credential", required_argument, NULL, 'c'},
+    {"file-credential", required_argument, NULL, 'F'},
     {"uid", required_argument, NULL, 'u'},
     {"gid", required_argument, NULL, 'g'},
     {"signal", required_argument, NULL, 's'},
@@ -86,10 +87,10 @@ static const struct option options[] = {
     {NULL, 0, 0, 0}};
 
 #if LWS_LIBRARY_VERSION_NUMBER < 4000000
-static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:f:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
 #endif
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-static const char *opt_string = "p:i:c:u:g:s:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:f:u:g:s:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
 #endif
 
 static void print_help() {
@@ -103,6 +104,7 @@ static void print_help() {
           "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
           "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
           "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
+          "    -f, --file-credential   File Credential for Basic Authentication (file format: username:password)\n"
           "    -u, --uid               User id to run with\n"
           "    -g, --gid               Group id to run with\n"
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
@@ -301,8 +303,10 @@ int main(int argc, char **argv) {
   bool browser = false;
   bool ssl = false;
   char cert_path[1024] = "";
+  char cred_path[1024] = "";
   char key_path[1024] = "";
   char ca_path[1024] = "";
+  char b64_text[256];
 
   struct json_object *client_prefs = json_object_new_object();
 
@@ -353,8 +357,22 @@ int main(int argc, char **argv) {
           fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
           return -1;
         }
-        char b64_text[256];
         lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
+        server->credential = strdup(b64_text);
+        break;
+      case 'f':
+        strncpy(cred_path, optarg, sizeof(cred_path) - 1);
+        cred_path[sizeof(cred_path) - 1] = '\0';
+        FILE *cred_file;
+        cred_file = fopen(cred_path, "r");
+        char file_text[256];
+        fgets(file_text,256,cred_file);
+        file_text[strcspn(file_text, "\n")] = 0;
+        if (strchr(file_text, ':') == NULL) {
+          fprintf(stderr, "ttyd: invalid credential, file format: username:password\n");
+          return -1;
+        }
+        lws_b64_encode_string(file_text, strlen(file_text), b64_text, sizeof(b64_text));
         server->credential = strdup(b64_text);
         break;
       case 'u':
