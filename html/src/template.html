@@ -13,5 +13,6 @@
 <% for (const js in htmlWebpackPlugin.files.js) { %>
 <script inline type="text/javascript" src="<%= htmlWebpackPlugin.files.js[js] %>"></script>
 <% } %>
+<script> window.parent && window.parent.postMessage({type :'KODEVAL', action:'containerLoaded'},'*');</script>
 </body>
 </html>
