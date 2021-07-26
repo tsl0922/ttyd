@@ -418,7 +418,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   pid = forkpty(&master, NULL, NULL, &size);
   if (pid < 0) {
     status = -errno;
-    goto error;
+    return status;
   } else if (pid == 0) {
     setsid();
     int ret = execvp(process->argv[0], process->argv);
