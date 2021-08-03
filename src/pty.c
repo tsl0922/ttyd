@@ -88,12 +88,13 @@ static void pty_io_free(pty_io_t *io) {
   free(io);
 }
 
-pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv) {
+pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv, char **envp) {
   pty_process *process = xmalloc(sizeof(pty_process));
   memset(process, 0, sizeof(pty_process));
   process->ctx = ctx;
   process->loop = loop;
   process->argv = argv;
+  process->envp = envp;
   process->columns = 80;
   process->rows = 24;
   process->exit_code = -1;
@@ -421,9 +422,9 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     return status;
   } else if (pid == 0) {
     setsid();
-    int ret = execvp(process->argv[0], process->argv);
+    int ret = execvpe(process->argv[0], process->argv, process->envp);
     if (ret < 0) {
-      perror("execvp failed\n");
+      perror("execvpe failed\n");
       _exit(-errno);
     }
   }
