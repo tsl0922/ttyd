@@ -124,6 +124,7 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
     }
 
     argv[n++] = filePath;
+    close(fd);
   }
 
   argv[n] = NULL;
