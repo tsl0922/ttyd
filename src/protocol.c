@@ -107,9 +107,9 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
       argv[n++] = pss->args[i];
     }
   }
-  else if (server->arg_file) {
+  else if (server->arg_file != NULL) {
     int fd = -1;
-    char filePath[] = "/tmp/XXXXXX";
+    char *filePath = strcat(server->arg_file, "XXXXXX");
 
     if ((fd = mkstemp(filePath)) == -1) {
       lwsl_err("Creation of temp file failed with error: %d (%s)\n", errno, strerror(errno));
@@ -200,7 +200,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       pss->wsi = wsi;
       pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
 
-      if (server->url_arg || server->arg_file) {
+      if (server->url_arg || server->arg_file != NULL) {
         while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
           if (strncmp(buf, "arg=", 4) == 0) {
             pss->args = xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));

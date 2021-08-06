@@ -41,7 +41,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
       Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
 
   -f, --arg-file
-      Allow client to write URL arguments to a temporary file; the file name is then passed in as a command line argument
+      File prefix for a unique generated temp file that URL arguments are written to (ex. /tmp/prefix); the generated file's full path is then passed in as a command line argument (ex. /tmp/prefix{unique string})
 
   -R, --readonly
       Do not allow clients to write to the TTY
