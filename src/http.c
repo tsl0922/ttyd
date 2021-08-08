@@ -20,19 +20,8 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
 
   char buf[256];
   int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-  if (len > 0) {
-    // extract base64 text from authorization header
-    char *ptr = &buf[0];
-    char *token, *b64_text = NULL;
-    int i = 1;
-    while ((token = strsep(&ptr, " ")) != NULL) {
-      if (strlen(token) == 0) continue;
-      if (i++ == 2) {
-        b64_text = token;
-        break;
-      }
-    }
-    if (b64_text != NULL && !strcmp(b64_text, server->credential)) return AUTH_OK;
+  if (len >= 7 && strstr(buf, "Basic ")) {
+    if (!strcmp(buf +6, server->credential)) return AUTH_OK;
   }
 
   unsigned char buffer[1024 + LWS_PRE], *p, *end;
