@@ -229,6 +229,17 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
 #endif
 }
 
+static int parse_int(char *name, char *str) {
+  char *endptr;
+  errno = 0;
+  long val = strtol(str, &endptr, 0);
+  if (errno != 0 || endptr == str) {
+    fprintf(stderr, "ttyd: invalid value for %s: %s\n", name, str);
+    exit(EXIT_FAILURE);
+  }
+  return (int) val;
+}
+
 static int calc_command_start(int argc, char **argv) {
   // make a copy of argc and argv
   int argc_copy = argc;
@@ -317,7 +328,7 @@ int main(int argc, char **argv) {
         printf("ttyd version %s\n", TTYD_VERSION);
         return 0;
       case 'd':
-        debug_level = atoi(optarg);
+        debug_level = parse_int("debug", optarg);
         break;
       case 'a':
         server->url_arg = true;
@@ -329,7 +340,7 @@ int main(int argc, char **argv) {
         server->check_origin = true;
         break;
       case 'm':
-        server->max_clients = atoi(optarg);
+        server->max_clients = parse_int("max-clients", optarg);
         break;
       case 'o':
         server->once = true;
@@ -338,7 +349,7 @@ int main(int argc, char **argv) {
         browser = true;
         break;
       case 'p':
-        info.port = atoi(optarg);
+        info.port = parse_int("port", optarg);
         if (info.port < 0) {
           fprintf(stderr, "ttyd: invalid port: %s\n", optarg);
           return -1;
@@ -358,10 +369,10 @@ int main(int argc, char **argv) {
         server->credential = strdup(b64_text);
         break;
       case 'u':
-        info.uid = atoi(optarg);
+        info.uid = parse_int("uid", optarg);
         break;
       case 'g':
-        info.gid = atoi(optarg);
+        info.gid = parse_int("gid", optarg);
         break;
       case 's': {
         int sig = get_sig(optarg);
@@ -407,13 +418,16 @@ int main(int argc, char **argv) {
       } break;
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
       case 'P':
-        if (atoi(optarg) <= 0) {
-          fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
-          return -1;
+        {
+          int interval = parse_int("ping-interval", optarg);
+          if (interval <= 0) {
+            fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
+            return -1;
+          }
+          retry.secs_since_valid_ping = interval;
+          retry.secs_since_valid_hangup = interval + 7;
+          info.retry_and_idle_policy = &retry;
         }
-        retry.secs_since_valid_ping = atoi(optarg);
-        retry.secs_since_valid_hangup = atoi(optarg) + 7;
-        info.retry_and_idle_policy = &retry;
         break;
 #endif
       case '6':
