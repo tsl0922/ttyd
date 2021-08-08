@@ -334,6 +334,11 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
 
+  // TODO: restore env after process creation
+  if (!SetEnvironmentVariable("TERM", process->term)) {
+    print_error("SetEnvironmentVariable");
+  }
+
   if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, NULL, NULL, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
     goto cleanup;
@@ -421,6 +426,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     return status;
   } else if (pid == 0) {
     setsid();
+    setenv("TERM", process->term, true);
     int ret = execvp(process->argv[0], process->argv);
     if (ret < 0) {
       perror("execvp failed\n");

@@ -110,6 +110,7 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
   pty_process *process = process_init((void *) pss, server->loop, argv);
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
+  strncpy(process->term, server->terminal_type, sizeof(process->term));
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
     lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
     process_free(process);

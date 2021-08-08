@@ -39,6 +39,7 @@ typedef void (*pty_exit_cb)(void *, pty_process *);
 struct pty_process_ {
   int pid, exit_code, exit_signal;
   uint16_t columns, rows;
+  char term[30];
   bool killed;
 #ifdef _WIN32
   STARTUPINFOEXW si;
