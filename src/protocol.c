@@ -109,7 +109,8 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
   }
   else if (server->arg_file != NULL) {
     int fd = -1;
-    char *filePath = strcat(server->arg_file, "XXXXXX");
+    char *filePath = xmalloc(strlen(server->arg_file) + 7);
+    sprintf(filePath, "%sXXXXXX", server->arg_file);
 
     if ((fd = mkstemp(filePath)) == -1) {
       lwsl_err("Creation of temp file failed with error: %d (%s)\n", errno, strerror(errno));
