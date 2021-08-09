@@ -109,8 +109,10 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
   }
   else if (server->arg_file != NULL) {
     int fd = -1;
-    char *filePath = xmalloc(strlen(server->arg_file) + 7);
-    sprintf(filePath, "%sXXXXXX", server->arg_file);
+    // mkstemp requires the file path to have suffix XXXXXX (len 7)
+    int file_path_len = strlen(server->arg_file) + 7;
+    char *filePath = xmalloc(file_path_len);
+    snprintf(filePath, file_path_len, "%sXXXXXX", server->arg_file);
 
     if ((fd = mkstemp(filePath)) == -1) {
       lwsl_err("Creation of temp file failed with error: %d (%s)\n", errno, strerror(errno));
