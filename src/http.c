@@ -6,10 +6,6 @@
 #include "server.h"
 #include "utils.h"
 
-#if LWS_LIBRARY_VERSION_MAJOR < 2
-#define HTTP_STATUS_FOUND 302
-#endif
-
 enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 
 static char *html_cache = NULL;
@@ -21,7 +17,7 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
   char buf[256];
   int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
   if (len >= 7 && strstr(buf, "Basic ")) {
-    if (!strcmp(buf +6, server->credential)) return AUTH_OK;
+    if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
   }
 
   unsigned char buffer[1024 + LWS_PRE], *p, *end;
@@ -89,12 +85,7 @@ static void pss_buffer_free(struct pss_http *pss) {
 static void access_log(struct lws *wsi, const char *path) {
   char rip[50];
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 2004000
   lws_get_peer_simple(lws_get_network_wsi(wsi), rip, sizeof(rip));
-#else
-  char name[100];
-  lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
-#endif
   lwsl_notice("HTTP %s - %s\n", path, rip);
 }
 
@@ -186,14 +177,9 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
             lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
           return 1;
 
-#if LWS_LIBRARY_VERSION_MAJOR < 2
-        if (lws_write_http(wsi, output, output_len) < 0) return 1;
-        goto try_to_reuse;
-#else
         pss->buffer = pss->ptr = output;
         pss->len = output_len;
         lws_callback_on_writable(wsi);
-#endif
       }
       break;
 

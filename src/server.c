@@ -22,68 +22,63 @@ struct lws_context *context;
 struct server *server;
 struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
-extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
-                         void *user, void *in, size_t len);
-extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason,
-                        void *user, void *in, size_t len);
+extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
+extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
 // websocket protocols
-static const struct lws_protocols protocols[] = {
-    {"http-only", callback_http, sizeof(struct pss_http), 0},
-    {"tty", callback_tty, sizeof(struct pss_tty), 0},
-    {NULL, NULL, 0, 0}};
+static const struct lws_protocols protocols[] = {{"http-only", callback_http, sizeof(struct pss_http), 0},
+                                                 {"tty", callback_tty, sizeof(struct pss_tty), 0},
+                                                 {NULL, NULL, 0, 0}};
 
 #ifndef LWS_WITHOUT_EXTENSIONS
 // websocket extensions
 static const struct lws_extension extensions[] = {
-    {"permessage-deflate", lws_extension_callback_pm_deflate,
-     "permessage-deflate"},
+    {"permessage-deflate", lws_extension_callback_pm_deflate, "permessage-deflate"},
     {"deflate-frame", lws_extension_callback_pm_deflate, "deflate_frame"},
     {NULL, NULL, NULL}};
 #endif
 
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-static const uint32_t backoff_ms[] = { 1000, 2000, 3000, 4000, 5000 };
+static const uint32_t backoff_ms[] = {1000, 2000, 3000, 4000, 5000};
 static lws_retry_bo_t retry = {
-      .retry_ms_table = backoff_ms,
-      .retry_ms_table_count = LWS_ARRAY_SIZE(backoff_ms),
-      .conceal_count = LWS_ARRAY_SIZE(backoff_ms),
-      .secs_since_valid_ping = 5,
-      .secs_since_valid_hangup = 10,
-      .jitter_percent = 0,
-    };
+    .retry_ms_table = backoff_ms,
+    .retry_ms_table_count = LWS_ARRAY_SIZE(backoff_ms),
+    .conceal_count = LWS_ARRAY_SIZE(backoff_ms),
+    .secs_since_valid_ping = 5,
+    .secs_since_valid_hangup = 10,
+    .jitter_percent = 0,
+};
 #endif
 
 // command line options
-static const struct option options[] = {
-    {"port", required_argument, NULL, 'p'},
-    {"interface", required_argument, NULL, 'i'},
-    {"credential", required_argument, NULL, 'c'},
-    {"uid", required_argument, NULL, 'u'},
-    {"gid", required_argument, NULL, 'g'},
-    {"signal", required_argument, NULL, 's'},
-    {"index", required_argument, NULL, 'I'},
-    {"base-path", required_argument, NULL, 'b'},
+static const struct option options[] = {{"port", required_argument, NULL, 'p'},
+                                        {"interface", required_argument, NULL, 'i'},
+                                        {"credential", required_argument, NULL, 'c'},
+                                        {"uid", required_argument, NULL, 'u'},
+                                        {"gid", required_argument, NULL, 'g'},
+                                        {"signal", required_argument, NULL, 's'},
+                                        {"index", required_argument, NULL, 'I'},
+                                        {"base-path", required_argument, NULL, 'b'},
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-    {"ping-interval", required_argument, NULL, 'P'},
+                                        {"ping-interval", required_argument, NULL, 'P'},
 #endif
-    {"ipv6", no_argument, NULL, '6'},
-    {"ssl", no_argument, NULL, 'S'},
-    {"ssl-cert", required_argument, NULL, 'C'},
-    {"ssl-key", required_argument, NULL, 'K'},
-    {"ssl-ca", required_argument, NULL, 'A'},
-    {"url-arg", no_argument, NULL, 'a'},
-    {"readonly", no_argument, NULL, 'R'},
-    {"terminal-type", required_argument, NULL, 'T'},
-    {"client-option", required_argument, NULL, 't'},
-    {"check-origin", no_argument, NULL, 'O'},
-    {"max-clients", required_argument, NULL, 'm'},
-    {"once", no_argument, NULL, 'o'},
-    {"browser", no_argument, NULL, 'B'},
-    {"debug", required_argument, NULL, 'd'},
-    {"version", no_argument, NULL, 'v'},
-    {"help", no_argument, NULL, 'h'},
-    {NULL, 0, 0, 0}};
+                                        {"ipv6", no_argument, NULL, '6'},
+                                        {"ssl", no_argument, NULL, 'S'},
+                                        {"ssl-cert", required_argument, NULL, 'C'},
+                                        {"ssl-key", required_argument, NULL, 'K'},
+                                        {"ssl-ca", required_argument, NULL, 'A'},
+                                        {"url-arg", no_argument, NULL, 'a'},
+                                        {"readonly", no_argument, NULL, 'R'},
+                                        {"terminal-type", required_argument, NULL, 'T'},
+                                        {"client-option", required_argument, NULL, 't'},
+                                        {"check-origin", no_argument, NULL, 'O'},
+                                        {"max-clients", required_argument, NULL, 'm'},
+                                        {"once", no_argument, NULL, 'o'},
+                                        {"browser", no_argument, NULL, 'B'},
+                                        {"debug", required_argument, NULL, 'd'},
+                                        {"version", no_argument, NULL, 'v'},
+                                        {"help", no_argument, NULL, 'h'},
+                                        {NULL, 0, 0, 0}};
 
 #if LWS_LIBRARY_VERSION_NUMBER < 4000000
 static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
@@ -167,7 +162,7 @@ static struct server *server_new(int argc, char **argv, int start) {
   char *ptr = ts->command;
   for (int i = 0; i < cmd_argc; i++) {
     size_t len = strlen(ts->argv[i]);
-    ptr = memcpy (ptr, ts->argv[i], len + 1) + len;
+    ptr = memcpy(ptr, ts->argv[i], len + 1) + len;
     if (i != cmd_argc - 1) {
       *ptr++ = ' ';
     }
@@ -186,18 +181,22 @@ static void server_free(struct server *ts) {
   if (ts->index != NULL) free(ts->index);
   free(ts->command);
   free(ts->prefs_json);
+
   int i = 0;
   do {
     free(ts->argv[i++]);
   } while (ts->argv[i] != NULL);
   free(ts->argv);
+
   if (strlen(ts->socket_path) > 0) {
     struct stat st;
     if (!stat(ts->socket_path, &st)) {
       unlink(ts->socket_path);
     }
   }
+
   uv_loop_close(ts->loop);
+
   free(ts->loop);
   free(ts);
 }
@@ -209,8 +208,7 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
     case SIGINT:
     case SIGTERM:
       get_sig_name(watcher->signum, sig_name, sizeof(sig_name));
-      lwsl_notice("received signal: %s (%d), exiting...\n", sig_name,
-                  watcher->signum);
+      lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
       break;
     default:
       signal(SIGABRT, SIG_DFL);
@@ -219,14 +217,11 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
 
   if (force_exit) exit(EXIT_FAILURE);
   force_exit = true;
+
   lws_cancel_service(context);
-#if LWS_LIBRARY_VERSION_MAJOR >= 3
   uv_stop(server->loop);
+
   lwsl_notice("send ^C to force exit.\n");
-#else
-  lws_libuv_stop(context);
-  exit(EXIT_SUCCESS);
-#endif
 }
 
 static int parse_int(char *name, char *str) {
@@ -237,7 +232,7 @@ static int parse_int(char *name, char *str) {
     fprintf(stderr, "ttyd: invalid value for %s: %s\n", name, str);
     exit(EXIT_FAILURE);
   }
-  return (int) val;
+  return (int)val;
 }
 
 static int calc_command_start(int argc, char **argv) {
@@ -300,8 +295,7 @@ int main(int argc, char **argv) {
   info.gid = -1;
   info.uid = -1;
   info.max_http_header_pool = 16;
-  info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 |
-                 LWS_SERVER_OPTION_DISABLE_IPV6;
+  info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
 #ifndef LWS_WITHOUT_EXTENSIONS
   info.extensions = extensions;
 #endif
@@ -394,13 +388,11 @@ int main(int argc, char **argv) {
         }
         struct stat st;
         if (stat(server->index, &st) == -1) {
-          fprintf(stderr, "Can not stat index.html: %s, error: %s\n",
-                  server->index, strerror(errno));
+          fprintf(stderr, "Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
           return -1;
         }
         if (S_ISDIR(st.st_mode)) {
-          fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n",
-                  server->index);
+          fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
           return -1;
         }
         break;
@@ -417,18 +409,16 @@ int main(int argc, char **argv) {
 #undef sc
       } break;
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-      case 'P':
-        {
-          int interval = parse_int("ping-interval", optarg);
-          if (interval <= 0) {
-            fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
-            return -1;
-          }
-          retry.secs_since_valid_ping = interval;
-          retry.secs_since_valid_hangup = interval + 7;
-          info.retry_and_idle_policy = &retry;
+      case 'P': {
+        int interval = parse_int("ping-interval", optarg);
+        if (interval <= 0) {
+          fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
+          return -1;
         }
-        break;
+        retry.secs_since_valid_ping = interval;
+        retry.secs_since_valid_hangup = interval + 7;
+        info.retry_and_idle_policy = &retry;
+      } break;
 #endif
       case '6':
         info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);
@@ -451,8 +441,7 @@ int main(int argc, char **argv) {
         break;
 #endif
       case 'T':
-        strncpy(server->terminal_type, optarg,
-                sizeof(server->terminal_type) - 1);
+        strncpy(server->terminal_type, optarg, sizeof(server->terminal_type) - 1);
         server->terminal_type[sizeof(server->terminal_type) - 1] = '\0';
         break;
       case '?':
@@ -463,22 +452,16 @@ int main(int argc, char **argv) {
           char *option = optarg;
           char *key = strsep(&option, "=");
           if (key == NULL) {
-            fprintf(stderr,
-                    "ttyd: invalid client option: %s, format: key=value\n",
-                    optarg);
+            fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
             return -1;
           }
           char *value = strsep(&option, "=");
           if (value == NULL) {
-            fprintf(stderr,
-                    "ttyd: invalid client option: %s, format: key=value\n",
-                    optarg);
+            fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
             return -1;
           }
           struct json_object *obj = json_tokener_parse(value);
-          json_object_object_add(
-              client_prefs, key,
-              obj != NULL ? obj : json_object_new_string(value));
+          json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
         }
         break;
       default:
@@ -496,13 +479,11 @@ int main(int argc, char **argv) {
 
   lws_set_log_level(debug_level, NULL);
 
-#if LWS_LIBRARY_VERSION_MAJOR >= 2
   char server_hdr[128] = "";
-  sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION,
-          LWS_LIBRARY_VERSION);
+  sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, LWS_LIBRARY_VERSION);
   info.server_string = server_hdr;
-#endif
-#if LWS_LIBRARY_VERSION_NUMBER >= 2001000 && LWS_LIBRARY_VERSION_NUMBER < 4000000
+
+#if LWS_LIBRARY_VERSION_NUMBER < 4000000
   info.ws_ping_pong_interval = 5;
 #endif
 
@@ -511,11 +492,10 @@ int main(int argc, char **argv) {
     if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
 #if defined(LWS_USE_UNIX_SOCK) || defined(LWS_WITH_UNIX_SOCK)
       info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
-      info.port = 0; // warmcat/libwebsockets#1985
+      info.port = 0;  // warmcat/libwebsockets#1985
       strncpy(server->socket_path, info.iface, sizeof(server->socket_path) - 1);
 #else
-      fprintf(stderr,
-              "libwebsockets is not compiled with UNIX domain socket support");
+      fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
       return -1;
 #endif
     }
@@ -529,17 +509,13 @@ int main(int argc, char **argv) {
       info.ssl_ca_filepath = ca_path;
       info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
     }
-#if LWS_LIBRARY_VERSION_MAJOR >= 2
     info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
-#endif
   }
 #endif
 
-  lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION,
-              LWS_LIBRARY_VERSION);
+  lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
   lwsl_notice("tty configuration:\n");
-  if (server->credential != NULL)
-    lwsl_notice("  credential: %s\n", server->credential);
+  if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
   lwsl_notice("  start command: %s\n", server->command);
   lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
   lwsl_notice("  terminal type: %s\n", server->terminal_type);
@@ -553,19 +529,14 @@ int main(int argc, char **argv) {
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
   if (server->readonly) lwsl_notice("  readonly: true\n");
-  if (server->max_clients > 0)
-    lwsl_notice("  max clients: %d\n", server->max_clients);
+  if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
   if (server->once) lwsl_notice("  once: true\n");
-  if (server->index != NULL) {
-    lwsl_notice("  custom index.html: %s\n", server->index);
-  }
+  if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
 
-#if LWS_LIBRARY_VERSION_MAJOR >= 3
   void *foreign_loops[1];
   foreign_loops[0] = server->loop;
   info.foreign_loops = foreign_loops;
   info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
-#endif
 
   context = lws_create_context(&info);
   if (context == NULL) {
@@ -573,16 +544,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-#if LWS_LIBRARY_VERSION_MAJOR >= 3
   struct lws_vhost *vhost = lws_create_vhost(context, &info);
   if (vhost == NULL) {
     lwsl_err("libwebsockets vhost creation failed\n");
     return 1;
   }
   int port = lws_get_vhost_listen_port(vhost);
-#else
-  int port = info.port;
-#endif
   lwsl_notice(" Listening on port: %d\n", port);
 
   if (browser) {
@@ -591,8 +558,7 @@ int main(int argc, char **argv) {
     open_uri(url);
   }
 
-#if LWS_LIBRARY_VERSION_MAJOR >= 3
-  #define sig_count 2
+#define sig_count 2
   int sig_nums[] = {SIGINT, SIGTERM};
   uv_signal_t signals[sig_count];
   for (int i = 0; i < sig_count; i++) {
@@ -605,16 +571,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < sig_count; i++) {
     uv_signal_stop(&signals[i]);
   }
-  #undef sig_count
-#else
-#if LWS_LIBRARY_VERSION_MAJOR < 2
-  lws_uv_initloop(context, server->loop, signal_cb, 0);
-#else
-  lws_uv_sigint_cfg(context, 1, signal_cb);
-  lws_uv_initloop(context, server->loop, 0);
-#endif
-  lws_libuv_run(context, 0);
-#endif
+#undef sig_count
 
   lws_context_destroy(context);
 

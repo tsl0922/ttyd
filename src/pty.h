@@ -7,10 +7,10 @@
 
 #ifdef _WIN32
 #ifndef HPCON
-# define HPCON VOID *
+#define HPCON VOID *
 #endif
 #ifndef PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE
-# define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
+#define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
 #endif
 
 bool conpty_init();
@@ -51,7 +51,7 @@ struct pty_process_ {
   uv_thread_t tid;
 #endif
   char **argv;
-  
+
   uv_loop_t *loop;
   uv_async_t async;
   pty_io_t *io;

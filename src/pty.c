@@ -32,9 +32,7 @@ static void alloc_cb(uv_handle_t *unused, size_t suggested_size, uv_buf_t *buf) 
   buf->len = suggested_size;
 }
 
-static void close_cb(uv_handle_t *handle) {
-  free(handle);
-}
+static void close_cb(uv_handle_t *handle) { free(handle); }
 
 pty_buf_t *pty_buf_init(char *base, size_t len) {
   pty_buf_t *buf = xmalloc(sizeof(pty_buf_t));
@@ -65,7 +63,7 @@ done:
 }
 
 static void write_cb(uv_write_t *req, int unused) {
-  pty_buf_t *buf = (pty_buf_t *)req->data;
+  pty_buf_t *buf = (pty_buf_t *) req->data;
   pty_buf_free(buf);
   free(req);
 }
@@ -152,10 +150,10 @@ bool pty_resize(pty_process *process) {
   if (process == NULL) return false;
   if (process->columns <= 0 || process->rows <= 0) return false;
 #ifdef _WIN32
-  COORD size = { (int16_t) process->columns, (int16_t) process->rows };
+  COORD size = {(int16_t) process->columns, (int16_t) process->rows};
   return pResizePseudoConsole(process->pty, size) == S_OK;
 #else
-  struct winsize size = { process->rows, process->columns, 0, 0 };
+  struct winsize size = {process->rows, process->columns, 0, 0};
   return ioctl(process->pty, TIOCSWINSZ, &size) == 0;
 #endif
 }
@@ -180,15 +178,12 @@ bool conpty_init() {
   static struct {
     char *name;
     FARPROC *ptr;
-  } conpty_entry[] = {
-    { "CreatePseudoConsole", (FARPROC *)&pCreatePseudoConsole },
-    { "ResizePseudoConsole", (FARPROC *)&pResizePseudoConsole },
-    { "ClosePseudoConsole", (FARPROC *)&pClosePseudoConsole },
-    { NULL, NULL }
-  };
-  for (int i = 0;
-    conpty_entry[i].name != NULL && conpty_entry[i].ptr != NULL; i++) {
-    if (uv_dlsym(&kernel, conpty_entry[i].name, (void **)conpty_entry[i].ptr)) {
+  } conpty_entry[] = {{"CreatePseudoConsole", (FARPROC *) &pCreatePseudoConsole},
+                      {"ResizePseudoConsole", (FARPROC *) &pResizePseudoConsole},
+                      {"ClosePseudoConsole", (FARPROC *) &pClosePseudoConsole},
+                      {NULL, NULL}};
+  for (int i = 0; conpty_entry[i].name != NULL && conpty_entry[i].ptr != NULL; i++) {
+    if (uv_dlsym(&kernel, conpty_entry[i].name, (void **) conpty_entry[i].ptr)) {
       uv_dlclose(&kernel);
       return false;
     }
@@ -212,7 +207,7 @@ static WCHAR *join_args(char **argv) {
 
   int len = MultiByteToWideChar(CP_UTF8, 0, args, -1, NULL, 0);
   if (len <= 0) goto failed;
-  WCHAR *ws = (WCHAR*) xmalloc(len * sizeof(WCHAR));
+  WCHAR *ws = (WCHAR *) xmalloc(len * sizeof(WCHAR));
   if (len != MultiByteToWideChar(CP_UTF8, 0, args, -1, ws, len)) {
     free(ws);
     goto failed;
@@ -228,7 +223,7 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   static int count = 0;
   char buf[256];
   HPCON pty = INVALID_HANDLE_VALUE;
-  SECURITY_ATTRIBUTES sa = { 0 };
+  SECURITY_ATTRIBUTES sa = {0};
   HANDLE in_pipe = INVALID_HANDLE_VALUE;
   HANDLE out_pipe = INVALID_HANDLE_VALUE;
   const DWORD open_mode = PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE;
@@ -260,14 +255,14 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   si_ex->StartupInfo.hStdInput = NULL;
   si_ex->StartupInfo.hStdOutput = NULL;
   size_t bytes_required;
-  InitializeProcThreadAttributeList(NULL, 1, 0,  &bytes_required);
+  InitializeProcThreadAttributeList(NULL, 1, 0, &bytes_required);
   si_ex->lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST) xmalloc(bytes_required);
   if (!InitializeProcThreadAttributeList(si_ex->lpAttributeList, 1, 0, &bytes_required)) {
     print_error("InitializeProcThreadAttributeList");
     goto failed;
   }
-  if (!UpdateProcThreadAttribute(si_ex->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                                pty, sizeof(HPCON), NULL, NULL)) {
+  if (!UpdateProcThreadAttribute(si_ex->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pty, sizeof(HPCON),
+                                 NULL, NULL)) {
     print_error("UpdateProcThreadAttribute");
     goto failed;
   }
@@ -288,9 +283,7 @@ done:
   return ret;
 }
 
-static void connect_cb(uv_connect_t *req, int status) {
-  free(req);
-}
+static void connect_cb(uv_connect_t *req, int status) { free(req); }
 
 static void CALLBACK conpty_exit(void *context, BOOLEAN unused) {
   pty_process *process = (pty_process *) context;
@@ -316,7 +309,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   char *in_name = NULL;
   char *out_name = NULL;
   DWORD flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-  COORD size = { (int16_t) process->columns, (int16_t) process->rows };
+  COORD size = {(int16_t) process->columns, (int16_t) process->rows};
 
   if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name)) return 1;
 
@@ -329,8 +322,8 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_connect_t *out_req = xmalloc(sizeof(uv_connect_t));
   uv_pipe_connect(in_req, io->in, in_name, connect_cb);
   uv_pipe_connect(out_req, io->out, out_name, connect_cb);
-  
-  PROCESS_INFORMATION pi = { 0 };
+
+  PROCESS_INFORMATION pi = {0};
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
 
@@ -351,7 +344,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   process->async.data = process;
   uv_async_init(process->loop, &process->async, async_cb);
 
-  if(!RegisterWaitForSingleObject(&process->wait, pi.hProcess, conpty_exit, process, INFINITE, WT_EXECUTEONLYONCE)) {
+  if (!RegisterWaitForSingleObject(&process->wait, pi.hProcess, conpty_exit, process, INFINITE, WT_EXECUTEONLYONCE)) {
     print_error("RegisterWaitForSingleObject");
     pty_io_free(io);
     goto cleanup;
@@ -380,7 +373,7 @@ static bool fd_duplicate(int fd, uv_pipe_t *pipe) {
   if (!fd_set_cloexec(fd_dup)) return false;
 
   int status = uv_pipe_open(pipe, fd_dup);
-  if(status) close(fd_dup);
+  if (status) close(fd_dup);
   return status == 0;
 }
 
@@ -419,7 +412,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_disable_stdio_inheritance();
 
   int master, pid;
-  struct winsize size = { process->rows, process->columns, 0, 0 };
+  struct winsize size = {process->rows, process->columns, 0, 0};
   pid = forkpty(&master, NULL, NULL, &size);
   if (pid < 0) {
     status = -errno;
@@ -439,12 +432,12 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     status = -errno;
     goto error;
   }
-  if(fcntl(master, F_SETFD, flags | O_NONBLOCK) == -1) {
+  if (fcntl(master, F_SETFD, flags | O_NONBLOCK) == -1) {
     status = -errno;
     goto error;
   }
   if (!fd_set_cloexec(master)) {
-    status=-errno;
+    status = -errno;
     goto error;
   }
 

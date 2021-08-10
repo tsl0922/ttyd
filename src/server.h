@@ -72,5 +72,5 @@ struct server {
   char socket_path[255];   // UNIX domain socket path
   char terminal_type[30];  // terminal type to report
 
-  uv_loop_t *loop;      // the libuv event loop
+  uv_loop_t *loop;         // the libuv event loop
 };
