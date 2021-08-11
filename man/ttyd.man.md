@@ -28,6 +28,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -c, --credential USER[:PASSWORD]
       Credential for Basic Authentication (format: username:password)
 
+  -H, --auth-header <name>
+      HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
+
   -u, --uid <uid>
       User id to run with
 

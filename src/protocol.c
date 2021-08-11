@@ -137,8 +137,21 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   free(message);
 }
 
-int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,
-                 size_t len) {
+static bool check_auth(struct lws *wsi) {
+  if (server->auth_header != NULL) {
+    return lws_hdr_custom_length(wsi, server->auth_header, strlen(server->auth_header)) > 0;
+  }
+
+  if (server->credential != NULL) {
+    char buf[256];
+    size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
+    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
+  }
+  
+  return true;
+}
+
+int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_tty *pss = (struct pss_tty *)user;
   char buf[256];
   size_t n = 0;
@@ -153,10 +166,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
-      if (server->credential != NULL) {
-        n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-        if (n < 7 || !strstr(buf, "Basic ") || strcmp(buf + 6, server->credential)) return 1;
-      }
+      if (!check_auth(wsi)) return 1;
 
       n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
 #if defined(LWS_ROLE_H2)
@@ -261,8 +271,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           }
           break;
         case RESIZE_TERMINAL:
-          json_object_put(parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns,
-                                            &pss->process->rows));
+          json_object_put(
+              parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
           pty_resize(pss->process);
           break;
         case PAUSE:

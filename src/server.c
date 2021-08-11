@@ -54,6 +54,7 @@ static lws_retry_bo_t retry = {
 static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"interface", required_argument, NULL, 'i'},
                                         {"credential", required_argument, NULL, 'c'},
+                                        {"auth-header", required_argument, NULL, 'H'},
                                         {"uid", required_argument, NULL, 'u'},
                                         {"gid", required_argument, NULL, 'g'},
                                         {"signal", required_argument, NULL, 's'},
@@ -79,13 +80,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-
-#if LWS_LIBRARY_VERSION_NUMBER < 4000000
-static const char *opt_string = "p:i:c:u:g:s:I:b:6aSC:K:A:Rt:T:Om:oBd:vh";
-#endif
-#if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-static const char *opt_string = "p:i:c:u:g:s:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
-#endif
+static const char *opt_string = "p:i:c:H:u:g:s:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -97,7 +92,8 @@ static void print_help() {
           "OPTIONS:\n"
           "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
           "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
-          "    -c, --credential        Credential for Basic Authentication (format: username:password)\n"
+          "    -c, --credential        Credential for basic authentication (format: username:password)\n"
+          "    -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication\n"
           "    -u, --uid               User id to run with\n"
           "    -g, --gid               Group id to run with\n"
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
@@ -130,6 +126,28 @@ static void print_help() {
           TTYD_VERSION
   );
   // clang-format on
+}
+
+static void print_config() {
+  lwsl_notice("tty configuration:\n");
+  if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
+  lwsl_notice("  start command: %s\n", server->command);
+  lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+  lwsl_notice("  terminal type: %s\n", server->terminal_type);
+  if (endpoints.parent[0]) {
+    lwsl_notice("endpoints:\n");
+    lwsl_notice("  base-path: %s\n", endpoints.parent);
+    lwsl_notice("  index    : %s\n", endpoints.index);
+    lwsl_notice("  token    : %s\n", endpoints.token);
+    lwsl_notice("  websocket: %s\n", endpoints.ws);
+  }
+  if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
+  if (server->check_origin) lwsl_notice("  check origin: true\n");
+  if (server->url_arg) lwsl_notice("  allow url arg: true\n");
+  if (server->readonly) lwsl_notice("  readonly: true\n");
+  if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
+  if (server->once) lwsl_notice("  once: true\n");
+  if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
 }
 
 static struct server *server_new(int argc, char **argv, int start) {
@@ -178,6 +196,7 @@ static struct server *server_new(int argc, char **argv, int start) {
 static void server_free(struct server *ts) {
   if (ts == NULL) return;
   if (ts->credential != NULL) free(ts->credential);
+  if (ts->auth_header != NULL) free(ts->auth_header);
   if (ts->index != NULL) free(ts->index);
   free(ts->command);
   free(ts->prefs_json);
@@ -362,6 +381,9 @@ int main(int argc, char **argv) {
         lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
         server->credential = strdup(b64_text);
         break;
+      case 'H':
+        server->auth_header = strdup(optarg);
+        break;
       case 'u':
         info.uid = parse_int("uid", optarg);
         break;
@@ -514,24 +536,15 @@ int main(int argc, char **argv) {
 #endif
 
   lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
-  lwsl_notice("tty configuration:\n");
-  if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
-  lwsl_notice("  start command: %s\n", server->command);
-  lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
-  lwsl_notice("  terminal type: %s\n", server->terminal_type);
-  if (endpoints.parent[0]) {
-    lwsl_notice("endpoints:\n");
-    lwsl_notice("  base-path: %s\n", endpoints.parent);
-    lwsl_notice("  index    : %s\n", endpoints.index);
-    lwsl_notice("  token    : %s\n", endpoints.token);
-    lwsl_notice("  websocket: %s\n", endpoints.ws);
+  print_config();
+
+  // lws custom header requires lower case name, and terminating :
+  if (server->auth_header != NULL) {
+    size_t auth_header_len = strlen(server->auth_header);
+    server->auth_header = xrealloc(server->auth_header, auth_header_len + 2);
+    strcat(server->auth_header + auth_header_len, ":");
+    lowercase(server->auth_header);
   }
-  if (server->check_origin) lwsl_notice("  check origin: true\n");
-  if (server->url_arg) lwsl_notice("  allow url arg: true\n");
-  if (server->readonly) lwsl_notice("  readonly: true\n");
-  if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
-  if (server->once) lwsl_notice("  once: true\n");
-  if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
 
   void *foreign_loops[1];
   foreign_loops[0] = server->loop;

@@ -14,7 +14,10 @@ void *xmalloc(size_t size);
 void *xrealloc(void *p, size_t size);
 
 // Convert a string to upper case
-char *uppercase(char *str);
+char *uppercase(char *s);
+
+// Convert a string to lower case
+char *lowercase(char *s);
 
 // Check whether str ends with suffix
 bool endswith(const char *str, const char *suffix);

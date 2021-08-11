@@ -106,7 +106,6 @@ build_libwebsockets() {
             -DLWS_WITH_LEJP=OFF \
             -DLWS_WITH_LEJP_CONF=OFF \
             -DLWS_WITH_LWSAC=OFF \
-            -DLWS_WITH_CUSTOM_HEADERS=OFF \
             -DLWS_WITH_SEQUENCER=OFF \
             ..
         make -j"$(nproc)" install

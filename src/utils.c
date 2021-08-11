@@ -37,12 +37,20 @@ void *xrealloc(void *p, size_t size) {
   return p;
 }
 
-char *uppercase(char *str) {
-  int i = 0;
-  do {
-    str[i] = (char)toupper(str[i]);
-  } while (str[i++] != '\0');
-  return str;
+char *uppercase(char *s) {
+  while(*s) {
+    *s = (char)toupper((int)*s);
+    s++;
+  }
+  return s;
+}
+
+char *lowercase(char *s) {
+  while(*s) {
+    *s = (char)tolower((int)*s);
+    s++;
+  }
+  return s;
 }
 
 bool endswith(const char *str, const char *suffix) {

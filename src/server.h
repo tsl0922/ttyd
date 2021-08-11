@@ -1,3 +1,4 @@
+#include <libwebsockets.h>
 #include <stdbool.h>
 #include <uv.h>
 
@@ -58,6 +59,7 @@ struct server {
   int client_count;        // client count
   char *prefs_json;        // client preferences
   char *credential;        // encoded basic auth credential
+  char *auth_header;       // header name used for auth proxy
   char *index;             // custom index.html
   char *command;           // full command line
   char **argv;             // command with arguments
