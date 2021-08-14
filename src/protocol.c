@@ -93,22 +93,49 @@ static void process_exit_cb(void *ctx, pty_process *process) {
   }
 }
 
-static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
-  // append url args to arguments
-  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
+static char **build_args(struct pss_tty *pss) {
   int i, n = 0;
+  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
+
   for (i = 0; i < server->argc; i++) {
     argv[n++] = server->argv[i];
   }
+
   for (i = 0; i < pss->argc; i++) {
     argv[n++] = pss->args[i];
   }
+
   argv[n] = NULL;
 
-  pty_process *process = process_init((void *)pss, server->loop, argv);
+  return argv;
+}
+
+static char **build_env(struct pss_tty *pss) {
+  int i = 0, n = 2;
+  char **envp = xmalloc(n * sizeof(char *));
+
+  // TERM
+  envp[i] = xmalloc(36);
+  snprintf(envp[i], 36, "TERM=%s", server->terminal_type);
+  i++;
+
+  // TTYD_USER
+  if (strlen(pss->user) > 0) {
+    envp = xrealloc(envp, (++n) * sizeof(char *));
+    envp[i] = xmalloc(40);
+    snprintf(envp[i], 40, "TTYD_USER=%s", pss->user);
+    i++;
+  }
+
+  envp[i] = NULL;
+
+  return envp;
+}
+
+static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
+  pty_process *process = process_init((void *)pss, server->loop, build_args(pss), build_env(pss));
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
-  strncpy(process->term, server->terminal_type, sizeof(process->term));
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
     lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
     process_free(process);
@@ -137,9 +164,9 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   free(message);
 }
 
-static bool check_auth(struct lws *wsi) {
+static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   if (server->auth_header != NULL) {
-    return lws_hdr_custom_length(wsi, server->auth_header, strlen(server->auth_header)) > 0;
+    return lws_hdr_custom_copy(wsi, pss->user, sizeof(pss->user), server->auth_header, strlen(server->auth_header)) > 0;
   }
 
   if (server->credential != NULL) {
@@ -147,7 +174,7 @@ static bool check_auth(struct lws *wsi) {
     size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
     return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
   }
-  
+
   return true;
 }
 
@@ -166,7 +193,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
-      if (!check_auth(wsi)) return 1;
+      if (!check_auth(wsi, pss)) return 1;
 
       n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
 #if defined(LWS_ROLE_H2)

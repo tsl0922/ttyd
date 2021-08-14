@@ -201,10 +201,8 @@ static void server_free(struct server *ts) {
   free(ts->command);
   free(ts->prefs_json);
 
-  int i = 0;
-  do {
-    free(ts->argv[i++]);
-  } while (ts->argv[i] != NULL);
+  char **p = ts->argv;
+  for (; *p; p++) free(*p);
   free(ts->argv);
 
   if (strlen(ts->socket_path) > 0) {

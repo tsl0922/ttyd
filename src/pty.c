@@ -9,12 +9,20 @@
 #ifndef _WIN32
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+
 #if defined(__OpenBSD__) || defined(__APPLE__)
 #include <util.h>
 #elif defined(__FreeBSD__)
 #include <libutil.h>
 #else
 #include <pty.h>
+#endif
+
+#if defined(__APPLE__)
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#else
+extern char **environ;
 #endif
 #endif
 
@@ -86,12 +94,13 @@ static void pty_io_free(pty_io_t *io) {
   free(io);
 }
 
-pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv) {
+pty_process *process_init(void *ctx, uv_loop_t *loop, char *argv[], char *envp[]) {
   pty_process *process = xmalloc(sizeof(pty_process));
   memset(process, 0, sizeof(pty_process));
   process->ctx = ctx;
   process->loop = loop;
   process->argv = argv;
+  process->envp = envp;
   process->columns = 80;
   process->rows = 24;
   process->exit_code = -1;
@@ -116,6 +125,9 @@ void process_free(pty_process *process) {
 #endif
   if (process->io != NULL) pty_io_free(process->io);
   if (process->argv != NULL) free(process->argv);
+  char **p = process->envp;
+  for (; *p; p++) free(*p);
+  free(process->envp);
   free(process);
 }
 
@@ -194,15 +206,16 @@ bool conpty_init() {
 // convert argv to cmdline for CreateProcessW
 static WCHAR *join_args(char **argv) {
   char *args = NULL;
-  for (; *argv; argv++) {
-    char *quoted = (char *) quote_arg(*argv);
+  char **ptr = argv;
+  for (; *ptr; ptr++) {
+    char *quoted = (char *) quote_arg(*ptr);
     size_t arg_len = args == NULL ? 1 : strlen(args) + 1;
     size_t quoted_len = strlen(quoted);
     args = xrealloc(args, arg_len + quoted_len);
     if (arg_len == 1) memset(args, 0, 2);
     if (arg_len != 1) strcat(args, " ");
     strncat(args, quoted, quoted_len);
-    if (quoted != *argv) free(quoted);
+    if (quoted != *ptr) free(quoted);
   }
 
   int len = MultiByteToWideChar(CP_UTF8, 0, args, -1, NULL, 0);
@@ -216,6 +229,30 @@ static WCHAR *join_args(char **argv) {
 
 failed:
   if (args != NULL) free(args);
+  return NULL;
+}
+
+static WCHAR *prep_env(char **envp) {
+  WCHAR *env = NULL;
+  size_t env_len = 0;
+  char **ptr = envp;
+  for (; *ptr; ptr++) {
+    int len = MultiByteToWideChar(CP_UTF8, 0, *ptr, -1, NULL, 0);
+    if (len <= 0) goto failed;
+    env_len += (len + 1);
+
+    env = xrealloc(env, env_len * sizeof(WCHAR));
+    if (len != MultiByteToWideChar(CP_UTF8, 0, *ptr, -1, env+(env_len-len-1), len)) goto failed;
+    env[env_len-1] = L'\0';
+  }
+
+  env_len++;
+  env = xrealloc(env, env_len * sizeof(WCHAR));
+  env[env_len-1] = L'\0';
+  return env;
+
+failed:
+  if (env != NULL) free(env);
   return NULL;
 }
 
@@ -305,7 +342,6 @@ static void async_cb(uv_async_t *async) {
 }
 
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
-  WCHAR *cmdline = NULL;
   char *in_name = NULL;
   char *out_name = NULL;
   DWORD flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
@@ -324,15 +360,13 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_pipe_connect(out_req, io->out, out_name, connect_cb);
 
   PROCESS_INFORMATION pi = {0};
+  WCHAR *cmdline, *env;
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
+  env = prep_env(process->envp);
+  if (env == NULL) goto cleanup;
 
-  // TODO: restore env after process creation
-  if (!SetEnvironmentVariable("TERM", process->term)) {
-    print_error("SetEnvironmentVariable");
-  }
-
-  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, NULL, NULL, &process->si.StartupInfo, &pi)) {
+  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, NULL, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
     goto cleanup;
   }
@@ -356,7 +390,7 @@ cleanup:
   if (in_name != NULL) free(in_name);
   if (out_name != NULL) free(out_name);
   if (cmdline != NULL) free(cmdline);
-
+  if (env != NULL) free(env);
   return status;
 }
 #else
@@ -406,6 +440,14 @@ static void async_cb(uv_async_t *async) {
   process_free(process);
 }
 
+static int pty_execvpe(const char *file, char **argv, char **envp) {
+  char **old = environ;
+  environ = envp;
+  int ret = execvp(file, argv);
+  environ = old;
+  return ret;
+}
+
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   int status = 0;
 
@@ -419,8 +461,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     return status;
   } else if (pid == 0) {
     setsid();
-    setenv("TERM", process->term, true);
-    int ret = execvp(process->argv[0], process->argv);
+    int ret = pty_execvpe(process->argv[0], process->argv, process->envp);
     if (ret < 0) {
       perror("execvp failed\n");
       _exit(-errno);
