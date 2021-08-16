@@ -58,6 +58,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"uid", required_argument, NULL, 'u'},
                                         {"gid", required_argument, NULL, 'g'},
                                         {"signal", required_argument, NULL, 's'},
+                                        {"cwd", required_argument, NULL, 'w'},
                                         {"index", required_argument, NULL, 'I'},
                                         {"base-path", required_argument, NULL, 'b'},
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
@@ -80,7 +81,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:c:H:u:g:s:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:H:u:g:s:w:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -97,6 +98,7 @@ static void print_help() {
           "    -u, --uid               User id to run with\n"
           "    -g, --gid               Group id to run with\n"
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
+          "    -w, --cwd               Working directory to be set for the child program\n"
           "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
           "    -R, --readonly          Do not allow clients to write to the TTY\n"
           "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
@@ -198,6 +200,7 @@ static void server_free(struct server *ts) {
   if (ts->credential != NULL) free(ts->credential);
   if (ts->auth_header != NULL) free(ts->auth_header);
   if (ts->index != NULL) free(ts->index);
+  if (ts->cwd != NULL) free(ts->cwd);
   free(ts->command);
   free(ts->prefs_json);
 
@@ -398,6 +401,9 @@ int main(int argc, char **argv) {
           return -1;
         }
       } break;
+      case 'w':
+        server->cwd = strdup(optarg);
+        break;
       case 'I':
         if (!strncmp(optarg, "~/", 2)) {
           const char *home = getenv("HOME");

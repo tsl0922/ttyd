@@ -125,6 +125,7 @@ void process_free(pty_process *process) {
 #endif
   if (process->io != NULL) pty_io_free(process->io);
   if (process->argv != NULL) free(process->argv);
+  if (process->cwd != NULL) free(process->cwd);
   char **p = process->envp;
   for (; *p; p++) free(*p);
   free(process->envp);
@@ -366,7 +367,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   env = prep_env(process->envp);
   if (env == NULL) goto cleanup;
 
-  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, NULL, &process->si.StartupInfo, &pi)) {
+  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, process->cwd, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
     goto cleanup;
   }
@@ -461,6 +462,12 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     return status;
   } else if (pid == 0) {
     setsid();
+    if (process->cwd != NULL) {
+      if (chdir(process->cwd) == -1) {
+        perror("chdir failed\n");
+        _exit(1);
+      }
+    }
     int ret = pty_execvpe(process->argv[0], process->argv, process->envp);
     if (ret < 0) {
       perror("execvp failed\n");

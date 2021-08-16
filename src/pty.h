@@ -51,6 +51,7 @@ struct pty_process_ {
 #endif
   char **argv;
   char **envp;
+  char *cwd;
 
   uv_loop_t *loop;
   uv_async_t async;

@@ -134,6 +134,7 @@ static char **build_env(struct pss_tty *pss) {
 
 static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
   pty_process *process = process_init((void *)pss, server->loop, build_args(pss), build_env(pss));
+  if (server->cwd != NULL) process->cwd = strdup(server->cwd);
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {

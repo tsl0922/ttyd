@@ -65,6 +65,7 @@ struct server {
   char *command;           // full command line
   char **argv;             // command with arguments
   int argc;                // command + arguments count
+  char *cwd;               // working directory
   int sig_code;            // close signal
   char sig_name[20];       // human readable signal string
   bool url_arg;            // allow client to send cli arguments in URL
