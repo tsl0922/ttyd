@@ -257,6 +257,18 @@ failed:
   return NULL;
 }
 
+static WCHAR *to_utf16(char *str) {
+  int len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+  if (len <= 0) return NULL;
+  WCHAR *wstr = xmalloc((len + 1) * sizeof(WCHAR));
+  if (len != MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, len)) {
+    free(wstr);
+    return NULL;
+  }
+  wstr[len] = L'\0';
+  return wstr;
+}
+
 static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **in_name, char **out_name) {
   static int count = 0;
   char buf[256];
@@ -361,13 +373,17 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_pipe_connect(out_req, io->out, out_name, connect_cb);
 
   PROCESS_INFORMATION pi = {0};
-  WCHAR *cmdline, *env;
+  WCHAR *cmdline, *env, *cwd;
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
   env = prep_env(process->envp);
   if (env == NULL) goto cleanup;
+  if (process->cwd != NULL) {
+    cwd = to_utf16(process->cwd);
+    if (cwd == NULL) goto cleanup;
+  }
 
-  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, process->cwd, &process->si.StartupInfo, &pi)) {
+  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, cwd, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
     goto cleanup;
   }
@@ -392,6 +408,7 @@ cleanup:
   if (out_name != NULL) free(out_name);
   if (cmdline != NULL) free(cmdline);
   if (env != NULL) free(env);
+  if (cwd != NULL) free(cwd);
   return status;
 }
 #else
