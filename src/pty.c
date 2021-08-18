@@ -233,30 +233,6 @@ failed:
   return NULL;
 }
 
-static WCHAR *prep_env(char **envp) {
-  WCHAR *env = NULL;
-  size_t env_len = 0;
-  char **ptr = envp;
-  for (; *ptr; ptr++) {
-    int len = MultiByteToWideChar(CP_UTF8, 0, *ptr, -1, NULL, 0);
-    if (len <= 0) goto failed;
-    env_len += (len + 1);
-
-    env = xrealloc(env, env_len * sizeof(WCHAR));
-    if (len != MultiByteToWideChar(CP_UTF8, 0, *ptr, -1, env+(env_len-len-1), len)) goto failed;
-    env[env_len-1] = L'\0';
-  }
-
-  env_len++;
-  env = xrealloc(env, env_len * sizeof(WCHAR));
-  env[env_len-1] = L'\0';
-  return env;
-
-failed:
-  if (env != NULL) free(env);
-  return NULL;
-}
-
 static WCHAR *to_utf16(char *str) {
   int len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
   if (len <= 0) return NULL;
@@ -373,17 +349,24 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_pipe_connect(out_req, io->out, out_name, connect_cb);
 
   PROCESS_INFORMATION pi = {0};
-  WCHAR *cmdline, *env, *cwd;
+  WCHAR *cmdline, *cwd;
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
-  env = prep_env(process->envp);
-  if (env == NULL) goto cleanup;
+  if (process->envp != NULL) {
+    char **p = process->envp;
+    for (; *p; p++) {
+      WCHAR *env = to_utf16(*p);
+      if (env == NULL) goto cleanup;
+      _wputenv(env);
+      free(env);
+    }
+  }
   if (process->cwd != NULL) {
     cwd = to_utf16(process->cwd);
     if (cwd == NULL) goto cleanup;
   }
 
-  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, env, cwd, &process->si.StartupInfo, &pi)) {
+  if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, NULL, cwd, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
     goto cleanup;
   }
@@ -407,7 +390,6 @@ cleanup:
   if (in_name != NULL) free(in_name);
   if (out_name != NULL) free(out_name);
   if (cmdline != NULL) free(cmdline);
-  if (env != NULL) free(env);
   if (cwd != NULL) free(cwd);
   return status;
 }
@@ -458,14 +440,6 @@ static void async_cb(uv_async_t *async) {
   process_free(process);
 }
 
-static int pty_execvpe(const char *file, char **argv, char **envp) {
-  char **old = environ;
-  environ = envp;
-  int ret = execvp(file, argv);
-  environ = old;
-  return ret;
-}
-
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   int status = 0;
 
@@ -479,13 +453,12 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     return status;
   } else if (pid == 0) {
     setsid();
-    if (process->cwd != NULL) {
-      if (chdir(process->cwd) == -1) {
-        perror("chdir failed\n");
-        _exit(1);
-      }
+    if (process->cwd != NULL) chdir(process->cwd);
+    if (process->envp != NULL) {
+      char **p = process->envp;
+      for (; *p; p++) putenv(*p);
     }
-    int ret = pty_execvpe(process->argv[0], process->argv, process->envp);
+    int ret = execvp(process->argv[0], process->argv);
     if (ret < 0) {
       perror("execvp failed\n");
       _exit(-errno);
