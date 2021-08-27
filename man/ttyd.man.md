@@ -28,6 +28,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -c, --credential USER[:PASSWORD]
       Credential for Basic Authentication (format: username:password)
 
+  -H, --auth-header <name>
+      HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
+
   -u, --uid <uid>
       User id to run with
 
@@ -36,6 +39,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
 
   -s, --signal <signal string>
       Signal to send to the command when exit it (default: 1, SIGHUP)
+
+  -w, --cwd <path>
+      Working directory to be set for the child program
 
   -a, --url-arg
       Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)

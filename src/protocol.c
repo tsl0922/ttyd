@@ -1,10 +1,10 @@
 #include <errno.h>
+#include <json.h>
+#include <libwebsockets.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <json.h>
-#include <libwebsockets.h>
 
 #include "pty.h"
 #include "server.h"
@@ -35,16 +35,14 @@ static int send_initial_message(struct lws *wsi, int index) {
   return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
 }
 
-static json_object* parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
+static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
   json_tokener *tok = json_tokener_new();
   json_object *obj = json_tokener_parse_ex(tok, buf, len);
   struct json_object *o = NULL;
 
-  if (json_object_object_get_ex(obj, "columns", &o))
-    *cols = (uint16_t) json_object_get_int(o);
-  if (json_object_object_get_ex(obj, "rows", &o))
-    *rows = (uint16_t) json_object_get_int(o);
-  
+  if (json_object_object_get_ex(obj, "columns", &o)) *cols = (uint16_t)json_object_get_int(o);
+  if (json_object_object_get_ex(obj, "rows", &o)) *rows = (uint16_t)json_object_get_int(o);
+
   json_tokener_free(tok);
   return obj;
 }
@@ -52,7 +50,7 @@ static json_object* parse_window_size(const char *buf, size_t len, uint16_t *col
 static bool check_host_origin(struct lws *wsi) {
   char buf[256];
   memset(buf, 0, sizeof(buf));
-  int len = lws_hdr_copy(wsi, buf, (int) sizeof(buf), WSI_TOKEN_ORIGIN);
+  int len = lws_hdr_copy(wsi, buf, (int)sizeof(buf), WSI_TOKEN_ORIGIN);
   if (len <= 0) {
     return false;
   }
@@ -68,23 +66,23 @@ static bool check_host_origin(struct lws *wsi) {
 
   char host_buf[256];
   memset(host_buf, 0, sizeof(host_buf));
-  len = lws_hdr_copy(wsi, host_buf, (int) sizeof(host_buf), WSI_TOKEN_HOST);
+  len = lws_hdr_copy(wsi, host_buf, (int)sizeof(host_buf), WSI_TOKEN_HOST);
 
   return len > 0 && strcasecmp(buf, host_buf) == 0;
 }
 
 static void process_read_cb(void *ctx, pty_buf_t *buf, bool eof) {
-  struct pss_tty *pss = (struct pss_tty *) ctx;
+  struct pss_tty *pss = (struct pss_tty *)ctx;
   if (eof && !process_running(pss->process))
     pss->lws_close_status = pss->process->exit_code == 0 ? 1000 : 1006;
   else
     pss->pty_buf = buf;
-  
+
   lws_callback_on_writable(pss->wsi);
 }
 
 static void process_exit_cb(void *ctx, pty_process *process) {
-  struct pss_tty *pss = (struct pss_tty *) ctx;
+  struct pss_tty *pss = (struct pss_tty *)ctx;
   pss->process = NULL;
   if (process->killed) {
     lwsl_notice("process killed with signal %d, pid: %d\n", process->exit_signal, process->pid);
@@ -95,13 +93,14 @@ static void process_exit_cb(void *ctx, pty_process *process) {
   }
 }
 
-static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
-  // append url args to arguments
-  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
+static char **build_args(struct pss_tty *pss) {
   int i, n = 0;
+  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
+
   for (i = 0; i < server->argc; i++) {
     argv[n++] = server->argv[i];
   }
+
   if (server->url_arg) {
     for (i = 0; i < pss->argc; i++) {
       argv[n++] = pss->args[i];
@@ -133,7 +132,34 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
 
   argv[n] = NULL;
 
-  pty_process *process = process_init((void *) pss, server->loop, argv);
+  return argv;
+}
+
+static char **build_env(struct pss_tty *pss) {
+  int i = 0, n = 2;
+  char **envp = xmalloc(n * sizeof(char *));
+
+  // TERM
+  envp[i] = xmalloc(36);
+  snprintf(envp[i], 36, "TERM=%s", server->terminal_type);
+  i++;
+
+  // TTYD_USER
+  if (strlen(pss->user) > 0) {
+    envp = xrealloc(envp, (++n) * sizeof(char *));
+    envp[i] = xmalloc(40);
+    snprintf(envp[i], 40, "TTYD_USER=%s", pss->user);
+    i++;
+  }
+
+  envp[i] = NULL;
+
+  return envp;
+}
+
+static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
+  pty_process *process = process_init((void *)pss, server->loop, build_args(pss), build_env(pss));
+  if (server->cwd != NULL) process->cwd = strdup(server->cwd);
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
@@ -151,21 +177,34 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
 static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   if (buf == NULL) return;
   char *message = xmalloc(LWS_PRE + 1 + buf->len);
-  char *ptr= message + LWS_PRE;
+  char *ptr = message + LWS_PRE;
 
   *ptr = OUTPUT;
   memcpy(ptr + 1, buf->base, buf->len);
   size_t n = buf->len + 1;
 
-  if (lws_write(wsi, (unsigned char *) ptr, n, LWS_WRITE_BINARY) < n) {
+  if (lws_write(wsi, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
     lwsl_err("write OUTPUT to WS\n");
   }
 
   free(message);
 }
 
-int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,
-                 size_t len) {
+static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
+  if (server->auth_header != NULL) {
+    return lws_hdr_custom_copy(wsi, pss->user, sizeof(pss->user), server->auth_header, strlen(server->auth_header)) > 0;
+  }
+
+  if (server->credential != NULL) {
+    char buf[256];
+    size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
+    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
+  }
+
+  return true;
+}
+
+int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_tty *pss = (struct pss_tty *)user;
   char buf[256];
   size_t n = 0;
@@ -180,6 +219,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
+      if (!check_auth(wsi, pss)) return 1;
 
       n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
 #if defined(LWS_ROLE_H2)
@@ -216,13 +256,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       server->client_count++;
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 2004000
       lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address, sizeof(pss->address));
-#else
-      char name[100];
-      lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), pss->address,
-                             sizeof(pss->address));
-#endif
       lwsl_notice("WS   %s - %s, clients: %d\n", pss->path, pss->address, server->client_count);
       break;
 
@@ -290,8 +324,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           }
           break;
         case RESIZE_TERMINAL:
-          json_object_put(parse_window_size(pss->buffer + 1, pss->len - 1,
-                          &pss->process->columns, &pss->process->rows));
+          json_object_put(
+              parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
           pty_resize(pss->process);
           break;
         case PAUSE:

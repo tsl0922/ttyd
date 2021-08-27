@@ -14,7 +14,7 @@ ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.15}"
 MBEDTLS_VERSION="${MBEDTLS_VERSION:-2.16.8}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.40.0}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.1.6}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.2.1}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -106,7 +106,6 @@ build_libwebsockets() {
             -DLWS_WITH_LEJP=OFF \
             -DLWS_WITH_LEJP_CONF=OFF \
             -DLWS_WITH_LWSAC=OFF \
-            -DLWS_WITH_CUSTOM_HEADERS=OFF \
             -DLWS_WITH_SEQUENCER=OFF \
             ..
         make -j"$(nproc)" install

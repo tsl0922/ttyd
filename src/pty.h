@@ -7,10 +7,10 @@
 
 #ifdef _WIN32
 #ifndef HPCON
-# define HPCON VOID *
+#define HPCON VOID *
 #endif
 #ifndef PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE
-# define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
+#define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
 #endif
 
 bool conpty_init();
@@ -50,7 +50,9 @@ struct pty_process_ {
   uv_thread_t tid;
 #endif
   char **argv;
-  
+  char **envp;
+  char *cwd;
+
   uv_loop_t *loop;
   uv_async_t async;
   pty_io_t *io;
@@ -60,7 +62,7 @@ struct pty_process_ {
 
 pty_buf_t *pty_buf_init(char *base, size_t len);
 void pty_buf_free(pty_buf_t *buf);
-pty_process *process_init(void *ctx, uv_loop_t *loop, char **argv);
+pty_process *process_init(void *ctx, uv_loop_t *loop, char *argv[], char *envp[]);
 bool process_running(pty_process *process);
 void process_free(pty_process *process);
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb);

@@ -6,55 +6,41 @@
 #include "server.h"
 #include "utils.h"
 
-#if LWS_LIBRARY_VERSION_MAJOR < 2
-#define HTTP_STATUS_FOUND 302
-#endif
-
 enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 
 static char *html_cache = NULL;
 static size_t html_cache_len = 0;
 
-static int check_auth(struct lws *wsi, struct pss_http *pss) {
-  if (server->credential == NULL) return AUTH_OK;
-
-  char buf[256];
-  int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-  if (len > 0) {
-    // extract base64 text from authorization header
-    char *ptr = &buf[0];
-    char *token, *b64_text = NULL;
-    int i = 1;
-    while ((token = strsep(&ptr, " ")) != NULL) {
-      if (strlen(token) == 0) continue;
-      if (i++ == 2) {
-        b64_text = token;
-        break;
-      }
-    }
-    if (b64_text != NULL && !strcmp(b64_text, server->credential)) return AUTH_OK;
-  }
-
+static int send_unauthorized(struct lws *wsi, unsigned int code, enum lws_token_indexes header) {
   unsigned char buffer[1024 + LWS_PRE], *p, *end;
   p = buffer + LWS_PRE;
   end = p + sizeof(buffer) - LWS_PRE;
 
-  char *body = strdup("401 Unauthorized\n");
-  size_t n = strlen(body);
-
-  if (lws_add_http_header_status(wsi, HTTP_STATUS_UNAUTHORIZED, &p, end) ||
-      lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_WWW_AUTHENTICATE,
-                                   (unsigned char *)"Basic realm=\"ttyd\"", 18, &p, end) ||
-      lws_add_http_header_content_length(wsi, n, &p, end) ||
-      lws_finalize_http_header(wsi, &p, end) ||
+  if (lws_add_http_header_status(wsi, code, &p, end) ||
+      lws_add_http_header_by_token(wsi, header, (unsigned char *)"Basic realm=\"ttyd\"", 18, &p, end) ||
+      lws_add_http_header_content_length(wsi, 0, &p, end) || lws_finalize_http_header(wsi, &p, end) ||
       lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
-    return AUTH_ERROR;
+    return AUTH_FAIL;
 
-  pss->buffer = pss->ptr = body;
-  pss->len = n;
-  lws_callback_on_writable(wsi);
+  return lws_http_transaction_completed(wsi) ? AUTH_FAIL : AUTH_ERROR;
+}
 
-  return AUTH_FAIL;
+static int check_auth(struct lws *wsi, struct pss_http *pss) {
+  if (server->auth_header != NULL) {
+    if (lws_hdr_custom_length(wsi, server->auth_header, strlen(server->auth_header)) > 0) return AUTH_OK;
+    return send_unauthorized(wsi, HTTP_STATUS_PROXY_AUTH_REQUIRED, WSI_TOKEN_HTTP_PROXY_AUTHENTICATE);
+  }
+
+  if(server->credential != NULL) {
+    char buf[256];
+    int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
+    if (len >= 7 && strstr(buf, "Basic ")) {
+      if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
+    }
+    return send_unauthorized(wsi, HTTP_STATUS_UNAUTHORIZED, WSI_TOKEN_HTTP_WWW_AUTHENTICATE);
+  }
+
+  return AUTH_OK;
 }
 
 static bool accept_gzip(struct lws *wsi) {
@@ -100,17 +86,11 @@ static void pss_buffer_free(struct pss_http *pss) {
 static void access_log(struct lws *wsi, const char *path) {
   char rip[50];
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 2004000
   lws_get_peer_simple(lws_get_network_wsi(wsi), rip, sizeof(rip));
-#else
-  char name[100];
-  lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi), name, sizeof(name), rip, sizeof(rip));
-#endif
   lwsl_notice("HTTP %s - %s\n", path, rip);
 }
 
-int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in,
-                  size_t len) {
+int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_http *pss = (struct pss_http *)user;
   unsigned char buffer[4096 + LWS_PRE], *p, *end;
   char buf[256];
@@ -138,8 +118,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         size_t n = sprintf(buf, "{\"token\": \"%s\"}", credential);
         if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                         (unsigned char *)"application/json;charset=utf-8", 30, &p,
-                                         end) ||
+                                         (unsigned char *)"application/json;charset=utf-8", 30, &p, end) ||
             lws_add_http_header_content_length(wsi, (unsigned long)n, &p, end) ||
             lws_finalize_http_header(wsi, &p, end) ||
             lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
@@ -154,11 +133,9 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       // redirects `/base-path` to `/base-path/`
       if (strcmp(pss->path, endpoints.parent) == 0) {
         if (lws_add_http_header_status(wsi, HTTP_STATUS_FOUND, &p, end) ||
-            lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_LOCATION,
-                                         (unsigned char *)endpoints.index,
+            lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_LOCATION, (unsigned char *)endpoints.index,
                                          (int)strlen(endpoints.index), &p, end) ||
-            lws_add_http_header_content_length(wsi, 0, &p, end) ||
-            lws_finalize_http_header(wsi, &p, end) ||
+            lws_add_http_header_content_length(wsi, 0, &p, end) || lws_finalize_http_header(wsi, &p, end) ||
             lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
           return 1;
         goto try_to_reuse;
@@ -177,15 +154,14 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         char *output = (char *)index_html;
         size_t output_len = index_html_len;
         if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
-            lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                         (const unsigned char *)content_type, 9, &p, end))
+            lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, (const unsigned char *)content_type, 9, &p,
+                                         end))
           return 1;
 #ifdef LWS_WITH_HTTP_STREAM_COMPRESSION
         if (!uncompress_html(&output, &output_len)) return 1;
 #else
         if (accept_gzip(wsi)) {
-          if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_ENCODING,
-                                           (unsigned char *)"gzip", 4, &p, end))
+          if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_ENCODING, (unsigned char *)"gzip", 4, &p, end))
             return 1;
         } else {
           if (!uncompress_html(&output, &output_len)) return 1;
@@ -197,14 +173,9 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
             lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
           return 1;
 
-#if LWS_LIBRARY_VERSION_MAJOR < 2
-        if (lws_write_http(wsi, output, output_len) < 0) return 1;
-        goto try_to_reuse;
-#else
         pss->buffer = pss->ptr = output;
         pss->len = output_len;
         lws_callback_on_writable(wsi);
-#endif
       }
       break;
 
