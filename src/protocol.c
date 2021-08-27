@@ -111,7 +111,7 @@ static char **build_args(struct pss_tty *pss) {
     char *filePath = xmalloc(file_path_len);
     snprintf(filePath, file_path_len, "%sXXXXXX", server->arg_file);
 
-    if ((fd = mkstemp(filePath)) != -1) {
+    if ((fd = mkstemp(filePath)) == -1) {
       lwsl_err("Creation of temp file failed with error: %d (%s)\n", errno, strerror(errno));
       return false;
     }
@@ -125,7 +125,7 @@ static char **build_args(struct pss_tty *pss) {
 
     if (close(fd) != 0) {
       lwsl_err("Close temp file failed with error: %d (%s)\n", errno, strerror(errno));
-      return false
+      return false;
     }
     argv[n++] = filePath;
   }
