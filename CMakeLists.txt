@@ -58,8 +58,12 @@ set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} $
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 include(CheckSymbolExists)
+check_symbol_exists(LWS_WITH_LIBUV "lws_config.h" LWS_WITH_LIBUV)
 check_symbol_exists(LWS_OPENSSL_SUPPORT "lws_config.h" LWS_OPENSSL_ENABLED)
 check_symbol_exists(LWS_WITH_MBEDTLS "lws_config.h" LWS_MBEDTLS_ENABLED)
+if(NOT LWS_WITH_LIBUV)
+    message(FATAL_ERROR "libwebsockets was not build with libuv support (-DLWS_WITH_LIBUV=ON)")
+endif()
 if(LWS_OPENSSL_ENABLED AND NOT LWS_MBEDTLS_ENABLED)
     find_package(OpenSSL REQUIRED)
     list(APPEND INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
