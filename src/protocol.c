@@ -113,18 +113,22 @@ static char **build_args(struct pss_tty *pss) {
 
     if ((fd = mkstemp(filePath)) == -1) {
       lwsl_err("Creation of temp file failed with error: %d (%s)\n", errno, strerror(errno));
+      free(filePath);
       return false;
     }
 
     for (i = 0; i < pss->argc; i++) {
       if (dprintf(fd, "%s\n", pss->args[i]) < 0) {
         lwsl_err("Write to temp file failed with error: %d (%s)\n", errno, strerror(errno));
+        close(fd);
+        free(filePath);
         return false;
       }
     }
 
     if (close(fd) != 0) {
       lwsl_err("Close temp file failed with error: %d (%s)\n", errno, strerror(errno));
+      free(filePath);
       return false;
     }
     argv[n++] = filePath;
