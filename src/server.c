@@ -101,7 +101,7 @@ static void print_help() {
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
           "    -w, --cwd               Working directory to be set for the child program\n"
           "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
-          "    -f, --arg-file          File prefix for a unique generated temp file that URL arguments are written to (ex. /tmp/prefix); the generated file's full path is then passed in as a command line argument (ex. /tmp/prefix{unique string})\n"
+          "    -f, --arg-file          File prefix for a unique generated temp file that URL arguments are written to (ex. /tmp/prefix); the generated file's full path is then passed in as a command line argument (ex. /tmp/prefix{unique string}). The command is responsible for deleting the file.\n"
           "    -R, --readonly          Do not allow clients to write to the TTY\n"
           "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
           "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
