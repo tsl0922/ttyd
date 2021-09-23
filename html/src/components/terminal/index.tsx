@@ -283,8 +283,7 @@ export class Xterm extends Component<Props> {
             this.opened = true;
             fitAddon.fit();
         }
-
-        this.applyOptions(this.props.clientOptions);
+        
         this.doReconnect = this.reconnect;
 
         terminal.focus();
