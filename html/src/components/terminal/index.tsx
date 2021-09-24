@@ -57,6 +57,7 @@ export class Xterm extends Component<Props> {
     private fitAddon: FitAddon;
     private overlayAddon: OverlayAddon;
     private zmodemAddon: ZmodemAddon;
+    private webglAddon: WebglAddon;
 
     private socket: WebSocket;
     private token: string;
@@ -206,8 +207,7 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
-    private applyOptions(options: any) {
-        const { terminal, fitAddon } = this;
+    private setRendererType(value: string) {
         const isWebGL2Available = () => {
             try {
                 const canvas = document.createElement('canvas');
@@ -217,14 +217,38 @@ export class Xterm extends Component<Props> {
             }
         };
 
+        const { terminal } = this;
+        switch (value) {
+            case 'webgl':
+                if (this.webglAddon) return;
+                if (isWebGL2Available()) {
+                    this.webglAddon = new WebglAddon();
+                    terminal.loadAddon(this.webglAddon);
+                    console.log(`[ttyd] WebGL renderer enabled`);
+                }
+                break;
+            default:
+                try {
+                    this.webglAddon?.dispose();
+                } catch {
+                    // ignore
+                }
+                this.webglAddon = undefined;
+                console.log(`[ttyd] option: rendererType=${value}`);
+                terminal.setOption('rendererType', value);
+                break;
+        }
+    }
+
+    @bind
+    private applyOptions(options: any) {
+        const { terminal, fitAddon } = this;
+
         Object.keys(options).forEach(key => {
             const value = options[key];
             switch (key) {
                 case 'rendererType':
-                    if (value === 'webgl' && isWebGL2Available()) {
-                        terminal.loadAddon(new WebglAddon());
-                        console.log(`[ttyd] WebGL renderer enabled`);
-                    }
+                    this.setRendererType(value);
                     break;
                 case 'disableLeaveAlert':
                     if (value) {
@@ -284,7 +308,6 @@ export class Xterm extends Component<Props> {
             fitAddon.fit();
         }
 
-        this.applyOptions(this.props.clientOptions);
         this.doReconnect = this.reconnect;
 
         terminal.focus();
@@ -337,7 +360,8 @@ export class Xterm extends Component<Props> {
                 document.title = this.title;
                 break;
             case Command.SET_PREFERENCES:
-                this.applyOptions(JSON.parse(textDecoder.decode(data)));
+                const prefs = JSON.parse(textDecoder.decode(data));
+                this.applyOptions(Object.assign({}, this.props.clientOptions, prefs));
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);
