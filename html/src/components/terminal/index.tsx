@@ -225,6 +225,9 @@ export class Xterm extends Component<Props> {
                     this.webglAddon = new WebglAddon();
                     terminal.loadAddon(this.webglAddon);
                     console.log(`[ttyd] WebGL renderer enabled`);
+                }else{
+                  this.webglAddon = undefined;
+                  console.log(`[ttyd] WebGL2.0 is not supported`);
                 }
                 break;
             default:
