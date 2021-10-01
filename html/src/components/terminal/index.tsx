@@ -216,12 +216,13 @@ export class Xterm extends Component<Props> {
                 return false;
             }
         };
+	const isSafari = navigator.userAgent.indexOf('Safari') >= 0;
 
         const { terminal } = this;
         switch (value) {
             case 'webgl':
                 if (this.webglAddon) return;
-                if (isWebGL2Available()) {
+                if (isWebGL2Available() && !isSafari) {
                     this.webglAddon = new WebglAddon();
                     terminal.loadAddon(this.webglAddon);
                     console.log(`[ttyd] WebGL renderer enabled`);
