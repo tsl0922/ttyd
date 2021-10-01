@@ -216,7 +216,7 @@ export class Xterm extends Component<Props> {
                 return false;
             }
         };
-	const isSafari = navigator.userAgent.indexOf('Safari') >= 0;
+        const isSafari = navigator.userAgent.indexOf('Safari') >= 0;
 
         const { terminal } = this;
         switch (value) {
