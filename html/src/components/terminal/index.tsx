@@ -219,21 +219,22 @@ export class Xterm extends Component<Props> {
 
         const isSafari = () => {
             // https://stackoverflow.com/questions/9847580
-            if (/constructor/i.test(String(window["HTMLElement"]))) {
+            if (/constructor/i.test(String(window['HTMLElement']))) {
                 return true;
             }
-            if (!window.top["safari"]) {
+            if (!window.top['safari']) {
                 return false;
             }
-            return String(window.top["safari"].pushNotification) === "[object SafariRemoteNotification]";
+            return String(window.top['safari'].pushNotification) === '[object SafariRemoteNotification]';
         };
 
         const isIos = () => {
             // https://stackoverflow.com/questions/9038625
             // https://github.com/lancedikson/bowser/issues/329
-            return !!navigator.platform && (
-                /iPad|iPhone|iPod/.test(navigator.platform)
-                || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1 && !window["MSStream"])
+            return (
+                !!navigator.platform &&
+                (/iPad|iPhone|iPod/.test(navigator.platform) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window['MSStream']))
             );
         };
 
