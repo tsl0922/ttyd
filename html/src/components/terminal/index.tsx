@@ -192,6 +192,7 @@ export class Xterm extends Component<Props> {
             });
         }
         terminal.open(container);
+        fitAddon.fit();
     }
 
     @bind
@@ -296,8 +297,8 @@ export class Xterm extends Component<Props> {
                     document.title = value;
                     break;
                 default:
-                    console.log(`[ttyd] option: ${key}=${value}`);
-                    terminal.setOption(key, value);
+                    console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
+                    terminal.options[key] = value;
                     if (key.indexOf('font') === 0) fitAddon.fit();
                     break;
             }
@@ -326,7 +327,6 @@ export class Xterm extends Component<Props> {
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.opened = true;
-            fitAddon.fit();
         }
 
         this.doReconnect = this.reconnect;
@@ -393,7 +393,7 @@ export class Xterm extends Component<Props> {
     @bind
     private onTerminalResize(size: { cols: number; rows: number }) {
         const { overlayAddon, socket, textEncoder, resizeOverlay } = this;
-        if (socket.readyState === WebSocket.OPEN) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
             const msg = JSON.stringify({ columns: size.cols, rows: size.rows });
             socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
         }
