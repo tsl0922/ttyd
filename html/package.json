@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "copy-webpack-plugin": "^9.0.1",
-    "css-loader": "^6.2.0",
+    "css-loader": "^6.5.1",
     "css-minimizer-webpack-plugin": "^3.0.2",
     "gts": "^1.1.2",
     "gulp": "^4.0.2",
