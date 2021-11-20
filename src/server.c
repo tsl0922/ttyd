@@ -437,13 +437,12 @@ int main(int argc, char **argv) {
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
       case 'P': {
         int interval = parse_int("ping-interval", optarg);
-        if (interval <= 0) {
+        if (interval < 0) {
           fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
           return -1;
         }
         retry.secs_since_valid_ping = interval;
         retry.secs_since_valid_hangup = interval + 7;
-        info.retry_and_idle_policy = &retry;
       } break;
 #endif
       case '6':
@@ -511,6 +510,8 @@ int main(int argc, char **argv) {
 
 #if LWS_LIBRARY_VERSION_NUMBER < 4000000
   info.ws_ping_pong_interval = 5;
+#else
+  info.retry_and_idle_policy = &retry;
 #endif
 
   if (strlen(iface) > 0) {
