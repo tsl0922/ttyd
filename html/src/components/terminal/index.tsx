@@ -212,12 +212,18 @@ export class Xterm extends Component<Props> {
         const { overlayAddon } = this;
         const isWebGL2Available = () => {
             try {
+                var win = window;
+                try {
+                    win = window.top;
+                } catch (e) {
+                    console.warn(`[ttyd] can't access to window.top`, e);
+                }
                 const isIos =
                     /iPad|iPhone|iPod/.test(navigator.platform) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window['MSStream']);
                 const isSafari =
                     /constructor/i.test(String(window['HTMLElement'])) ||
-                    String(window['safari']?.pushNotification) === '[object SafariRemoteNotification]';
+                    String(win['safari']?.pushNotification) === '[object SafariRemoteNotification]';
                 return (
                     !isSafari &&
                     !isIos &&
