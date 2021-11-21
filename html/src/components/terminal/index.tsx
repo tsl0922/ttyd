@@ -209,41 +209,32 @@ export class Xterm extends Component<Props> {
 
     @bind
     private setRendererType(value: string) {
+        const { overlayAddon } = this;
         const isWebGL2Available = () => {
             try {
-                const canvas = document.createElement('canvas');
-                return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+                const isIos =
+                    /iPad|iPhone|iPod/.test(navigator.platform) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window['MSStream']);
+                const isSafari =
+                    /constructor/i.test(String(window['HTMLElement'])) ||
+                    String(window['safari']?.pushNotification) === '[object SafariRemoteNotification]';
+                return (
+                    !isSafari &&
+                    !isIos &&
+                    window.WebGL2RenderingContext &&
+                    document.createElement('canvas').getContext('webgl2')
+                );
             } catch (e) {
+                console.warn(`[ttyd] webgl2 detection error`, e);
                 return false;
             }
-        };
-
-        const isSafari = () => {
-            // https://stackoverflow.com/questions/9847580
-            if (/constructor/i.test(String(window['HTMLElement']))) {
-                return true;
-            }
-            if (!window.top['safari']) {
-                return false;
-            }
-            return String(window.top['safari'].pushNotification) === '[object SafariRemoteNotification]';
-        };
-
-        const isIos = () => {
-            // https://stackoverflow.com/questions/9038625
-            // https://github.com/lancedikson/bowser/issues/329
-            return (
-                !!navigator.platform &&
-                (/iPad|iPhone|iPod/.test(navigator.platform) ||
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window['MSStream']))
-            );
         };
 
         const { terminal } = this;
         switch (value) {
             case 'webgl':
                 if (this.webglAddon) return;
-                if (isWebGL2Available() && !isSafari() && !isIos()) {
+                if (isWebGL2Available()) {
                     this.webglAddon = new WebglAddon();
                     terminal.loadAddon(this.webglAddon);
                     console.log(`[ttyd] WebGL renderer enabled`);
