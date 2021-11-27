@@ -280,7 +280,11 @@ export class Xterm extends Component<Props> {
                     break;
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
-                    terminal.options[key] = value;
+                    if (terminal.options[key] instanceof Object) {
+                        terminal.options[key] = Object.assign({}, terminal.options[key], value);
+                    } else {
+                        terminal.options[key] = value;
+                    }
                     if (key.indexOf('font') === 0) fitAddon.fit();
                     break;
             }
