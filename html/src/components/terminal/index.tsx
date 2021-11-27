@@ -1,6 +1,6 @@
 import { bind } from 'decko';
 import { Component, h } from 'preact';
-import { ITerminalOptions, Terminal } from 'xterm';
+import { ITerminalOptions, RendererType, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
@@ -208,47 +208,38 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
-    private setRendererType(value: string) {
-        const { overlayAddon } = this;
-        const isWebGL2Available = () => {
+    private setRendererType(value: 'webgl' | RendererType) {
+        const { terminal } = this;
+
+        const disposeWebglRenderer = () => {
             try {
-                const isIos =
-                    /iPad|iPhone|iPod/.test(navigator.platform) ||
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window['MSStream']);
-                const isSafari =
-                    /constructor/i.test(String(window['HTMLElement'])) ||
-                    String(window['safari']?.pushNotification) === '[object SafariRemoteNotification]';
-                return (
-                    !isSafari &&
-                    !isIos &&
-                    window.WebGL2RenderingContext &&
-                    document.createElement('canvas').getContext('webgl2')
-                );
-            } catch (e) {
-                console.warn(`[ttyd] webgl2 detection error`, e);
-                return false;
+                this.webglAddon?.dispose();
+            } catch {
+                // ignore
             }
+            this.webglAddon = undefined;
         };
 
-        const { terminal } = this;
         switch (value) {
             case 'webgl':
                 if (this.webglAddon) return;
-                if (isWebGL2Available()) {
-                    this.webglAddon = new WebglAddon();
-                    terminal.loadAddon(this.webglAddon);
-                    console.log(`[ttyd] WebGL renderer enabled`);
+                try {
+                    if (window.WebGL2RenderingContext && document.createElement('canvas').getContext('webgl2')) {
+                        this.webglAddon = new WebglAddon();
+                        this.webglAddon.onContextLoss(() => {
+                            disposeWebglRenderer();
+                        });
+                        terminal.loadAddon(this.webglAddon);
+                        console.log(`[ttyd] WebGL renderer enabled`);
+                    }
+                } catch (e) {
+                    console.warn(`[ttyd] webgl2 init error`, e);
                 }
                 break;
             default:
-                try {
-                    this.webglAddon?.dispose();
-                } catch {
-                    // ignore
-                }
-                this.webglAddon = undefined;
+                disposeWebglRenderer();
                 console.log(`[ttyd] option: rendererType=${value}`);
-                terminal.setOption('rendererType', value);
+                terminal.options.rendererType = value;
                 break;
         }
     }
