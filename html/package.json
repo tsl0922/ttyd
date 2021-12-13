@@ -18,7 +18,7 @@
     "fix": "gts fix"
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^10.0.0",
+    "copy-webpack-plugin": "^10.1.0",
     "css-loader": "^6.5.1",
     "css-minimizer-webpack-plugin": "^3.2.0",
     "gts": "^1.1.2",
