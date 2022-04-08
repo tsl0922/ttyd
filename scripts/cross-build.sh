@@ -10,7 +10,7 @@ STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 BUILD_TARGET="${BUILD_TARGET:-x86_64}"
 
-ZLIB_VERSION="${ZLIB_VERSION:-1.2.11}"
+ZLIB_VERSION="${ZLIB_VERSION:-1.2.12}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.15}"
 MBEDTLS_VERSION="${MBEDTLS_VERSION:-2.16.8}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.40.0}"
@@ -18,7 +18,7 @@ LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.2.1}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
-    curl -sLo- "https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -fSsLo- "https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}"/zlib-"${ZLIB_VERSION}"
         env CHOST="${TARGET}" ./configure --static --archs="-fPIC" --prefix="${STAGE_DIR}"
         make -j"$(nproc)" install
@@ -27,7 +27,7 @@ build_zlib() {
 
 build_json-c() {
     echo "=== Building json-c-${JSON_C_VERSION} (${TARGET})..."
-    curl -sLo- "https://s3.amazonaws.com/json-c_releases/releases/json-c-${JSON_C_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -fSsLo- "https://s3.amazonaws.com/json-c_releases/releases/json-c-${JSON_C_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/json-c-${JSON_C_VERSION}"
         rm -rf build && mkdir -p build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
@@ -41,7 +41,7 @@ build_json-c() {
 
 build_mbedtls() {
     echo "=== Building mbedtls-${MBEDTLS_VERSION} (${TARGET})..."
-    curl -sLo- "https://github.com/ARMmbed/mbedtls/archive/v${MBEDTLS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -fSsLo- "https://github.com/ARMmbed/mbedtls/archive/v${MBEDTLS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/mbedtls-${MBEDTLS_VERSION}"
         rm -rf build && mkdir -p build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
@@ -55,7 +55,7 @@ build_mbedtls() {
 
 build_libuv() {
     echo "=== Building libuv-${LIBUV_VERSION} (${TARGET})..."
-    curl -sLo- "https://dist.libuv.org/dist/v${LIBUV_VERSION}/libuv-v${LIBUV_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -fSsLo- "https://dist.libuv.org/dist/v${LIBUV_VERSION}/libuv-v${LIBUV_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libuv-v${LIBUV_VERSION}"
         ./autogen.sh
         env CFLAGS=-fPIC ./configure --disable-shared --enable-static --prefix="${STAGE_DIR}" --host="${TARGET}"
@@ -81,7 +81,7 @@ EOF
 
 build_libwebsockets() {
     echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
-    curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    curl -fSsLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         sed -i '/PC_OPENSSL/d' lib/tls/CMakeLists.txt
@@ -134,7 +134,7 @@ build() {
     echo "=== Installing toolchain ${ALIAS} (${TARGET})..."
 
     mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:/opt/cross/bin"
-    curl -sLo- "https://musl.cc/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components 1
+    curl -fSsLo- "https://musl.cc/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components 1
 
     echo "=== Building target ${ALIAS} (${TARGET})..."
 
