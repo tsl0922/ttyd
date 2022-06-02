@@ -33,7 +33,7 @@
     "sass-loader": "^12.4.0",
     "scssfmt": "^1.0.7",
     "style-loader": "^3.3.1",
-    "terser-webpack-plugin": "^5.3.0",
+    "terser-webpack-plugin": "^5.3.3",
     "through2": "^4.0.2",
     "ts-loader": "^9.2.6",
     "tslint": "^6.1.3",
