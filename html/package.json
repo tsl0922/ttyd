@@ -28,7 +28,7 @@
     "gulp-inline-source": "^4.0.0",
     "gulp-rename": "^2.0.0",
     "html-webpack-plugin": "^5.5.0",
-    "mini-css-extract-plugin": "^2.4.6",
+    "mini-css-extract-plugin": "^2.6.1",
     "node-sass": "^7.0.1",
     "sass-loader": "^12.4.0",
     "scssfmt": "^1.0.7",
