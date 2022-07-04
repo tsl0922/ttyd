@@ -4,7 +4,7 @@ set -eo pipefail
 
 TMPDIR="${TMPDIR:-/tmp}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.15}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.2.1}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.3.2}"
 
 build_libwebsockets() {
   curl -sLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -f - -C "${TMPDIR}"
