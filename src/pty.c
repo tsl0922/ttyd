@@ -470,7 +470,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     status = -errno;
     goto error;
   }
-  if (fcntl(master, F_SETFD, flags | O_NONBLOCK) == -1) {
+  if (fcntl(master, F_SETFL, flags | O_NONBLOCK) == -1) {
     status = -errno;
     goto error;
   }
