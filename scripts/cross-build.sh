@@ -130,11 +130,12 @@ build() {
     ALIAS="$2"
     STAGE_DIR="${STAGE_ROOT}/${TARGET}"
     BUILD_DIR="${BUILD_ROOT}/${TARGET}"
+    MUSL_CC_URL="https://github.com/tsl0922/musl-toolchains/releases/download/2021-11-23"
 
     echo "=== Installing toolchain ${ALIAS} (${TARGET})..."
 
     mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:/opt/cross/bin"
-    curl -fSsLo- "https://musl.cc/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components 1
+    curl -fSsLo- "${MUSL_CC_URL}/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components 1
 
     echo "=== Building target ${ALIAS} (${TARGET})..."
 
