@@ -20,7 +20,7 @@ const clientOptions = {
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
-    fontFamily: 'Menlo For Powerline,Consolas,Liberation Mono,Menlo,Courier,monospace',
+    fontFamily: 'Consolas,Liberation Mono,Menlo,Courier,monospace',
     theme: {
         foreground: '#d2d2d2',
         background: '#2b2b2b',
