@@ -21,20 +21,10 @@ typedef struct {
   size_t len;
 } pty_buf_t;
 
-typedef void (*pty_read_cb)(void *, pty_buf_t *, bool);
-
-typedef struct {
-  uv_pipe_t *in;
-  uv_pipe_t *out;
-  bool paused;
-
-  pty_read_cb read_cb;
-  void *ctx;
-} pty_io_t;
-
 struct pty_process_;
 typedef struct pty_process_ pty_process;
-typedef void (*pty_exit_cb)(void *, pty_process *);
+typedef void (*pty_read_cb)(pty_process *, pty_buf_t *, bool);
+typedef void (*pty_exit_cb)(pty_process *);
 
 struct pty_process_ {
   int pid, exit_code, exit_signal;
@@ -55,7 +45,11 @@ struct pty_process_ {
 
   uv_loop_t *loop;
   uv_async_t async;
-  pty_io_t *io;
+  uv_pipe_t *in;
+  uv_pipe_t *out;
+  bool paused;
+
+  pty_read_cb read_cb;
   pty_exit_cb exit_cb;
   void *ctx;
 };

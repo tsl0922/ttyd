@@ -51,9 +51,7 @@ static bool check_host_origin(struct lws *wsi) {
   char buf[256];
   memset(buf, 0, sizeof(buf));
   int len = lws_hdr_copy(wsi, buf, (int)sizeof(buf), WSI_TOKEN_ORIGIN);
-  if (len <= 0) {
-    return false;
-  }
+  if (len <= 0) return false;
 
   const char *prot, *address, *path;
   int port;
@@ -71,8 +69,10 @@ static bool check_host_origin(struct lws *wsi) {
   return len > 0 && strcasecmp(buf, host_buf) == 0;
 }
 
-static void process_read_cb(void *ctx, pty_buf_t *buf, bool eof) {
-  struct pss_tty *pss = (struct pss_tty *)ctx;
+static void process_read_cb(pty_process *process, pty_buf_t *buf, bool eof) {
+  if (process->killed) return ;
+
+  struct pss_tty *pss = (struct pss_tty *)process->ctx;
   if (eof && !process_running(pss->process))
     pss->lws_close_status = pss->process->exit_code == 0 ? 1000 : 1006;
   else
@@ -81,16 +81,17 @@ static void process_read_cb(void *ctx, pty_buf_t *buf, bool eof) {
   lws_callback_on_writable(pss->wsi);
 }
 
-static void process_exit_cb(void *ctx, pty_process *process) {
-  struct pss_tty *pss = (struct pss_tty *)ctx;
-  pss->process = NULL;
+static void process_exit_cb(pty_process *process) {
   if (process->killed) {
     lwsl_notice("process killed with signal %d, pid: %d\n", process->exit_signal, process->pid);
-  } else {
-    lwsl_notice("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
-    pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
-    lws_callback_on_writable(pss->wsi);
+    return ;
   }
+
+  lwsl_notice("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
+  struct pss_tty *pss = (struct pss_tty *)process->ctx;
+  pss->process = NULL;
+  pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
+  lws_callback_on_writable(pss->wsi);
 }
 
 static char **build_args(struct pss_tty *pss) {
