@@ -90,6 +90,9 @@ static void process_exit_cb(pty_process *process) {
   lwsl_notice("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
   struct pss_tty *pss = (struct pss_tty *)process->ctx;
   pss->process = NULL;
+  if (pss->pty_buf != NULL) {
+      pty_buf_free(pss->pty_buf);
+    }
   pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
   lws_callback_on_writable(pss->wsi);
 }
