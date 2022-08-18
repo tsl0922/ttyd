@@ -104,9 +104,9 @@ void process_free(pty_process *process) {
   if (process->pty != NULL) pClosePseudoConsole(process->pty);
   if (process->handle != NULL) CloseHandle(process->handle);
 #else
+  close(process->pty);
   uv_thread_join(&process->tid);
 #endif
-  close(process->pty);
   if (process->in != NULL) uv_close((uv_handle_t *) process->in, close_cb);
   if (process->out != NULL) uv_close((uv_handle_t *) process->out, close_cb);
   if (process->argv != NULL) free(process->argv);
