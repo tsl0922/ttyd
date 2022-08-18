@@ -56,6 +56,11 @@ struct pss_tty {
   int lws_close_status;
 };
 
+typedef struct {
+  struct pss_tty *pss;
+  bool ws_closed;
+} pty_ctx_t ;
+
 struct server {
   int client_count;        // client count
   char *prefs_json;        // client preferences

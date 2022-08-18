@@ -51,7 +51,8 @@ pty_buf_t *pty_buf_init(char *base, size_t len) {
 }
 
 void pty_buf_free(pty_buf_t *buf) {
-  free(buf->base);
+  if (buf == NULL) return;
+  if (buf->base != NULL) free(buf->base);
   free(buf);
 }
 
@@ -105,6 +106,7 @@ void process_free(pty_process *process) {
 #else
   uv_thread_join(&process->tid);
 #endif
+  close(process->pty);
   if (process->in != NULL) uv_close((uv_handle_t *) process->in, close_cb);
   if (process->out != NULL) uv_close((uv_handle_t *) process->out, close_cb);
   if (process->argv != NULL) free(process->argv);
@@ -153,7 +155,6 @@ bool pty_resize(pty_process *process) {
 
 bool pty_kill(pty_process *process, int sig) {
   if (process == NULL) return false;
-  process->killed = true;
 #ifdef _WIN32
   return TerminateProcess(process->handle, 1) != 0;
 #else
