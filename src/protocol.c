@@ -363,9 +363,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       server->client_count--;
       lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
-      if (pss->buffer != NULL) {
-        free(pss->buffer);
-      }
+      if (pss->buffer != NULL) free(pss->buffer);
+      if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
       for (int i = 0; i < pss->argc; i++) {
         free(pss->args[i]);
       }
