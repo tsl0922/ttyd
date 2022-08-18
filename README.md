@@ -66,7 +66,7 @@ USAGE:
     ttyd [options] <command> [<arguments...>]
 
 VERSION:
-    1.7.0
+    1.7.1
 
 OPTIONS:
     -p, --port              Port to listen (default: 7681, use `0` for random port)
