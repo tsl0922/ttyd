@@ -314,6 +314,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           }
           break;
         case RESIZE_TERMINAL:
+          if (pss->process == NULL) break;
           json_object_put(
               parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
           pty_resize(pss->process);
