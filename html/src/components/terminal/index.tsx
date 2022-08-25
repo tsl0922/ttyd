@@ -4,6 +4,7 @@ import { ITerminalOptions, RendererType, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
+import { TrzszFilter } from 'trzsz';
 
 import { OverlayAddon } from './overlay';
 import { ZmodemAddon, FlowControl } from '../zmodem';
@@ -58,6 +59,7 @@ export class Xterm extends Component<Props> {
     private overlayAddon: OverlayAddon;
     private zmodemAddon: ZmodemAddon;
     private webglAddon: WebglAddon;
+    private trzszFilter: TrzszFilter;
 
     private socket: WebSocket;
     private token: string;
@@ -177,12 +179,43 @@ export class Xterm extends Component<Props> {
         terminal.loadAddon(new WebLinksAddon());
         terminal.loadAddon(this.zmodemAddon);
 
+        this.trzszFilter = new TrzszFilter({
+            writeToTerminal: (data) => {
+                if (this.trzszFilter.isTransferringFiles()) {
+                    this.terminal.write(data as string);
+                } else {
+                    this.zmodemAddon.consume(data as ArrayBuffer);
+                }
+            },
+            sendToServer: (data) => {
+                if (this.trzszFilter.isTransferringFiles()) {
+                    if (data instanceof Uint8Array) {
+                        this.sendData(data);
+                    } else {
+                        this.socket.send(Command.INPUT + data);
+                    }
+                } else {
+                    this.onTerminalData(data as string);
+                }
+            },
+            terminalColumns: terminal.cols,
+        });
+
+        document.body.addEventListener("dragover", (event) => event.preventDefault());
+        document.body.addEventListener('drop', (event) => {
+            event.preventDefault();
+            this.trzszFilter
+                .uploadFiles(event.dataTransfer.items)
+                .then(() => console.log('upload success'))
+                .catch((err) => console.log(err));
+        });
+
         terminal.onTitleChange(data => {
             if (data && data !== '' && !this.titleFixed) {
                 document.title = data + ' | ' + this.title;
             }
         });
-        terminal.onData(this.onTerminalData);
+        terminal.onData((data) => this.trzszFilter.processTerminalInput(data));
         terminal.onResize(this.onTerminalResize);
         if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
             terminal.onSelectionChange(() => {
@@ -360,7 +393,7 @@ export class Xterm extends Component<Props> {
 
         switch (cmd) {
             case Command.OUTPUT:
-                zmodemAddon.consume(data);
+                this.trzszFilter.processServerOutput(data);
                 break;
             case Command.SET_WINDOW_TITLE:
                 this.title = textDecoder.decode(data);
@@ -388,6 +421,7 @@ export class Xterm extends Component<Props> {
                 overlayAddon.showOverlay(`${size.cols}x${size.rows}`);
             }, 500);
         }
+        this.trzszFilter.setTerminalColumns(size.cols);
     }
 
     @bind

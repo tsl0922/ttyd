@@ -6499,6 +6499,11 @@ trim-newlines@^2.0.0:
   resolved "https://registry.yarnpkg.com/trim-newlines/-/trim-newlines-2.0.0.tgz#b403d0b91be50c331dfc4b82eeceb22c3de16d20"
   integrity sha1-tAPQuRvlDDMd/EuC7s6yLD3hbSA=
 
+trzsz@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/trzsz/-/trzsz-0.4.3.tgz#936ff6714c3dc194448d9e091240d615b4e62bb8"
+  integrity sha512-OcOOPM7XN9kNxjuABsxBv8Zyd9pNi9qfXNW8Ad+30BcGmxZI89wRG/Am38hWw2MOiLoqi3SAch7uysqUCG36Gg==
+
 ts-loader@^9.3.1:
   version "9.3.1"
   resolved "https://mirrors.cloud.tencent.com/npm/ts-loader/-/ts-loader-9.3.1.tgz#fe25cca56e3e71c1087fe48dc67f4df8c59b22d4"
