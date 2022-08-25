@@ -7171,6 +7171,11 @@ xterm-addon-fit@^0.5.0:
   resolved "https://registry.yarnpkg.com/xterm-addon-fit/-/xterm-addon-fit-0.5.0.tgz#2d51b983b786a97dcd6cde805e700c7f913bc596"
   integrity sha512-DsS9fqhXHacEmsPxBJZvfj2la30Iz9xk+UKjhQgnYNkrUIN5CYLbw7WEfz117c7+S86S/tpHPfvNxJsF5/G8wQ==
 
+xterm-addon-image@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/xterm-addon-image/-/xterm-addon-image-0.1.0.tgz#ead96aa224f5fcbfb45da2907f02368fe92985e6"
+  integrity sha512-xMvcEQ2rVUIXbbj5BRhznrZU24CRaMiSo8l2HH/E1FeE+G+KKduoF6mwja856/n4ekZ7K0ALZmmyDsbZODhDqQ==
+
 xterm-addon-web-links@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/xterm-addon-web-links/-/xterm-addon-web-links-0.6.0.tgz#0296cb6c99588847894670d998c9ea6a6aeb26ee"

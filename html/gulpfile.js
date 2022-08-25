@@ -37,9 +37,33 @@ task('clean', () => {
         .pipe(clean());
 });
 
+const insertImageWorker = (content) => {
+    const SENTINEL = '#IMAGEWORKER_PLACEHOLDER#';
+    const idx = content.indexOf(SENTINEL);
+    const worker = require('fs').readFileSync('node_modules/xterm-addon-image/lib/xterm-addon-image-worker.js', {encoding: 'utf8'});
+    /**
+     * hacky strip + cat insert of worker code:
+     * - strip first and last line from worker, assuming it was packed into 3 lines - comment, code, sourcemap_comment
+     * - insert with single quote string markers, assuming worker code got cleaned of those and will not clash
+     *
+     * Well, the current bundling of the worker kinda guarantees the assumed structure above, but this might not be the case
+     * for later versions anymore. A safer but more involved approach would extract the active code parts with a parser and
+     * identify+escape string marker clashes.
+     */
+    return [
+        content.slice(0, idx - 1),
+        "'", worker.split('\n')[1], "'",
+        content.slice(idx + SENTINEL.length + 1)
+    ].join('');
+};
+
 task('inline', () => {
     return src('dist/index.html')
         .pipe(inlineSource())
+	.pipe(through2.obj((file, enc, cb) => {
+            file.contents = Buffer.from(insertImageWorker(file.contents.toString()));
+            return cb(null, file);
+        }))
         .pipe(rename("inline.html"))
         .pipe(dest('dist/'));
 });
