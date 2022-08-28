@@ -12,7 +12,9 @@ import { ZmodemAddon, FlowControl } from '../zmodem';
 import 'xterm/css/xterm.css';
 
 // image worker, placeholder gets replaced with real code in gulp
-const imageWorkerUrl = window.URL.createObjectURL(new Blob(['#IMAGEWORKER_PLACEHOLDER#'], {type: "text/javascript"}));
+const imageWorkerUrl = window.URL.createObjectURL(
+    new Blob(['#IMAGEWORKER_PLACEHOLDER#'], { type: 'text/javascript' })
+);
 
 interface TtydTerminal extends Terminal {
     fit(): void;
