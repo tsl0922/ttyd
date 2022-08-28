@@ -539,7 +539,7 @@ int main(int argc, char **argv) {
       info.ssl_ca_filepath = ca_path;
       info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
     }
-    info.options |= LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
+    info.options |= LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT | LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
   }
 #endif
 
