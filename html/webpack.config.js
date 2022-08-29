@@ -37,6 +37,15 @@ const baseConfig = {
                     'sass-loader',
                 ],
             },
+            {
+                test: /xterm-addon-image-worker/,
+                type: 'asset/inline',
+                generator: {
+                    dataUrl: content => {
+                        return content.toString();
+                    }
+                }
+            },
         ]
     },
     resolve: {

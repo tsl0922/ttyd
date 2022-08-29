@@ -59,4 +59,3 @@ task('default', series('inline', () => {
         .pipe(rename("html.h"))
         .pipe(dest('../src/'));
 }));
-
