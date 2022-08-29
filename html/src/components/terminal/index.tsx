@@ -5,14 +5,13 @@ import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { ImageAddon } from 'xterm-addon-image';
-
 import { OverlayAddon } from './overlay';
 import { ZmodemAddon, FlowControl } from '../zmodem';
 
 import 'xterm/css/xterm.css';
+import worker from 'xterm-addon-image/lib/xterm-addon-image-worker';
 
-// image worker, placeholder gets replaced with real code in gulp
-const imageWorkerUrl = window.URL.createObjectURL(new Blob(['#IMAGEWORKER_PLACEHOLDER#'], { type: 'text/javascript' }));
+const imageWorkerUrl = window.URL.createObjectURL(new Blob([worker], { type: 'text/javascript' }));
 
 interface TtydTerminal extends Terminal {
     fit(): void;
