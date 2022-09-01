@@ -45,6 +45,8 @@ parts:
       - build-essential 
       - libjson-c-dev 
       - libwebsockets-dev
+      - cmake
+      - git
       
     stage-packages:
       - build-essential 
