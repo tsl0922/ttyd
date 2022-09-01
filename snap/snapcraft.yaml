@@ -16,7 +16,7 @@ assumes:
 
 apps:
   ttyd:
-    command: bin/ttyd
+    command: usr/bin/ttyd
     command-chain: 
       - bin/homeishome-launch       
   plugs:
@@ -34,7 +34,9 @@ parts:
     source: https://github.com/tsl0922/ttyd
     source-type: git
     plugin: cmake
-    
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      
     build-packages:
       - build-essential 
       - libjson-c-dev 
