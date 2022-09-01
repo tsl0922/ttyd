@@ -28,8 +28,9 @@ parts:
   ttyd:
     source: https://github.com/tsl0922/ttyd
     source-type: git
-    plugin: cmake
-
+    plugin: make
+    make-parameters:
+      - -lpthread
     override-pull: |
       snapcraftctl pull
       snapcraftctl set-version "$(git describe --tags | sed 's/^v//' | cut -d "-" -f1)"
@@ -38,9 +39,6 @@ parts:
       - build-essential 
       - libjson-c-dev 
       - libwebsockets-dev
-      - cmake
-      - git     
-      - libpthread-stubs0-dev
       
     stage-packages:
       - build-essential 
