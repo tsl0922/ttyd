@@ -49,6 +49,7 @@ parts:
       - extra-cmake-modules
       - git
       - gcc-10
+      - libpthread-stubs0-dev
       
     stage-packages:
       - build-essential 
