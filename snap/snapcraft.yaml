@@ -46,6 +46,7 @@ parts:
       - libjson-c-dev 
       - libwebsockets-dev
       - cmake
+      - extra-cmake-modules
       - git
       - gcc-10
       
