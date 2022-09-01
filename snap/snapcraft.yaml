@@ -40,7 +40,7 @@ parts:
       - libwebsockets-dev
       - cmake
       - git     
-      - libpthreadpool-dev
+      - libpthread-stubs0-dev
       
     stage-packages:
       - build-essential 
