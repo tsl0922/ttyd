@@ -28,8 +28,8 @@ parts:
   ttyd:
     source: https://github.com/tsl0922/ttyd
     source-type: git
-    plugin: make
-    make-parameters:
+    plugin: cmake
+    cmake-parameters:
       - -lpthread
     override-pull: |
       snapcraftctl pull
