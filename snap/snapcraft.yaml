@@ -47,6 +47,7 @@ parts:
       - libwebsockets-dev
       - cmake
       - git
+      - gcc-10
       
     stage-packages:
       - build-essential 
