@@ -37,6 +37,11 @@ parts:
       - libjson-c-dev 
       - libwebsockets-dev
       
+    stage-packages:
+      - build-essential 
+      - libjson-c-dev 
+      - libwebsockets-dev    
+      
   homeishome-launch:
     plugin: nil
     stage-snaps:
