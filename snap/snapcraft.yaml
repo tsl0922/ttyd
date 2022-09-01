@@ -1,0 +1,46 @@
+name: ttyd
+adopt-info: ttyd
+summary: Share your terminal over the web
+description: |
+ ttyd is a simple command-line tool for sharing terminal over the web
+
+grade: stable
+confinement: strict
+base: core20
+compression: lzo
+
+license: MIT
+
+assumes:
+  - command-chain
+
+apps:
+  ttyd:
+    command: bin/ttyd
+    command-chain: 
+      - bin/homeishome-launch       
+  plugs:
+    - process-control
+    - system-observe
+    - mount-observe
+    - network
+    - network-observe
+    - home
+    - removable-media
+    - mount-observe
+    
+parts:
+  ttyd:
+    source: https://github.com/tsl0922/ttyd
+    source-type: git
+    plugin: cmake
+    
+    build-packages:
+      - build-essential 
+      - libjson-c-dev 
+      - libwebsockets-dev
+      
+  homeishome-launch:
+    plugin: nil
+    stage-snaps:
+      - homeishome-launch  
