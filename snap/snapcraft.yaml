@@ -40,11 +40,13 @@ parts:
       - build-essential 
       - libjson-c-dev 
       - libwebsockets-dev
+      - cmake
+      - git      
       
     stage-packages:
       - build-essential 
       - libjson-c-dev 
-      - libwebsockets-dev    
+      - libwebsockets-dev
       
   homeishome-launch:
     plugin: nil
