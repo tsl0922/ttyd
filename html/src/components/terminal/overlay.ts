@@ -9,6 +9,7 @@ export class OverlayAddon implements ITerminalAddon {
 
     constructor() {
         this.overlayNode = document.createElement('div');
+        this.overlayNode.className = 'term-overlay';
         this.overlayNode.style.cssText = `border-radius: 15px;
 font-size: xx-large;
 opacity: 0.75;
