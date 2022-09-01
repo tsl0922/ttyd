@@ -39,7 +39,8 @@ parts:
       - libjson-c-dev 
       - libwebsockets-dev
       - cmake
-      - git      
+      - git     
+      - libpthreadpool-dev
       
     stage-packages:
       - build-essential 
