@@ -30,8 +30,9 @@ parts:
     source-type: git
     plugin: cmake
     cmake-parameters:
-      - -LDFLAGS=pthread
       - -DCMAKE_INSTALL_PREFIX=/usr
+    build-environment:
+      - LDFLAGS: "-pthread"
       
     override-pull: |
       snapcraftctl pull
