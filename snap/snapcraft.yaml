@@ -28,14 +28,10 @@ parts:
   ttyd:
     source: https://github.com/tsl0922/ttyd
     source-type: git
-    plugin: nil
-    override-build: |
-      git clone https://github.com/tsl0922/ttyd.git
-      cd ttyd && mkdir build && cd build
-      cmake ..
-      make && make -j$(nproc) install
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/  
-      cp ttyd $SNAPCRAFT_PART_INSTALL/usr/bin/
+    plugin: cmake
+    cmake-parameters:
+      - -LDFLAGS='-pthread'
+      - -DCMAKE_INSTALL_PREFIX=/usr
       
     override-pull: |
       snapcraftctl pull
