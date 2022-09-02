@@ -19,14 +19,14 @@ apps:
     command: usr/bin/ttyd
     command-chain: 
       - bin/homeishome-launch       
-    plugs:
-      - network
-      - network-observe
-      - home
-      - process-control
-      - removable-media
-      - system-observe
-      - system-trace
+#    plugs:
+#      - network
+#      - network-observe
+#      - home
+#      - process-control
+#      - removable-media
+#      - system-observe
+#      - system-trace
 
 parts:
   ttyd:
