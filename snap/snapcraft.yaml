@@ -5,7 +5,7 @@ description: |
  ttyd is a simple command-line tool for sharing terminal over the web
 
 grade: devel
-confinement: devmode
+confinement: classic
 base: core20
 compression: lzo
 
