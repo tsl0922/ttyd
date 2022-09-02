@@ -41,11 +41,6 @@ parts:
       - build-essential 
       - libjson-c-dev 
       - libwebsockets-dev
-      - cmake
-      - extra-cmake-modules
-      - git
-      - gcc-10
-      - libpthread-stubs0-dev
       
     stage-packages:
       - build-essential 
