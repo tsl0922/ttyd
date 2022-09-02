@@ -23,6 +23,10 @@ apps:
       - network
       - network-observe
       - home
+      - process-control
+      - removable-media
+      - system-observe
+      - system-trace
 
 parts:
   ttyd:
