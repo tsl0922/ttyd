@@ -274,6 +274,7 @@ export class Xterm extends Component<Props> {
                     if (value) {
                         console.log(`[ttyd] Reconnect disabled`);
                         this.reconnect = false;
+                        this.doReconnect = false;
                     }
                     break;
                 case 'titleFixed':
