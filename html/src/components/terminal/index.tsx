@@ -383,10 +383,11 @@ export class Xterm extends Component<Props> {
     @bind
     private onTerminalResize(size: { cols: number; rows: number }) {
         const { overlayAddon, socket, textEncoder, resizeOverlay } = this;
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            const msg = JSON.stringify({ columns: size.cols, rows: size.rows });
-            socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
-        }
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+        const msg = JSON.stringify({ columns: size.cols, rows: size.rows });
+        socket.send(textEncoder.encode(Command.RESIZE_TERMINAL + msg));
+
         if (resizeOverlay) {
             setTimeout(() => {
                 overlayAddon.showOverlay(`${size.cols}x${size.rows}`);
