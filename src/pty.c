@@ -42,6 +42,10 @@ static void alloc_cb(uv_handle_t *unused, size_t suggested_size, uv_buf_t *buf) 
 
 static void close_cb(uv_handle_t *handle) { free(handle); }
 
+static void async_free_cb(uv_handle_t *handle) {
+  free((uv_async_t *) handle -> data);
+}
+
 pty_buf_t *pty_buf_init(char *base, size_t len) {
   pty_buf_t *buf = xmalloc(sizeof(pty_buf_t));
   buf->base = xmalloc(len);
@@ -114,7 +118,6 @@ void process_free(pty_process *process) {
   char **p = process->envp;
   for (; *p; p++) free(*p);
   free(process->envp);
-  free(process);
 }
 
 void pty_pause(pty_process *process) {
@@ -307,7 +310,7 @@ static void async_cb(uv_async_t *async) {
   process->exit_signal = 1;
   process->exit_cb(process);
 
-  uv_close((uv_handle_t *) async, NULL);
+  uv_close((uv_handle_t *) async, async_free_cb);
   process_free(process);
 }
 
@@ -420,7 +423,7 @@ static void async_cb(uv_async_t *async) {
   pty_process *process = (pty_process *) async->data;
   process->exit_cb(process);
 
-  uv_close((uv_handle_t *) async, NULL);
+  uv_close((uv_handle_t *) async, async_free_cb);
   process_free(process);
 }
 
