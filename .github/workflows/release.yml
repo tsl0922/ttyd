@@ -57,7 +57,8 @@ jobs:
         with:
           msystem: MINGW64
           install: >-
-            make
+            base-devel
+            subversion
             mingw64/mingw-w64-x86_64-gcc
             mingw64/mingw-w64-x86_64-cmake
             mingw64/mingw-w64-x86_64-zlib
