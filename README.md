@@ -31,6 +31,12 @@ brew install ttyd
 ## Install on Linux
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page.
+
+- Install the snap:
+    
+    `sudo snap install ttyd --classic`
+    
+    
 - Build from source (debian/ubuntu):
 
     ```bash
