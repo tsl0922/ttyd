@@ -1,8 +1,9 @@
 import { bind } from 'decko';
 import { Component, h } from 'preact';
-import { ITerminalOptions, RendererType, Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { ITerminalOptions, Terminal } from 'xterm';
+import { CanvasAddon } from 'xterm-addon-canvas';
 import { WebglAddon } from 'xterm-addon-webgl';
+import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { ImageAddon } from 'xterm-addon-image';
 import { OverlayAddon } from './overlay';
@@ -36,8 +37,10 @@ const enum Command {
     RESUME = '3',
 }
 
+export type RendererType = 'dom' | 'canvas' | 'webgl';
+
 export interface ClientOptions {
-    rendererType: 'dom' | 'canvas' | 'webgl';
+    rendererType: RendererType;
     disableLeaveAlert: boolean;
     disableResizeOverlay: boolean;
     titleFixed: string;
@@ -61,6 +64,7 @@ export class Xterm extends Component<Props> {
     private overlayAddon: OverlayAddon;
     private zmodemAddon: ZmodemAddon;
     private webglAddon: WebglAddon;
+    private canvasAddon: CanvasAddon;
 
     private socket: WebSocket;
     private token: string;
@@ -212,9 +216,16 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
-    private setRendererType(value: 'webgl' | RendererType) {
+    private setRendererType(value: RendererType) {
         const { terminal } = this;
-
+        const disposeCanvasRenderer = () => {
+            try {
+                this.canvasAddon?.dispose();
+            } catch {
+                // ignore
+            }
+            this.canvasAddon = undefined;
+        };
         const disposeWebglRenderer = () => {
             try {
                 this.webglAddon?.dispose();
@@ -223,33 +234,50 @@ export class Xterm extends Component<Props> {
             }
             this.webglAddon = undefined;
         };
+        const enableCanvasRenderer = () => {
+            if (this.canvasAddon) return;
+            this.canvasAddon = new CanvasAddon();
+            disposeWebglRenderer();
+            try {
+                this.terminal.loadAddon(this.canvasAddon);
+                console.log(`[ttyd] canvas renderer loaded`);
+            } catch (e) {
+                console.log(`[ttyd] canvas renderer could not be loaded, falling back to dom renderer`, e);
+                disposeCanvasRenderer();
+            }
+        };
+        const enableWebglRenderer = () => {
+            if (this.webglAddon) return;
+            this.webglAddon = new WebglAddon();
+            disposeCanvasRenderer();
+            try {
+                this.webglAddon.onContextLoss(() => {
+                    this.webglAddon?.dispose();
+                });
+                terminal.loadAddon(this.webglAddon);
+                console.log(`[ttyd] WebGL renderer loaded`);
+            } catch (e) {
+                console.log(`[ttyd] WebGL renderer could not be loaded, falling back to canvas renderer`, e);
+                disposeWebglRenderer();
+                enableCanvasRenderer();
+            }
+        };
 
         switch (value) {
-            case 'webgl':
-                if (this.webglAddon) return;
-                try {
-                    if (window.WebGL2RenderingContext && document.createElement('canvas').getContext('webgl2')) {
-                        this.webglAddon = new WebglAddon();
-                        this.webglAddon.onContextLoss(() => {
-                            disposeWebglRenderer();
-                        });
-                        terminal.loadAddon(this.webglAddon);
-                        console.log(`[ttyd] WebGL renderer enabled`);
-                    }
-                } catch (e) {
-                    console.warn(`[ttyd] webgl2 init error`, e);
-                }
+            case 'canvas':
+                enableCanvasRenderer();
                 break;
+            case 'webgl':
+                enableWebglRenderer();
+                break;
+            case 'dom':
             default:
-                disposeWebglRenderer();
-                console.log(`[ttyd] option: rendererType=${value}`);
-                terminal.options.rendererType = value;
                 break;
         }
     }
 
     @bind
-    private applyOptions(options: any) {
+    private applyOptions(options: ITerminalOptions) {
         const { terminal, fitAddon } = this;
 
         Object.keys(options).forEach(key => {
@@ -373,7 +401,8 @@ export class Xterm extends Component<Props> {
                 break;
             case Command.SET_PREFERENCES:
                 const prefs = JSON.parse(textDecoder.decode(data));
-                this.applyOptions(Object.assign({}, this.props.clientOptions, prefs));
+                const options = Object.assign({}, this.props.clientOptions, prefs) as ITerminalOptions;
+                this.applyOptions(options);
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);

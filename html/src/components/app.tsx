@@ -42,6 +42,7 @@ const termOptions = {
         brightCyan: '#37e6e8',
         brightWhite: '#f1f1f0',
     } as ITheme,
+    allowProposedApi: true,
 } as ITerminalOptions;
 
 export class App extends Component {
