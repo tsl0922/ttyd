@@ -34,7 +34,7 @@ jobs:
           cd libwebsockets-${LWS_VERSION}
           cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
           make && sudo make install && sudo ldconfig
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Build ttyd
         run: |
           cmake -DCMAKE_BUILD_TYPE=RELEASE .
@@ -46,7 +46,7 @@ jobs:
       matrix:
         target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install packages
         run: |
           sudo apt-get update
@@ -55,14 +55,14 @@ jobs:
         env:
           BUILD_TARGET: ${{ matrix.target }}
         run: ./scripts/cross-build.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd
   win10:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -79,7 +79,7 @@ jobs:
       - name: Build ttyd
         shell: msys2 {0}
         run: ./scripts/mingw-build.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ttyd.win10
           path: build/ttyd.exe

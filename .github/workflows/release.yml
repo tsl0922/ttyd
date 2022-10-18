@@ -6,30 +6,13 @@ on:
     - "*"
 
 jobs:
-  release:
-    runs-on: ubuntu-20.04
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }} 
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: true
-          prerelease: false
-
   build:
     runs-on: ubuntu-20.04
-    needs: release
     strategy:
       matrix:
         target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install packages
         run: |
           sudo apt-get update
@@ -37,22 +20,18 @@ jobs:
       - name: Cross build (${{ matrix.target }})
         env:
           BUILD_TARGET: ${{ matrix.target }}
-        run: ./scripts/cross-build.sh
-      - name: Upload assets
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/cross-build.sh
+          mv build/ttyd build/ttyd.${{ matrix.target }}
+      - uses: ncipollo/release-action@v1
         with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: build/ttyd
-          asset_name: ttyd.${{ matrix.target }}
-          asset_content_type: application/octet-stream
+          artifacts: build/ttyd.${{ matrix.target }}
+          allowUpdates: true
+          draft: true
   win10:
     runs-on: windows-latest
-    needs: release
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -68,14 +47,11 @@ jobs:
           update: true
       - name: Build ttyd
         shell: msys2 {0}
-        run: ./scripts/mingw-build.sh
-      - name: Upload assets
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/mingw-build.sh
+          mv build/ttyd.exe build/ttyd.win10.exe
+      - uses: ncipollo/release-action@v1
         with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: build/ttyd.exe
-          asset_name: ttyd.win10.exe
-          asset_content_type: application/octet-stream
+          artifacts: build/ttyd.win10.exe
+          allowUpdates: true
+          draft: true
