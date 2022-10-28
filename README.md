@@ -29,6 +29,12 @@ Install with [homebrew](http://brew.sh):
 brew install ttyd
 ```
 
+Install with [MacPorts](https://www.macports.org):
+
+```bash
+sudo port install ttyd
+```
+
 ## Install on Linux
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page.
