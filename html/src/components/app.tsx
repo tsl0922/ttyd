@@ -1,7 +1,7 @@
 import { h, Component } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
-import { ClientOptions, Xterm } from './terminal';
+import { ClientOptions, FlowControl, Xterm } from './terminal';
 
 if ((module as any).hot) {
     // tslint:disable-next-line:no-var-requires
@@ -44,6 +44,11 @@ const termOptions = {
     } as ITheme,
     allowProposedApi: true,
 } as ITerminalOptions;
+const flowControl = {
+    limit: 100000,
+    highWater: 10,
+    lowWater: 4,
+} as FlowControl;
 
 export class App extends Component {
     render() {
@@ -54,6 +59,7 @@ export class App extends Component {
                 tokenUrl={tokenUrl}
                 clientOptions={clientOptions}
                 termOptions={termOptions}
+                flowControl={flowControl}
             />
         );
     }

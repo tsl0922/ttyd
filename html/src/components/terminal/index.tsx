@@ -7,7 +7,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { ImageAddon } from 'xterm-addon-image';
 import { OverlayAddon } from './overlay';
-import { ZmodemAddon, FlowControl } from '../zmodem';
+import { ZmodemAddon } from '../zmodem';
 
 import 'xterm/css/xterm.css';
 import worker from 'xterm-addon-image/lib/xterm-addon-image-worker';
@@ -46,12 +46,19 @@ export interface ClientOptions {
     titleFixed: string;
 }
 
+export interface FlowControl {
+    limit: number;
+    highWater: number;
+    lowWater: number;
+}
+
 interface Props {
     id: string;
     wsUrl: string;
     tokenUrl: string;
     clientOptions: ClientOptions;
     termOptions: ITerminalOptions;
+    flowControl: FlowControl;
 }
 
 export class Xterm extends Component<Props> {
@@ -59,6 +66,9 @@ export class Xterm extends Component<Props> {
     private textDecoder: TextDecoder;
     private container: HTMLElement;
     private terminal: Terminal;
+
+    private written = 0;
+    private pending = 0;
 
     private fitAddon: FitAddon;
     private overlayAddon: OverlayAddon;
@@ -103,17 +113,9 @@ export class Xterm extends Component<Props> {
     }
 
     render({ id }: Props) {
-        const control = {
-            limit: 100000,
-            highWater: 10,
-            lowWater: 4,
-            pause: () => this.pause(),
-            resume: () => this.resume(),
-        } as FlowControl;
-
         return (
             <div id={id} ref={c => (this.container = c)}>
-                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} control={control} />
+                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} writer={this.writeData} />
             </div>
         );
     }
@@ -131,12 +133,18 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
-    private sendData(data: ArrayLike<number>) {
-        const { socket } = this;
-        const payload = new Uint8Array(data.length + 1);
-        payload[0] = Command.INPUT.charCodeAt(0);
-        payload.set(data, 1);
-        socket.send(payload);
+    private sendData(data: string | Uint8Array) {
+        const { socket, textEncoder } = this;
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+        if (typeof data === 'string') {
+            socket.send(textEncoder.encode(Command.INPUT + data));
+        } else {
+            const payload = new Uint8Array(data.length + 1);
+            payload[0] = Command.INPUT.charCodeAt(0);
+            payload.set(data, 1);
+            socket.send(payload);
+        }
     }
 
     @bind
@@ -201,6 +209,29 @@ export class Xterm extends Component<Props> {
         }
         terminal.open(container);
         fitAddon.fit();
+    }
+
+    @bind
+    private writeData(data: string | Uint8Array) {
+        const { terminal, pause, resume } = this;
+        const { limit, highWater, lowWater } = this.props.flowControl;
+
+        this.written += data.length;
+        if (this.written > limit) {
+            terminal.write(data, () => {
+                this.pending = Math.max(this.pending - 1, 0);
+                if (this.pending < lowWater) {
+                    resume();
+                }
+            });
+            this.pending++;
+            this.written = 0;
+            if (this.pending > highWater) {
+                pause();
+            }
+        } else {
+            terminal.write(data);
+        }
     }
 
     @bind
@@ -427,9 +458,6 @@ export class Xterm extends Component<Props> {
 
     @bind
     private onTerminalData(data: string) {
-        const { socket, textEncoder } = this;
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(textEncoder.encode(Command.INPUT + data));
-        }
+        this.sendData(data);
     }
 }

@@ -6,18 +6,9 @@ import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 
 import { Modal } from '../modal';
 
-export interface FlowControl {
-    limit: number;
-    highWater: number;
-    lowWater: number;
-
-    pause: () => void;
-    resume: () => void;
-}
-
 interface Props {
-    sender: (data: ArrayLike<number>) => void;
-    control: FlowControl;
+    sender: (data: string | Uint8Array) => void;
+    writer: (data: string | Uint8Array) => void;
 }
 
 interface State {
@@ -29,9 +20,6 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private keyDispose: IDisposable | undefined;
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
-
-    private written = 0;
-    private pending = 0;
 
     constructor(props: Props) {
         super(props);
@@ -97,31 +85,12 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private zmodemWrite(data: ArrayBuffer): void {
-        const { limit, highWater, lowWater, pause, resume } = this.props.control;
-        const { terminal } = this;
-        const rawData = new Uint8Array(data);
-
-        this.written += rawData.length;
-        if (this.written > limit) {
-            terminal.write(rawData, () => {
-                this.pending = Math.max(this.pending - 1, 0);
-                if (this.pending < lowWater) {
-                    resume();
-                }
-            });
-            this.pending++;
-            this.written = 0;
-            if (this.pending > highWater) {
-                pause();
-            }
-        } else {
-            terminal.write(rawData);
-        }
+        this.props.writer(new Uint8Array(data));
     }
 
     @bind
     private zmodemSend(data: ArrayLike<number>): void {
-        this.props.sender(data);
+        this.props.sender(new Uint8Array(data));
     }
 
     @bind
@@ -192,7 +161,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         const offset = offer.get_offset();
         const percent = ((100 * offset) / size).toFixed(2);
 
-        terminal.write(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
+        this.props.writer(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
     }
 
     private bytesHuman(bytes: any, precision: number): string {
