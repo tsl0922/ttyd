@@ -16,6 +16,7 @@ const clientOptions = {
     rendererType: 'webgl',
     disableLeaveAlert: false,
     disableResizeOverlay: false,
+    enableZmodem: false,
     titleFixed: null,
 } as ClientOptions;
 const termOptions = {

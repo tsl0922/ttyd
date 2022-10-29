@@ -43,8 +43,11 @@ export interface ClientOptions {
     rendererType: RendererType;
     disableLeaveAlert: boolean;
     disableResizeOverlay: boolean;
+    enableZmodem: boolean;
     titleFixed: string;
 }
+
+type Options = ITerminalOptions & ClientOptions;
 
 export interface FlowControl {
     limit: number;
@@ -61,7 +64,11 @@ interface Props {
     flowControl: FlowControl;
 }
 
-export class Xterm extends Component<Props> {
+interface State {
+    zmodem: boolean;
+}
+
+export class Xterm extends Component<Props, State> {
     private textEncoder: TextEncoder;
     private textDecoder: TextDecoder;
     private container: HTMLElement;
@@ -72,11 +79,11 @@ export class Xterm extends Component<Props> {
 
     private fitAddon: FitAddon;
     private overlayAddon: OverlayAddon;
-    private zmodemAddon: ZmodemAddon;
     private webglAddon: WebglAddon;
     private canvasAddon: CanvasAddon;
 
     private socket: WebSocket;
+    private writeFunc: (data: ArrayBuffer) => void;
     private token: string;
     private opened = false;
     private title: string;
@@ -89,6 +96,7 @@ export class Xterm extends Component<Props> {
     constructor(props: Props) {
         super(props);
 
+        this.writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
         this.textEncoder = new TextEncoder();
         this.textDecoder = new TextDecoder();
         this.fitAddon = new FitAddon();
@@ -112,10 +120,10 @@ export class Xterm extends Component<Props> {
         window.removeEventListener('beforeunload', this.onWindowUnload);
     }
 
-    render({ id }: Props) {
+    render({ id }: Props, { zmodem }: State) {
         return (
             <div id={id} ref={c => (this.container = c)}>
-                <ZmodemAddon ref={c => (this.zmodemAddon = c)} sender={this.sendData} writer={this.writeData} />
+                {zmodem && <ZmodemAddon callback={this.zmodemCb} sender={this.sendData} writer={this.writeData} />}
             </div>
         );
     }
@@ -130,6 +138,12 @@ export class Xterm extends Component<Props> {
     private resume() {
         const { textEncoder, socket } = this;
         socket.send(textEncoder.encode(Command.RESUME));
+    }
+
+    @bind
+    private zmodemCb(addon: ZmodemAddon) {
+        this.terminal.loadAddon(addon);
+        this.writeFunc = (data: ArrayBuffer) => addon.consume(data);
     }
 
     @bind
@@ -190,7 +204,6 @@ export class Xterm extends Component<Props> {
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
-        terminal.loadAddon(this.zmodemAddon);
         terminal.loadAddon(new ImageAddon(imageWorkerUrl));
 
         terminal.onTitleChange(data => {
@@ -308,9 +321,8 @@ export class Xterm extends Component<Props> {
     }
 
     @bind
-    private applyOptions(options: ITerminalOptions) {
+    private applyOptions(options: Options) {
         const { terminal, fitAddon } = this;
-
         Object.keys(options).forEach(key => {
             const value = options[key];
             switch (key) {
@@ -334,6 +346,12 @@ export class Xterm extends Component<Props> {
                         console.log(`[ttyd] Reconnect disabled`);
                         this.reconnect = false;
                         this.doReconnect = false;
+                    }
+                    break;
+                case 'enableZmodem':
+                    if (value) {
+                        this.setState({ zmodem: true });
+                        console.log(`[ttyd] Zmodem enabled`);
                     }
                     break;
                 case 'titleFixed':
@@ -417,14 +435,14 @@ export class Xterm extends Component<Props> {
 
     @bind
     private onSocketData(event: MessageEvent) {
-        const { textDecoder, zmodemAddon } = this;
+        const { textDecoder } = this;
         const rawData = event.data as ArrayBuffer;
         const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
         const data = rawData.slice(1);
 
         switch (cmd) {
             case Command.OUTPUT:
-                zmodemAddon.consume(data);
+                this.writeFunc(data);
                 break;
             case Command.SET_WINDOW_TITLE:
                 this.title = textDecoder.decode(data);
@@ -432,8 +450,7 @@ export class Xterm extends Component<Props> {
                 break;
             case Command.SET_PREFERENCES:
                 const prefs = JSON.parse(textDecoder.decode(data));
-                const options = Object.assign({}, this.props.clientOptions, prefs) as ITerminalOptions;
-                this.applyOptions(options);
+                this.applyOptions({ ...this.props.clientOptions, ...prefs } as Options);
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);

@@ -7,6 +7,7 @@ import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 import { Modal } from '../modal';
 
 interface Props {
+    callback: (addon: ZmodemAddon) => void;
     sender: (data: string | Uint8Array) => void;
     writer: (data: string | Uint8Array) => void;
 }
@@ -27,7 +28,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         this.zmodemInit();
     }
 
-    render(_, { modal }: State) {
+    render(_: Props, { modal }: State) {
         return (
             <Modal show={modal}>
                 <label class="file-label">
@@ -38,6 +39,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         );
     }
 
+    componentDidMount() {
+        this.props.callback(this);
+    }
+
     activate(terminal: Terminal): void {
         this.terminal = terminal;
     }
@@ -45,11 +50,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     dispose(): void {}
 
     consume(data: ArrayBuffer) {
-        const { sentry, handleError } = this;
         try {
-            sentry.consume(data);
+            this.sentry.consume(data);
         } catch (e) {
-            handleError(e, 'consume');
+            this.handleError(e, 'consume');
         }
     }
 
@@ -153,7 +157,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private writeProgress(offer: Zmodem.Offer) {
-        const { terminal, bytesHuman } = this;
+        const { bytesHuman } = this;
 
         const file = offer.get_details();
         const name = file.name;
