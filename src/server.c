@@ -53,6 +53,7 @@ static lws_retry_bo_t retry = {
 // command line options
 static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"interface", required_argument, NULL, 'i'},
+                                        {"socket-owner", required_argument, NULL, 'U'},
                                         {"credential", required_argument, NULL, 'c'},
                                         {"auth-header", required_argument, NULL, 'H'},
                                         {"uid", required_argument, NULL, 'u'},
@@ -93,6 +94,7 @@ static void print_help() {
           "OPTIONS:\n"
           "    -p, --port              Port to listen (default: 7681, use `0` for random port)\n"
           "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
+          "    -U, --socket-owner      User owner of the UNIX domain socket file, when enabled (eg: user:group)\n"
           "    -c, --credential        Credential for basic authentication (format: username:password)\n"
           "    -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication\n"
           "    -u, --uid               User id to run with\n"
@@ -323,6 +325,7 @@ int main(int argc, char **argv) {
 
   int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
   char iface[128] = "";
+  char socket_owner[128] = "";
   bool browser = false;
   bool ssl = false;
   char cert_path[1024] = "";
@@ -372,6 +375,10 @@ int main(int argc, char **argv) {
       case 'i':
         strncpy(iface, optarg, sizeof(iface) - 1);
         iface[sizeof(iface) - 1] = '\0';
+        break;
+      case 'U':
+        strncpy(socket_owner, optarg, sizeof(socket_owner) - 1);
+        socket_owner[sizeof(socket_owner) - 1] = '\0';
         break;
       case 'c':
         if (strchr(optarg, ':') == NULL) {
@@ -521,6 +528,9 @@ int main(int argc, char **argv) {
       info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
       info.port = 0;  // warmcat/libwebsockets#1985
       strncpy(server->socket_path, info.iface, sizeof(server->socket_path) - 1);
+      if (strlen(socket_owner) > 0) {
+        info.unix_socket_perms = socket_owner;
+      }
 #else
       fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
       return -1;
