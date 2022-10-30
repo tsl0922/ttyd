@@ -210,6 +210,7 @@ export class Xterm extends Component<Props, State> {
             }
         });
         terminal.onData(this.onTerminalData);
+        terminal.onBinary(this.onTerminalBinary);
         terminal.onResize(this.onTerminalResize);
         if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
             terminal.onSelectionChange(() => {
@@ -483,5 +484,10 @@ export class Xterm extends Component<Props, State> {
     @bind
     private onTerminalData(data: string) {
         this.sendData(data);
+    }
+
+    @bind
+    private onTerminalBinary(data: string) {
+        this.sendData(Uint8Array.from(data, v => v.charCodeAt(0)));
     }
 }
