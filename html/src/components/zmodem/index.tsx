@@ -3,6 +3,7 @@ import { h, Component } from 'preact';
 import { saveAs } from 'file-saver';
 import { IDisposable, ITerminalAddon, Terminal } from 'xterm';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
+import { TrzszFilter } from 'trzsz';
 
 import { Modal } from '../modal';
 
@@ -21,11 +22,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private keyDispose: IDisposable | undefined;
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
+    private trzszFilter: TrzszFilter;
 
     constructor(props: Props) {
         super(props);
-
-        this.zmodemInit();
     }
 
     render(_: Props, { modal }: State) {
@@ -45,13 +45,15 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     activate(terminal: Terminal): void {
         this.terminal = terminal;
+        this.zmodemInit();
+        this.trzszInit();
     }
 
     dispose(): void {}
 
     consume(data: ArrayBuffer) {
         try {
-            this.sentry.consume(data);
+            this.trzszFilter.processServerOutput(data);
         } catch (e) {
             this.handleError(e, 'consume');
         }
@@ -61,6 +63,36 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private handleError(e: Error, reason: string) {
         console.error(`[ttyd] zmodem ${reason}: `, e);
         this.zmodemReset();
+    }
+
+    @bind
+    private trzszInit() {
+        this.trzszFilter = new TrzszFilter({
+            writeToTerminal: (data: string | ArrayBuffer | Uint8Array | Blob) => this.trzszWrite(data),
+            sendToServer: (data: string | Uint8Array) => this.trzszSend(data),
+            terminalColumns: this.terminal.cols,
+        });
+        this.terminal.onResize((size: { cols: number; rows: number }) => {
+            this.trzszFilter.setTerminalColumns(size.cols);
+        });
+    }
+
+    @bind
+    private trzszWrite(data: string | ArrayBuffer | Uint8Array | Blob) {
+        if (this.trzszFilter.isTransferringFiles()) {
+            this.props.writer(data as string);
+        } else {
+            this.sentry.consume(data as ArrayBuffer);
+        }
+    }
+
+    @bind
+    private trzszSend(data: string | Uint8Array) {
+        if (this.trzszFilter.isTransferringFiles()) {
+            this.props.sender(data);
+        } else {
+            this.props.writer(data as string);
+        }
     }
 
     @bind
@@ -158,7 +190,6 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     @bind
     private writeProgress(offer: Zmodem.Offer) {
         const { bytesHuman } = this;
-
         const file = offer.get_details();
         const name = file.name;
         const size = file.size;
