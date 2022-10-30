@@ -88,11 +88,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private trzszSend(data: string | Uint8Array) {
-        if (this.trzszFilter.isTransferringFiles()) {
-            this.props.sender(data);
-        } else {
-            this.props.writer(data as string);
-        }
+        this.props.sender(data);
     }
 
     @bind
