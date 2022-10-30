@@ -17,6 +17,7 @@ const clientOptions = {
     disableLeaveAlert: false,
     disableResizeOverlay: false,
     enableZmodem: false,
+    enableSixel: false,
     titleFixed: null,
 } as ClientOptions;
 const termOptions = {

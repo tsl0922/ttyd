@@ -12,8 +12,6 @@ import { ZmodemAddon } from '../zmodem';
 import 'xterm/css/xterm.css';
 import worker from 'xterm-addon-image/lib/xterm-addon-image-worker';
 
-const imageWorkerUrl = window.URL.createObjectURL(new Blob([worker], { type: 'text/javascript' }));
-
 interface TtydTerminal extends Terminal {
     fit(): void;
 }
@@ -44,6 +42,7 @@ export interface ClientOptions {
     disableLeaveAlert: boolean;
     disableResizeOverlay: boolean;
     enableZmodem: boolean;
+    enableSixel: boolean;
     titleFixed: string;
 }
 
@@ -204,7 +203,6 @@ export class Xterm extends Component<Props, State> {
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
-        terminal.loadAddon(new ImageAddon(imageWorkerUrl));
 
         terminal.onTitleChange(data => {
             if (data && data !== '' && !this.titleFixed) {
@@ -352,6 +350,15 @@ export class Xterm extends Component<Props, State> {
                     if (value) {
                         this.setState({ zmodem: true });
                         console.log(`[ttyd] Zmodem enabled`);
+                    }
+                    break;
+                case 'enableSixel':
+                    if (value) {
+                        const imageWorkerUrl = window.URL.createObjectURL(
+                            new Blob([worker], { type: 'text/javascript' })
+                        );
+                        terminal.loadAddon(new ImageAddon(imageWorkerUrl));
+                        console.log(`[ttyd] Sixel enabled`);
                     }
                     break;
                 case 'titleFixed':
