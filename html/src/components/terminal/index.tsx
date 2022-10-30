@@ -95,7 +95,7 @@ export class Xterm extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
-        this.writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
+        this.writeFunc = data => this.writeData(new Uint8Array(data));
         this.textEncoder = new TextEncoder();
         this.textDecoder = new TextDecoder();
         this.fitAddon = new FitAddon();
@@ -142,7 +142,7 @@ export class Xterm extends Component<Props, State> {
     @bind
     private zmodemCb(addon: ZmodemAddon) {
         this.terminal.loadAddon(addon);
-        this.writeFunc = (data: ArrayBuffer) => addon.consume(data);
+        this.writeFunc = data => addon.consume(data);
     }
 
     @bind

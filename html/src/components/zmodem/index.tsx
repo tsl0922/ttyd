@@ -68,13 +68,11 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     @bind
     private trzszInit() {
         this.trzszFilter = new TrzszFilter({
-            writeToTerminal: (data: string | ArrayBuffer | Uint8Array | Blob) => this.trzszWrite(data),
-            sendToServer: (data: string | Uint8Array) => this.trzszSend(data),
+            writeToTerminal: data => this.trzszWrite(data),
+            sendToServer: data => this.trzszSend(data),
             terminalColumns: this.terminal.cols,
         });
-        this.terminal.onResize((size: { cols: number; rows: number }) => {
-            this.trzszFilter.setTerminalColumns(size.cols);
-        });
+        this.terminal.onResize(size => this.trzszFilter.setTerminalColumns(size.cols));
     }
 
     @bind
@@ -95,10 +93,10 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private zmodemInit() {
         this.session = null;
         this.sentry = new Zmodem.Sentry({
-            to_terminal: (octets: ArrayBuffer) => this.zmodemWrite(octets),
-            sender: (octets: ArrayLike<number>) => this.zmodemSend(octets),
+            to_terminal: octets => this.zmodemWrite(octets),
+            sender: octets => this.zmodemSend(octets),
             on_retract: () => this.zmodemReset(),
-            on_detect: (detection: Zmodem.Detection) => this.zmodemDetect(detection),
+            on_detect: detection => this.zmodemDetect(detection),
         });
     }
 
@@ -155,7 +153,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         const files: FileList = (event.target as HTMLInputElement).files;
 
         Zmodem.Browser.send_files(session, files, {
-            on_progress: (_, offer: Zmodem.Offer) => writeProgress(offer),
+            on_progress: (_, offer) => writeProgress(offer),
         })
             .then(() => session.close())
             .catch(e => handleError(e, 'send'));
@@ -165,7 +163,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     private receiveFile() {
         const { session, writeProgress, handleError } = this;
 
-        session.on('offer', (offer: Zmodem.Offer) => {
+        session.on('offer', offer => {
             const fileBuffer = [];
             offer.on('input', payload => {
                 writeProgress(offer);
