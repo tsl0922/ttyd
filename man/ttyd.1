@@ -10,7 +10,7 @@ ttyd \- Share your terminal over the web
 \fBttyd\fP [options] <command> [<arguments...>]
 
 
-.SH Description
+.SH DESCRIPTION
 .PP
 ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 
@@ -21,6 +21,8 @@ Built on top of Libwebsockets with libuv for speed
 Fully\-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
 .IP \(bu 2
 Graphical ZMODEM integration with lrzsz support
+.IP \(bu 2
+Sixel image output support
 .IP \(bu 2
 SSL support based on OpenSSL
 .IP \(bu 2
@@ -41,6 +43,10 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 .PP
 \-i, \-\-interface <interface>
       Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
+
+.PP
+\-U, \-\-socket\-owner
+      User owner of the UNIX domain socket file, when enabled (eg: user:group)
 
 .PP
 \-c, \-\-credential USER[:PASSWORD]
@@ -77,7 +83,7 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 
 .PP
 \-t, \-\-client\-option <key=value>
-      Send option to client (format: key=value), repeat to add more options
+      Send option to client (format: key=value), repeat to add more options, see \fBCLIENT OPTOINS\fP for details
 
 .PP
 \-T, \-\-terminal\-type
@@ -144,7 +150,73 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
       Print this text and exit
 
 
-.SH Examples
+.SH CLIENT OPTOINS
+.PP
+ttyd has a mechanism to pass server side command\-line arguments to the browser page which is called \fBclient options\fP:
+
+.PP
+.RS
+
+.nf
+\-t, \-\-client\-option     Send option to client (format: key=value), repeat to add more options
+
+.fi
+.RE
+
+.SH Basic usage
+.RS
+.IP \(bu 2
+\fB\fC\-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
+.IP \(bu 2
+\fB\fC\-t disableLeaveAlert=true\fR: disable the leave page alert
+.IP \(bu 2
+\fB\fC\-t disableResizeOverlay=true\fR: disable the terminal resize overlay
+.IP \(bu 2
+\fB\fC\-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
+.IP \(bu 2
+\fB\fC\-t enableZmodem=true\fR: enable ZMODEM
+\[la]https://en.wikipedia.org/wiki/ZMODEM\[ra] integration with lrzsz
+\[la]https://ohse.de/uwe/software/lrzsz.html\[ra] support
+.IP \(bu 2
+\fB\fC\-t enableSixel=true\fR: enable Sixel
+\[la]https://en.wikipedia.org/wiki/Sixel\[ra] image output support (Usage
+\[la]https://saitoha.github.io/libsixel/\[ra])
+.IP \(bu 2
+\fB\fC\-t titleFixed=hello\fR: set a fixed title for the browser window
+.IP \(bu 2
+\fB\fC\-t fontSize=20\fR: change the font size of the terminal
+
+.RE
+
+.SH Advanced usage
+.PP
+You can use the client option to change all the settings of xterm defined in ITerminalOptions
+\[la]https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/\[ra], examples:
+
+.RS
+.IP \(bu 2
+\fB\fC\-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
+.IP \(bu 2
+\fB\fC\-t lineHeight=1.5\fR: set line\-height to \fB\fC1.5\fR
+.IP \(bu 2
+\fB\fC\-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
+
+.RE
+
+.PP
+to try the example options above, run:
+
+.PP
+.RS
+
+.nf
+ttyd \-t cursorStyle=bar \-t lineHeight=1.5 \-t 'theme={"background": "green"}' bash
+
+.fi
+.RE
+
+
+.SH EXAMPLES
 .PP
 ttyd starts web server at port 7681 by default, you can use the \-p option to change it, the command will be started with arguments as options. For example, run:
 

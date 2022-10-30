@@ -7,12 +7,13 @@ ttyd 1 "September 2016" ttyd "User Manual"
 # SYNOPSIS
   **ttyd** [options] \<command\> [\<arguments...\>]
 
-# Description
+# DESCRIPTION
   ttyd is a command-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 
   - Built on top of Libwebsockets with libuv for speed
   - Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
-  - Graphical ZMODEM integration with lrzsz support 
+  - Graphical ZMODEM integration with lrzsz support
+  - Sixel image output support
   - SSL support based on OpenSSL
   - Run any custom command with options
   - Basic authentication support and many other custom options
@@ -24,6 +25,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
 
   -i, --interface <interface>
       Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
+
+  -U, --socket-owner
+      User owner of the UNIX domain socket file, when enabled (eg: user:group)
 
   -c, --credential USER[:PASSWORD]
       Credential for Basic Authentication (format: username:password)
@@ -50,7 +54,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
       Do not allow clients to write to the TTY
 
   -t, --client-option <key=value>
-      Send option to client (format: key=value), repeat to add more options
+      Send option to client (format: key=value), repeat to add more options, see **CLIENT OPTOINS** for details
 
   -T, --terminal-type
       Terminal type to report, default: xterm-256color
@@ -100,7 +104,39 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -h, --help
       Print this text and exit
 
-# Examples
+# CLIENT OPTOINS
+ttyd has a mechanism to pass server side command-line arguments to the browser page which is called **client options**:
+
+```bash
+-t, --client-option     Send option to client (format: key=value), repeat to add more options
+```
+
+## Basic usage
+
+- `-t rendererType=canvas`: use the `canvas` renderer for xterm.js (default: `webgl`)
+- `-t disableLeaveAlert=true`: disable the leave page alert
+- `-t disableResizeOverlay=true`: disable the terminal resize overlay
+- `-t disableReconnect=true`: prevent the terminal from reconnecting on connection error/close
+- `-t enableZmodem=true`: enable [ZMODEM](https://en.wikipedia.org/wiki/ZMODEM) integration with [lrzsz](https://ohse.de/uwe/software/lrzsz.html) support
+- `-t enableSixel=true`: enable [Sixel](https://en.wikipedia.org/wiki/Sixel) image output support ([Usage](https://saitoha.github.io/libsixel/))
+- `-t titleFixed=hello`: set a fixed title for the browser window
+- `-t fontSize=20`: change the font size of the terminal
+
+## Advanced usage
+
+You can use the client option to change all the settings of xterm defined in [ITerminalOptions](https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/), examples:
+
+- `-t cursorStyle=bar`: set cursor style to `bar`
+- `-t lineHeight=1.5`: set line-height to `1.5`
+- `-t 'theme={"background": "green"}'`: set background color to `green`
+
+to try the example options above, run:
+
+```bash
+ttyd -t cursorStyle=bar -t lineHeight=1.5 -t 'theme={"background": "green"}' bash
+```
+
+# EXAMPLES
   ttyd starts web server at port 7681 by default, you can use the -p option to change it, the command will be started with arguments as options. For example, run:
   
 ```  
