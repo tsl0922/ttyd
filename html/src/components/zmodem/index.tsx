@@ -8,6 +8,8 @@ import { TrzszFilter } from 'trzsz';
 import { Modal } from '../modal';
 
 interface Props {
+    zmodem: boolean;
+    trzsz: boolean;
     callback: (addon: ZmodemAddon) => void;
     sender: (data: string | Uint8Array) => void;
     writer: (data: string | Uint8Array) => void;
@@ -19,9 +21,10 @@ interface State {
 
 export class ZmodemAddon extends Component<Props, State> implements ITerminalAddon {
     private terminal: Terminal | undefined;
-    private keyDispose: IDisposable | undefined;
+    private disposables: IDisposable[] = [];
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
+    private denier: () => void;
     private trzszFilter: TrzszFilter;
 
     constructor(props: Props) {
@@ -43,100 +46,91 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         this.props.callback(this);
     }
 
-    activate(terminal: Terminal): void {
-        this.terminal = terminal;
-        this.zmodemInit();
-        this.trzszInit();
+    componentWillUnmount() {
+        this.dispose();
     }
 
-    dispose(): void {}
+    activate(terminal: Terminal) {
+        this.terminal = terminal;
+        if (this.props.zmodem) this.zmodemInit();
+        if (this.props.trzsz) this.trzszInit();
+    }
+
+    dispose() {
+        for (const d of this.disposables) {
+            d.dispose();
+        }
+        this.disposables.length = 0;
+    }
 
     consume(data: ArrayBuffer) {
         try {
-            this.trzszFilter.processServerOutput(data);
+            if (this.props.trzsz) {
+                this.trzszFilter.processServerOutput(data);
+            } else {
+                this.sentry.consume(data);
+            }
         } catch (e) {
             this.handleError(e, 'consume');
         }
     }
 
-    @bind
-    private handleError(e: Error, reason: string) {
-        console.error(`[ttyd] zmodem ${reason}: `, e);
-        this.zmodemReset();
-    }
-
-    @bind
-    private trzszInit() {
-        this.trzszFilter = new TrzszFilter({
-            writeToTerminal: data => this.trzszWrite(data),
-            sendToServer: data => this.trzszSend(data),
-            terminalColumns: this.terminal.cols,
-        });
-        this.terminal.onResize(size => this.trzszFilter.setTerminalColumns(size.cols));
-    }
-
-    @bind
-    private trzszWrite(data: string | ArrayBuffer | Uint8Array | Blob) {
-        if (this.trzszFilter.isTransferringFiles()) {
-            this.props.writer(data as string);
-        } else {
-            this.sentry.consume(data as ArrayBuffer);
-        }
-    }
-
-    @bind
-    private trzszSend(data: string | Uint8Array) {
-        this.props.sender(data);
-    }
-
-    @bind
-    private zmodemInit() {
-        this.session = null;
-        this.sentry = new Zmodem.Sentry({
-            to_terminal: octets => this.zmodemWrite(octets),
-            sender: octets => this.zmodemSend(octets),
-            on_retract: () => this.zmodemReset(),
-            on_detect: detection => this.zmodemDetect(detection),
-        });
-    }
-
-    @bind
-    private zmodemReset() {
+    private reset() {
         this.terminal.options.disableStdin = false;
-
-        if (this.keyDispose) {
-            this.keyDispose.dispose();
-            this.keyDispose = null;
-        }
-        this.zmodemInit();
-
         this.terminal.focus();
     }
 
     @bind
-    private zmodemWrite(data: ArrayBuffer): void {
-        this.props.writer(new Uint8Array(data));
+    private handleError(e: Error, reason: string) {
+        console.error(`[ttyd] zmodem ${reason}: `, e);
+        this.reset();
     }
 
     @bind
-    private zmodemSend(data: ArrayLike<number>): void {
-        this.props.sender(new Uint8Array(data));
+    private trzszInit() {
+        const { writer, sender, zmodem } = this.props;
+        const { terminal } = this;
+        this.trzszFilter = new TrzszFilter({
+            writeToTerminal: data => {
+                if (!this.trzszFilter.isTransferringFiles() && zmodem) {
+                    this.sentry.consume(data);
+                } else {
+                    writer(typeof data === 'string' ? data : new Uint8Array(data as ArrayBuffer));
+                }
+            },
+            sendToServer: data => sender(data),
+            terminalColumns: terminal.cols,
+        });
+        this.disposables.push(terminal.onResize(size => this.trzszFilter.setTerminalColumns(size.cols)));
+    }
+
+    @bind
+    private zmodemInit() {
+        const { writer, sender } = this.props;
+        const { terminal, reset, zmodemDetect } = this;
+        this.session = null;
+        this.sentry = new Zmodem.Sentry({
+            to_terminal: octets => writer(new Uint8Array(octets)),
+            sender: octets => sender(new Uint8Array(octets)),
+            on_retract: () => reset(),
+            on_detect: detection => zmodemDetect(detection),
+        });
+        this.disposables.push(terminal.onKey(e => {
+            const event = e.domEvent;
+            if (event.ctrlKey && event.key === 'c') {
+                if (this.denier) this.denier();
+            }
+        }));
     }
 
     @bind
     private zmodemDetect(detection: Zmodem.Detection): void {
-        const { terminal, receiveFile, zmodemReset } = this;
+        const { terminal, receiveFile, reset } = this;
         terminal.options.disableStdin = true;
 
-        this.keyDispose = terminal.onKey(e => {
-            const event = e.domEvent;
-            if (event.ctrlKey && event.key === 'c') {
-                detection.deny();
-            }
-        });
-
+        this.denier = () => detection.deny();
         this.session = detection.confirm();
-        this.session.on('session_end', zmodemReset);
+        this.session.on('session_end', () => reset());
 
         if (this.session.type === 'send') {
             this.setState({ modal: true });

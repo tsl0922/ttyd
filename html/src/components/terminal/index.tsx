@@ -42,6 +42,7 @@ export interface ClientOptions {
     disableLeaveAlert: boolean;
     disableResizeOverlay: boolean;
     enableZmodem: boolean;
+    enableTrzsz: boolean;
     enableSixel: boolean;
     titleFixed: string;
 }
@@ -65,6 +66,7 @@ interface Props {
 
 interface State {
     zmodem: boolean;
+    trzsz: boolean;
 }
 
 export class Xterm extends Component<Props, State> {
@@ -119,10 +121,18 @@ export class Xterm extends Component<Props, State> {
         window.removeEventListener('beforeunload', this.onWindowUnload);
     }
 
-    render({ id }: Props, { zmodem }: State) {
+    render({ id }: Props, { zmodem, trzsz }: State) {
         return (
             <div id={id} ref={c => (this.container = c)}>
-                {zmodem && <ZmodemAddon callback={this.zmodemCb} sender={this.sendData} writer={this.writeData} />}
+                {(zmodem || trzsz) && (
+                    <ZmodemAddon
+                        zmodem={zmodem}
+                        trzsz={trzsz}
+                        callback={this.zmodemCb}
+                        sender={this.sendData}
+                        writer={this.writeData}
+                    />
+                )}
             </div>
         );
     }
@@ -353,6 +363,12 @@ export class Xterm extends Component<Props, State> {
                         console.log(`[ttyd] Zmodem enabled`);
                     }
                     break;
+                case 'enableTrzsz':
+                    if (value) {
+                        this.setState({ trzsz: true });
+                        console.log(`[ttyd] trzsz enabled`);
+                    }
+                    break;
                 case 'enableSixel':
                     if (value) {
                         const imageWorkerUrl = window.URL.createObjectURL(
@@ -400,6 +416,7 @@ export class Xterm extends Component<Props, State> {
         if (this.opened) {
             terminal.reset();
             terminal.resize(dims.cols, dims.rows);
+            terminal.options.disableStdin = false;
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.opened = true;
@@ -416,6 +433,7 @@ export class Xterm extends Component<Props, State> {
 
         const { refreshToken, connect, doReconnect, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed', null);
+        this.setState({ zmodem: false, trzsz: false });
 
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && doReconnect) {
