@@ -44,7 +44,7 @@ export interface ClientOptions {
     enableZmodem: boolean;
     enableTrzsz: boolean;
     enableSixel: boolean;
-    titleFixed: string;
+    titleFixed: string | null;
 }
 
 type Options = ITerminalOptions & ClientOptions;
@@ -70,21 +70,21 @@ interface State {
 }
 
 export class Xterm extends Component<Props, State> {
-    private textEncoder: TextEncoder;
-    private textDecoder: TextDecoder;
+    private textEncoder = new TextEncoder();
+    private textDecoder = new TextDecoder();
     private container: HTMLElement;
     private terminal: Terminal;
 
     private written = 0;
     private pending = 0;
 
-    private fitAddon: FitAddon;
-    private overlayAddon: OverlayAddon;
-    private webglAddon: WebglAddon;
-    private canvasAddon: CanvasAddon;
+    private fitAddon = new FitAddon();
+    private overlayAddon = new OverlayAddon();
+    private webglAddon?: WebglAddon;
+    private canvasAddon?: CanvasAddon;
 
     private socket: WebSocket;
-    private writeFunc: (data: ArrayBuffer) => void;
+    private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
     private token: string;
     private opened = false;
     private title: string;
@@ -96,12 +96,6 @@ export class Xterm extends Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
-
-        this.writeFunc = data => this.writeData(new Uint8Array(data));
-        this.textEncoder = new TextEncoder();
-        this.textDecoder = new TextDecoder();
-        this.fitAddon = new FitAddon();
-        this.overlayAddon = new OverlayAddon();
     }
 
     async componentDidMount() {
@@ -123,7 +117,7 @@ export class Xterm extends Component<Props, State> {
 
     render({ id }: Props, { zmodem, trzsz }: State) {
         return (
-            <div id={id} ref={c => (this.container = c)}>
+            <div id={id} ref={c => (this.container = c as HTMLElement)}>
                 {(zmodem || trzsz) && (
                     <ZmodemAddon
                         zmodem={zmodem}
@@ -293,9 +287,9 @@ export class Xterm extends Component<Props, State> {
             disposeWebglRenderer();
             try {
                 this.terminal.loadAddon(this.canvasAddon);
-                console.log(`[ttyd] canvas renderer loaded`);
+                console.log('[ttyd] canvas renderer loaded');
             } catch (e) {
-                console.log(`[ttyd] canvas renderer could not be loaded, falling back to dom renderer`, e);
+                console.log('[ttyd] canvas renderer could not be loaded, falling back to dom renderer', e);
                 disposeCanvasRenderer();
             }
         };
@@ -308,9 +302,9 @@ export class Xterm extends Component<Props, State> {
                     this.webglAddon?.dispose();
                 });
                 terminal.loadAddon(this.webglAddon);
-                console.log(`[ttyd] WebGL renderer loaded`);
+                console.log('[ttyd] WebGL renderer loaded');
             } catch (e) {
-                console.log(`[ttyd] WebGL renderer could not be loaded, falling back to canvas renderer`, e);
+                console.log('[ttyd] WebGL renderer could not be loaded, falling back to canvas renderer', e);
                 disposeWebglRenderer();
                 enableCanvasRenderer();
             }
@@ -346,13 +340,13 @@ export class Xterm extends Component<Props, State> {
                     break;
                 case 'disableResizeOverlay':
                     if (value) {
-                        console.log(`[ttyd] Resize overlay disabled`);
+                        console.log('[ttyd] Resize overlay disabled');
                         this.resizeOverlay = false;
                     }
                     break;
                 case 'disableReconnect':
                     if (value) {
-                        console.log(`[ttyd] Reconnect disabled`);
+                        console.log('[ttyd] Reconnect disabled');
                         this.reconnect = false;
                         this.doReconnect = false;
                     }
@@ -360,13 +354,13 @@ export class Xterm extends Component<Props, State> {
                 case 'enableZmodem':
                     if (value) {
                         this.setState({ zmodem: true });
-                        console.log(`[ttyd] Zmodem enabled`);
+                        console.log('[ttyd] Zmodem enabled');
                     }
                     break;
                 case 'enableTrzsz':
                     if (value) {
                         this.setState({ trzsz: true });
-                        console.log(`[ttyd] trzsz enabled`);
+                        console.log('[ttyd] trzsz enabled');
                     }
                     break;
                 case 'enableSixel':
@@ -375,7 +369,7 @@ export class Xterm extends Component<Props, State> {
                             new Blob([worker], { type: 'text/javascript' })
                         );
                         terminal.loadAddon(new ImageAddon(imageWorkerUrl));
-                        console.log(`[ttyd] Sixel enabled`);
+                        console.log('[ttyd] Sixel enabled');
                     }
                     break;
                 case 'titleFixed':
@@ -401,21 +395,19 @@ export class Xterm extends Component<Props, State> {
     private onSocketOpen() {
         console.log('[ttyd] websocket connection opened');
 
-        const { socket, textEncoder, terminal, fitAddon, overlayAddon } = this;
-        const dims = fitAddon.proposeDimensions();
+        const { socket, textEncoder, terminal, overlayAddon } = this;
         socket.send(
             textEncoder.encode(
                 JSON.stringify({
                     AuthToken: this.token,
-                    columns: dims.cols,
-                    rows: dims.rows,
+                    columns: terminal.cols,
+                    rows: terminal.rows,
                 })
             )
         );
 
         if (this.opened) {
             terminal.reset();
-            terminal.resize(dims.cols, dims.rows);
             terminal.options.disableStdin = false;
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
@@ -432,12 +424,12 @@ export class Xterm extends Component<Props, State> {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
         const { refreshToken, connect, doReconnect, overlayAddon } = this;
-        overlayAddon.showOverlay('Connection Closed', null);
+        overlayAddon.showOverlay('Connection Closed');
         this.setState({ zmodem: false, trzsz: false });
 
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && doReconnect) {
-            overlayAddon.showOverlay('Reconnecting...', null);
+            overlayAddon.showOverlay('Reconnecting...');
             refreshToken().then(connect);
         } else {
             const { terminal } = this;
@@ -445,11 +437,11 @@ export class Xterm extends Component<Props, State> {
                 const event = e.domEvent;
                 if (event.key === 'Enter') {
                     keyDispose.dispose();
-                    overlayAddon.showOverlay('Reconnecting...', null);
+                    overlayAddon.showOverlay('Reconnecting...');
                     refreshToken().then(connect);
                 }
             });
-            overlayAddon.showOverlay('Press ⏎ to Reconnect', null);
+            overlayAddon.showOverlay('Press ⏎ to Reconnect');
         }
     }
 
@@ -475,8 +467,10 @@ export class Xterm extends Component<Props, State> {
                 document.title = this.title;
                 break;
             case Command.SET_PREFERENCES:
-                const prefs = JSON.parse(textDecoder.decode(data));
-                this.applyOptions({ ...this.props.clientOptions, ...prefs } as Options);
+                this.applyOptions({
+                    ...this.props.clientOptions,
+                    ...JSON.parse(textDecoder.decode(data)),
+                } as Options);
                 break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);
@@ -494,7 +488,7 @@ export class Xterm extends Component<Props, State> {
 
         if (resizeOverlay) {
             setTimeout(() => {
-                overlayAddon.showOverlay(`${size.cols}x${size.rows}`);
+                overlayAddon.showOverlay(`${size.cols}x${size.rows}`, 300);
             }, 500);
         }
     }

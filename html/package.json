@@ -17,11 +17,15 @@
     "check": "gts check",
     "fix": "gts fix"
   },
+  "engines": {
+    "node": ">=12"
+  },
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "css-minimizer-webpack-plugin": "^4.2.2",
-    "gts": "^1.1.2",
+    "eslint-webpack-plugin": "^3.2.0",
+    "gts": "^4.0.0",
     "gulp": "^4.0.2",
     "gulp-clean": "^0.4.0",
     "gulp-gzip": "^1.4.2",
@@ -36,8 +40,6 @@
     "terser-webpack-plugin": "^5.3.6",
     "through2": "^4.0.2",
     "ts-loader": "^9.4.1",
-    "tslint": "^6.1.3",
-    "tslint-loader": "^3.5.4",
     "typescript": "^4.8.4",
     "util": "^0.12.5",
     "webpack": "^5.74.0",

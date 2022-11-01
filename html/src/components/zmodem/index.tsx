@@ -20,7 +20,7 @@ interface State {
 }
 
 export class ZmodemAddon extends Component<Props, State> implements ITerminalAddon {
-    private terminal: Terminal | undefined;
+    private terminal: Terminal;
     private disposables: IDisposable[] = [];
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
@@ -81,7 +81,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
     }
 
     @bind
-    private handleError(e: Error, reason: string) {
+    private handleError(e: any, reason: string) {
         console.error(`[ttyd] zmodem ${reason}: `, e);
         this.reset();
     }
@@ -115,12 +115,14 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
             on_retract: () => reset(),
             on_detect: detection => zmodemDetect(detection),
         });
-        this.disposables.push(terminal.onKey(e => {
-            const event = e.domEvent;
-            if (event.ctrlKey && event.key === 'c') {
-                if (this.denier) this.denier();
-            }
-        }));
+        this.disposables.push(
+            terminal.onKey(e => {
+                const event = e.domEvent;
+                if (event.ctrlKey && event.key === 'c') {
+                    if (this.denier) this.denier();
+                }
+            })
+        );
     }
 
     @bind
@@ -144,7 +146,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         this.setState({ modal: false });
 
         const { session, writeProgress, handleError } = this;
-        const files: FileList = (event.target as HTMLInputElement).files;
+        const files = (event.target as HTMLInputElement).files;
 
         Zmodem.Browser.send_files(session, files, {
             on_progress: (_, offer) => writeProgress(offer),
@@ -158,15 +160,11 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         const { session, writeProgress, handleError } = this;
 
         session.on('offer', offer => {
-            const fileBuffer = [];
-            offer.on('input', payload => {
-                writeProgress(offer);
-                fileBuffer.push(new Uint8Array(payload));
-            });
+            offer.on('input', () => writeProgress(offer));
             offer
                 .accept()
-                .then(() => {
-                    const blob = new Blob(fileBuffer, { type: 'application/octet-stream' });
+                .then(payloads => {
+                    const blob = new Blob(payloads, { type: 'application/octet-stream' });
                     saveAs(blob, offer.get_details().name);
                 })
                 .catch(e => handleError(e, 'receive'));

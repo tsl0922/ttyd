@@ -1,0 +1,11 @@
+{
+  "extends": "./node_modules/gts/",
+  "overrides": [
+    {
+      "files": ["gulpfile.js", "webpack.config.js"],
+      "rules": {
+        "node/no-unpublished-require": "off"
+      }
+    }
+  ]
+}

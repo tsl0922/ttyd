@@ -4,12 +4,11 @@ import { ITerminalOptions, ITheme } from 'xterm';
 import { ClientOptions, FlowControl, Xterm } from './terminal';
 
 if ((module as any).hot) {
-    // tslint:disable-next-line:no-var-requires
     require('preact/debug');
 }
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const path = window.location.pathname.replace(/[\/]+$/, '');
+const path = window.location.pathname.replace(/[/]+$/, '');
 const wsUrl = [protocol, '//', window.location.host, path, '/ws', window.location.search].join('');
 const tokenUrl = [window.location.protocol, '//', window.location.host, path, '/token'].join('');
 const clientOptions = {
@@ -17,6 +16,7 @@ const clientOptions = {
     disableLeaveAlert: false,
     disableResizeOverlay: false,
     enableZmodem: false,
+    enableTrzsz: false,
     enableSixel: false,
     titleFixed: null,
 } as ClientOptions;

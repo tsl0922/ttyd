@@ -1,7 +1,0 @@
-{
-  "extends": "gts/tslint.json",
-  "rules": {
-    "deprecation": false,
-    "no-any": false
-  }
-}

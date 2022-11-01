@@ -1,11 +1,12 @@
 // ported from hterm.Terminal.prototype.showOverlay
 // https://chromium.googlesource.com/apps/libapps/+/master/hterm/js/hterm_terminal.js
+import { bind } from 'decko';
 import { ITerminalAddon, Terminal } from 'xterm';
 
 export class OverlayAddon implements ITerminalAddon {
-    private terminal: Terminal | undefined;
-    private overlayNode: HTMLElement | null;
-    private overlayTimeout: number | null;
+    private terminal: Terminal;
+    private overlayNode: HTMLElement;
+    private overlayTimeout?: number;
 
     constructor() {
         this.overlayNode = document.createElement('div');
@@ -35,8 +36,10 @@ position: absolute;
 
     dispose(): void {}
 
+    @bind
     showOverlay(msg: string, timeout?: number): void {
         const { terminal, overlayNode } = this;
+        if (!terminal.element) return;
 
         overlayNode.style.color = '#101010';
         overlayNode.style.backgroundColor = '#f0f0f0';
@@ -53,21 +56,16 @@ position: absolute;
         overlayNode.style.top = (divSize.height - overlaySize.height) / 2 + 'px';
         overlayNode.style.left = (divSize.width - overlaySize.width) / 2 + 'px';
 
-        if (this.overlayTimeout) {
-            clearTimeout(this.overlayTimeout);
-        }
-        if (timeout === null) {
-            return;
-        }
+        if (this.overlayTimeout) clearTimeout(this.overlayTimeout);
+        if (!timeout) return;
 
-        const self = this;
-        self.overlayTimeout = setTimeout(() => {
+        this.overlayTimeout = setTimeout(() => {
             overlayNode.style.opacity = '0';
-            self.overlayTimeout = setTimeout(() => {
+            this.overlayTimeout = setTimeout(() => {
                 if (overlayNode.parentNode) {
                     overlayNode.parentNode.removeChild(overlayNode);
                 }
-                self.overlayTimeout = null;
+                this.overlayTimeout = undefined;
                 overlayNode.style.opacity = '0.75';
             }, 200) as any;
         }, timeout || 1500) as any;

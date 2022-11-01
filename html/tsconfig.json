@@ -1,20 +1,15 @@
 {
+  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "target": "es2015",
-    "module": "es2015",
-    "lib": [
-      "es2015",
-      "dom"
-    ],
-    "allowJs": true,
-    "jsx": "react",
-    "jsxFactory": "h",
-    "sourceMap": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "declaration": false,
     "experimentalDecorators": true,
-    "noImplicitReturns": true,
-    "noUnusedParameters": true
+    "strictPropertyInitialization": false,
   },
   "include": [
     "src/**/*.tsx",
