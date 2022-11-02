@@ -1,8 +1,9 @@
+.nh
 .TH ttyd 1 "September 2016" ttyd "User Manual"
 
 .SH NAME
 .PP
-ttyd \- Share your terminal over the web
+ttyd - Share your terminal over the web
 
 
 .SH SYNOPSIS
@@ -12,13 +13,13 @@ ttyd \- Share your terminal over the web
 
 .SH DESCRIPTION
 .PP
-ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
+ttyd is a command-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 
 .RS
 .IP \(bu 2
 Built on top of Libwebsockets with libuv for speed
 .IP \(bu 2
-Fully\-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
+Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
 .IP \(bu 2
 Graphical ZMODEM integration with lrzsz support
 .IP \(bu 2
@@ -37,128 +38,127 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 
 .SH OPTIONS
 .PP
-\-p, \-\-port <port>
+-p, --port 
       Port to listen (default: 7681, use \fB\fC0\fR for random port)
 
 .PP
-\-i, \-\-interface <interface>
+-i, --interface 
       Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
 
 .PP
-\-U, \-\-socket\-owner
+-U, --socket-owner
       User owner of the UNIX domain socket file, when enabled (eg: user:group)
 
 .PP
-\-c, \-\-credential USER[:PASSWORD]
+-c, --credential USER[:PASSWORD]
       Credential for Basic Authentication (format: username:password)
 
 .PP
-\-H, \-\-auth\-header <name>
+-H, --auth-header 
       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
 
 .PP
-\-u, \-\-uid <uid>
+-u, --uid 
       User id to run with
 
 .PP
-\-g, \-\-gid <gid>
+-g, --gid 
       Group id to run with
 
 .PP
-\-s, \-\-signal <signal string>
+-s, --signal 
       Signal to send to the command when exit it (default: 1, SIGHUP)
 
 .PP
-\-w, \-\-cwd <path>
+-w, --cwd 
       Working directory to be set for the child program
 
 .PP
-\-a, \-\-url\-arg
-      Allow client to send command line arguments in URL (eg: 
-\[la]http://localhost:7681?arg=foo&arg=bar\[ra])
+-a, --url-arg
+      Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
 
 .PP
-\-R, \-\-readonly
+-R, --readonly
       Do not allow clients to write to the TTY
 
 .PP
-\-t, \-\-client\-option <key=value>
+-t, --client-option 
       Send option to client (format: key=value), repeat to add more options, see \fBCLIENT OPTOINS\fP for details
 
 .PP
-\-T, \-\-terminal\-type
-      Terminal type to report, default: xterm\-256color
+-T, --terminal-type
+      Terminal type to report, default: xterm-256color
 
 .PP
-\-O, \-\-check\-origin
+-O, --check-origin
       Do not allow websocket connection from different origin
 
 .PP
-\-m, \-\-max\-clients
+-m, --max-clients
       Maximum clients to support (default: 0, no limit)
 
 .PP
-\-o, \-\-once
+-o, --once
       Accept only one client and exit on disconnection
 
 .PP
-\-B, \-\-browser
+-B, --browser
       Open terminal with the default system browser
 
 .PP
-\-I, \-\-index <index file>
+-I, --index 
       Custom index.html path
 
 .PP
-\-b, \-\-base\-path
+-b, --base-path
       Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)
 
 .PP
-\-P, \-\-ping\-interval
+-P, --ping-interval
       Websocket ping interval(sec) (default: 300)
 
 .PP
-\-6, \-\-ipv6
+-6, --ipv6
       Enable IPv6 support
 
 .PP
-\-S, \-\-ssl
+-S, --ssl
       Enable SSL
 
 .PP
-\-C, \-\-ssl\-cert <cert path>
+-C, --ssl-cert 
       SSL certificate file path
 
 .PP
-\-K, \-\-ssl\-key <key path>
+-K, --ssl-key 
       SSL key file path
 
 .PP
-\-A, \-\-ssl\-ca <ca path>
+-A, --ssl-ca 
       SSL CA file path for client certificate verification
 
 .PP
-\-d, \-\-debug <level>
+-d, --debug 
       Set log level (default: 7)
 
 .PP
-\-v, \-\-version
+-v, --version
       Print the version and exit
 
 .PP
-\-h, \-\-help
+-h, --help
       Print this text and exit
 
 
 .SH CLIENT OPTOINS
 .PP
-ttyd has a mechanism to pass server side command\-line arguments to the browser page which is called \fBclient options\fP:
+ttyd has a mechanism to pass server side command-line arguments to the browser page which is called \fBclient options\fP:
 
 .PP
 .RS
 
 .nf
-\-t, \-\-client\-option     Send option to client (format: key=value), repeat to add more options
+-t, --client-option     Send option to client (format: key=value), repeat to add more options
 
 .fi
 .RE
@@ -166,25 +166,28 @@ ttyd has a mechanism to pass server side command\-line arguments to the browser 
 .SH Basic usage
 .RS
 .IP \(bu 2
-\fB\fC\-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
+\fB\fC-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
 .IP \(bu 2
-\fB\fC\-t disableLeaveAlert=true\fR: disable the leave page alert
+\fB\fC-t disableLeaveAlert=true\fR: disable the leave page alert
 .IP \(bu 2
-\fB\fC\-t disableResizeOverlay=true\fR: disable the terminal resize overlay
+\fB\fC-t disableResizeOverlay=true\fR: disable the terminal resize overlay
 .IP \(bu 2
-\fB\fC\-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
+\fB\fC-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
 .IP \(bu 2
-\fB\fC\-t enableZmodem=true\fR: enable ZMODEM
-\[la]https://en.wikipedia.org/wiki/ZMODEM\[ra] integration with lrzsz
-\[la]https://ohse.de/uwe/software/lrzsz.html\[ra] support
+\fB\fC-t enableZmodem=true\fR: enable ZMODEM
+\[la]https://en.wikipedia.org/wiki/ZMODEM\[ra] / lrzsz
+\[la]https://ohse.de/uwe/software/lrzsz.html\[ra] file transfer support
 .IP \(bu 2
-\fB\fC\-t enableSixel=true\fR: enable Sixel
+\fB\fC-t enableTrzsz=true\fR: enable trzsz
+\[la]https://trzsz.github.io\[ra] file transfer support
+.IP \(bu 2
+\fB\fC-t enableSixel=true\fR: enable Sixel
 \[la]https://en.wikipedia.org/wiki/Sixel\[ra] image output support (Usage
 \[la]https://saitoha.github.io/libsixel/\[ra])
 .IP \(bu 2
-\fB\fC\-t titleFixed=hello\fR: set a fixed title for the browser window
+\fB\fC-t titleFixed=hello\fR: set a fixed title for the browser window
 .IP \(bu 2
-\fB\fC\-t fontSize=20\fR: change the font size of the terminal
+\fB\fC-t fontSize=20\fR: change the font size of the terminal
 
 .RE
 
@@ -195,11 +198,11 @@ You can use the client option to change all the settings of xterm defined in ITe
 
 .RS
 .IP \(bu 2
-\fB\fC\-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
+\fB\fC-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
 .IP \(bu 2
-\fB\fC\-t lineHeight=1.5\fR: set line\-height to \fB\fC1.5\fR
+\fB\fC-t lineHeight=1.5\fR: set line-height to \fB\fC1.5\fR
 .IP \(bu 2
-\fB\fC\-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
+\fB\fC-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
 
 .RE
 
@@ -210,7 +213,7 @@ to try the example options above, run:
 .RS
 
 .nf
-ttyd \-t cursorStyle=bar \-t lineHeight=1.5 \-t 'theme={"background": "green"}' bash
+ttyd -t cursorStyle=bar -t lineHeight=1.5 -t 'theme={"background": "green"}' bash
 
 .fi
 .RE
@@ -218,20 +221,19 @@ ttyd \-t cursorStyle=bar \-t lineHeight=1.5 \-t 'theme={"background": "green"}' 
 
 .SH EXAMPLES
 .PP
-ttyd starts web server at port 7681 by default, you can use the \-p option to change it, the command will be started with arguments as options. For example, run:
+ttyd starts web server at port 7681 by default, you can use the -p option to change it, the command will be started with arguments as options. For example, run:
 
 .PP
 .RS
 
 .nf
-ttyd \-p 8080 bash \-x
+ttyd -p 8080 bash -x
 
 .fi
 .RE
 
 .PP
-Then open 
-\[la]http://localhost:8080\[ra] with a browser, you will get a bash shell with debug mode enabled. More examples:
+Then open http://localhost:8080 with a browser, you will get a bash shell with debug mode enabled. More examples:
 
 .RS
 .IP \(bu 2
@@ -239,12 +241,12 @@ If you want to login with your system accounts on the web browser, run \fB\fCtty
 .IP \(bu 2
 You can even run a none shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
 .IP \(bu 2
-Sharing single process with multiple clients: \fB\fCttyd tmux new \-A \-s ttyd vim\fR, run \fB\fCtmux new \-A \-s ttyd\fR to connect to the tmux session from terminal.
+Sharing single process with multiple clients: \fB\fCttyd tmux new -A -s ttyd vim\fR, run \fB\fCtmux new -A -s ttyd\fR to connect to the tmux session from terminal.
 
 .RE
 
 
-.SH SSL how\-to
+.SH SSL how-to
 .PP
 Generate SSL CA and self signed server/client certificates:
 
@@ -253,18 +255,18 @@ Generate SSL CA and self signed server/client certificates:
 
 .nf
 # CA certificate (FQDN must be different from server/client)
-openssl genrsa \-out ca.key 2048
-openssl req \-new \-x509 \-days 365 \-key ca.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" \-out ca.crt
+openssl genrsa -out ca.key 2048
+openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out ca.crt
 
 # server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
-openssl req \-newkey rsa:2048 \-nodes \-keyout server.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" \-out server.csr
-openssl x509 \-sha256 \-req \-extfile <(printf "subjectAltName=DNS:localhost") \-days 365 \-in server.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out server.crt
+openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out server.csr
+openssl x509 -sha256 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
 # client certificate (the p12/pem format may be useful for some clients)
-openssl req \-newkey rsa:2048 \-nodes \-keyout client.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" \-out client.csr
-openssl x509 \-req \-days 365 \-in client.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out client.crt
-openssl pkcs12 \-export \-clcerts \-in client.crt \-inkey client.key \-out client.p12
-openssl pkcs12 \-in client.p12 \-out client.pem \-clcerts
+openssl req -newkey rsa:2048 -nodes -keyout client.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" -out client.csr
+openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt
+openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
+openssl pkcs12 -in client.p12 -out client.pem -clcerts
 
 .fi
 .RE
@@ -276,7 +278,7 @@ Then start ttyd:
 .RS
 
 .nf
-ttyd \-\-ssl \-\-ssl\-cert server.crt \-\-ssl\-key server.key \-\-ssl\-ca ca.crt bash
+ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
 
 .fi
 .RE
@@ -288,13 +290,13 @@ You may want to test the client certificate verification with \fIcurl\fP(1):
 .RS
 
 .nf
-curl \-\-insecure \-\-cert client.p12[:password] \-v https://localhost:7681
+curl --insecure --cert client.p12[:password] -v https://localhost:7681
 
 .fi
 .RE
 
 .PP
-If you don't want to enable client certificate verification, remove the \fB\fC\-\-ssl\-ca\fR option.
+If you don't want to enable client certificate verification, remove the \fB\fC--ssl-ca\fR option.
 
 
 .SH Docker and ttyd
@@ -303,9 +305,9 @@ Docker containers are jailed environments which are more secure, this is useful 
 
 .RS
 .IP \(bu 2
-Sharing single docker container with multiple clients: docker run \-it \-\-rm \-p 7681:7681 tsl0922/ttyd.
+Sharing single docker container with multiple clients: docker run -it --rm -p 7681:7681 tsl0922/ttyd.
 .IP \(bu 2
-Creating new docker container for each client: ttyd docker run \-it \-\-rm ubuntu.
+Creating new docker container for each client: ttyd docker run -it --rm ubuntu.
 
 .RE
 
@@ -318,14 +320,14 @@ Sample config to proxy ttyd under the \fB\fC/ttyd\fR path:
 .RS
 
 .nf
-location \~ ^/ttyd(.*)$ {
-    proxy\_http\_version 1.1;
-    proxy\_set\_header Host $host;
-    proxy\_set\_header X\-Forwarded\-Proto $scheme;
-    proxy\_set\_header X\-Forwarded\-For $proxy\_add\_x\_forwarded\_for;
-    proxy\_set\_header Upgrade $http\_upgrade;
-    proxy\_set\_header Connection "upgrade";
-    proxy\_pass http://127.0.0.1:7681/$1;
+location ~ ^/ttyd(.*)$ {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_pass http://127.0.0.1:7681/$1;
 }
 
 .fi
@@ -334,5 +336,4 @@ location \~ ^/ttyd(.*)$ {
 
 .SH AUTHOR
 .PP
-Shuanglei Tao <tsl0922@gmail.com> Visit 
-\[la]https://github.com/tsl0922/ttyd\[ra] to get more information and report bugs.
+Shuanglei Tao <tsl0922@gmail.com> Visit https://github.com/tsl0922/ttyd to get more information and report bugs.

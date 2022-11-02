@@ -117,7 +117,8 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 - `-t disableLeaveAlert=true`: disable the leave page alert
 - `-t disableResizeOverlay=true`: disable the terminal resize overlay
 - `-t disableReconnect=true`: prevent the terminal from reconnecting on connection error/close
-- `-t enableZmodem=true`: enable [ZMODEM](https://en.wikipedia.org/wiki/ZMODEM) integration with [lrzsz](https://ohse.de/uwe/software/lrzsz.html) support
+- `-t enableZmodem=true`: enable [ZMODEM](https://en.wikipedia.org/wiki/ZMODEM) / [lrzsz](https://ohse.de/uwe/software/lrzsz.html) file transfer support
+- `-t enableTrzsz=true`: enable [trzsz](https://trzsz.github.io) file transfer support
 - `-t enableSixel=true`: enable [Sixel](https://en.wikipedia.org/wiki/Sixel) image output support ([Usage](https://saitoha.github.io/libsixel/))
 - `-t titleFixed=hello`: set a fixed title for the browser window
 - `-t fontSize=20`: change the font size of the terminal
