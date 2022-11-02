@@ -78,6 +78,9 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 \[la]http://localhost:7681?arg=foo&arg=bar\[ra])
 
 .PP
+\-f, \-\-arg\-file
+      File prefix for a unique generated temp file that URL arguments are written to (ex. /tmp/prefix); the generated file's full path is then passed in as a command line argument (ex. /tmp/prefix{unique string}). The command is responsible for deleting the file.
+.PP
 \-R, \-\-readonly
       Do not allow clients to write to the TTY
 

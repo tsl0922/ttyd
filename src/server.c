@@ -71,6 +71,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"ssl-key", required_argument, NULL, 'K'},
                                         {"ssl-ca", required_argument, NULL, 'A'},
                                         {"url-arg", no_argument, NULL, 'a'},
+					{"arg-file", required_argument, NULL, 'f'},
                                         {"readonly", no_argument, NULL, 'R'},
                                         {"terminal-type", required_argument, NULL, 'T'},
                                         {"client-option", required_argument, NULL, 't'},
@@ -82,7 +83,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:c:H:u:g:s:w:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:c:H:u:g:s:w:I:b:P:6af:SC:K:A:Rt:T:Om:oBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -102,6 +103,7 @@ static void print_help() {
           "    -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)\n"
           "    -w, --cwd               Working directory to be set for the child program\n"
           "    -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)\n"
+          "    -f, --arg-file          File prefix for a unique generated temp file that URL arguments are written to (ex. /tmp/prefix); the generated file's full path is then passed in as a command line argument (ex. /tmp/prefix{unique string}). The command is responsible for deleting the file.\n"
           "    -R, --readonly          Do not allow clients to write to the TTY\n"
           "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
           "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
@@ -148,6 +150,7 @@ static void print_config() {
   if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
+  if (server->arg_file != NULL) lwsl_notice("  temp file name prefix: %s\n", server->arg_file);
   if (server->readonly) lwsl_notice("  readonly: true\n");
   if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
   if (server->once) lwsl_notice("  once: true\n");
@@ -199,6 +202,7 @@ static struct server *server_new(int argc, char **argv, int start) {
 
 static void server_free(struct server *ts) {
   if (ts == NULL) return;
+  if (ts->arg_file != NULL) free(ts->arg_file);
   if (ts->credential != NULL) free(ts->credential);
   if (ts->auth_header != NULL) free(ts->auth_header);
   if (ts->index != NULL) free(ts->index);
@@ -349,6 +353,11 @@ int main(int argc, char **argv) {
         break;
       case 'a':
         server->url_arg = true;
+        server->arg_file = NULL;
+        break;
+      case 'f':
+        server->arg_file = strdup(optarg);
+        server->url_arg = false;
         break;
       case 'R':
         server->readonly = true;

@@ -74,6 +74,7 @@ struct server {
   int sig_code;            // close signal
   char sig_name[20];       // human readable signal string
   bool url_arg;            // allow client to send cli arguments in URL
+  char *arg_file;          // file prefix for a generated temp file that URL arguments are written to
   bool readonly;           // whether not allow clients to write to the TTY
   bool check_origin;       // whether allow websocket connection from different origin
   int max_clients;         // maximum clients to support
