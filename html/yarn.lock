@@ -10584,11 +10584,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zmodem.js@npm:^0.1.10":
+"zmodem.js@npm:0.1.10":
   version: 0.1.10
   resolution: "zmodem.js@npm:0.1.10"
   dependencies:
     crc-32: ^1.1.1
   checksum: d6cd400a4d6439b653519305518eb46a11bd0b48a744a12471c35f18b795fd253f3f6fe50247883f430b067c41b79d43f777532f728be66a8dd384df5f9d6f4f
+  languageName: node
+  linkType: hard
+
+"zmodem.js@patch:zmodem.js@npm%3A0.1.10#./.yarn/patches/zmodem.js-npm-0.1.10-e5537fa2ed.patch::locator=ttyd%40workspace%3A.":
+  version: 0.1.10
+  resolution: "zmodem.js@patch:zmodem.js@npm%3A0.1.10#./.yarn/patches/zmodem.js-npm-0.1.10-e5537fa2ed.patch::version=0.1.10&hash=7aa19a&locator=ttyd%40workspace%3A."
+  dependencies:
+    crc-32: ^1.1.1
+  checksum: ca52c5fad8a2e7df8aae678d50bf82701e94543547368470998c39af0a2e01908252d89a976c6748a89048dc332def688ad845082090035a18387c8611abe70b
   languageName: node
   linkType: hard
