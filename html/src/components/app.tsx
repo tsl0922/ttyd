@@ -1,7 +1,8 @@
 import { h, Component } from 'preact';
 
 import { ITerminalOptions, ITheme } from 'xterm';
-import { ClientOptions, FlowControl, Xterm } from './terminal';
+import { ClientOptions, FlowControl } from './terminal/xterm';
+import { Terminal } from './terminal';
 
 if ((module as any).hot) {
     require('preact/debug');
@@ -18,7 +19,6 @@ const clientOptions = {
     enableZmodem: false,
     enableTrzsz: false,
     enableSixel: false,
-    titleFixed: null,
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
@@ -55,7 +55,7 @@ const flowControl = {
 export class App extends Component {
     render() {
         return (
-            <Xterm
+            <Terminal
                 id="terminal-container"
                 wsUrl={wsUrl}
                 tokenUrl={tokenUrl}

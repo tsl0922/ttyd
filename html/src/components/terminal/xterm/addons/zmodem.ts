@@ -1,59 +1,31 @@
 import { bind } from 'decko';
-import { h, Component } from 'preact';
 import { saveAs } from 'file-saver';
 import { IDisposable, ITerminalAddon, Terminal } from 'xterm';
 import * as Zmodem from 'zmodem.js/src/zmodem_browser';
 import { TrzszFilter } from 'trzsz';
 
-import { Modal } from '../modal';
-
-interface Props {
+export interface ZmodeOptions {
     zmodem: boolean;
     trzsz: boolean;
-    callback: (addon: ZmodemAddon) => void;
+    onSend: () => void;
     sender: (data: string | Uint8Array) => void;
     writer: (data: string | Uint8Array) => void;
 }
 
-interface State {
-    modal: boolean;
-}
-
-export class ZmodemAddon extends Component<Props, State> implements ITerminalAddon {
-    private terminal: Terminal;
+export class ZmodemAddon implements ITerminalAddon {
     private disposables: IDisposable[] = [];
+    private terminal: Terminal;
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
     private denier: () => void;
     private trzszFilter: TrzszFilter;
 
-    constructor(props: Props) {
-        super(props);
-    }
-
-    render(_: Props, { modal }: State) {
-        return (
-            <Modal show={modal}>
-                <label class="file-label">
-                    <input onChange={this.sendFile} class="file-input" type="file" multiple />
-                    <span class="file-cta">Choose files…</span>
-                </label>
-            </Modal>
-        );
-    }
-
-    componentDidMount() {
-        this.props.callback(this);
-    }
-
-    componentWillUnmount() {
-        this.dispose();
-    }
+    constructor(private options: ZmodeOptions) {}
 
     activate(terminal: Terminal) {
         this.terminal = terminal;
-        if (this.props.zmodem) this.zmodemInit();
-        if (this.props.trzsz) this.trzszInit();
+        if (this.options.zmodem) this.zmodemInit();
+        if (this.options.trzsz) this.trzszInit();
     }
 
     dispose() {
@@ -65,7 +37,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     consume(data: ArrayBuffer) {
         try {
-            if (this.props.trzsz) {
+            if (this.options.trzsz) {
                 this.trzszFilter.processServerOutput(data);
             } else {
                 this.sentry.consume(data);
@@ -75,6 +47,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         }
     }
 
+    @bind
     private reset() {
         this.terminal.options.disableStdin = false;
         this.terminal.focus();
@@ -88,8 +61,8 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private trzszInit() {
-        const { writer, sender, zmodem } = this.props;
         const { terminal } = this;
+        const { sender, writer, zmodem } = this.options;
         this.trzszFilter = new TrzszFilter({
             writeToTerminal: data => {
                 if (!this.trzszFilter.isTransferringFiles() && zmodem) {
@@ -106,7 +79,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
 
     @bind
     private zmodemInit() {
-        const { writer, sender } = this.props;
+        const { sender, writer } = this.options;
         const { terminal, reset, zmodemDetect } = this;
         this.session = null;
         this.sentry = new Zmodem.Sentry({
@@ -135,19 +108,15 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         this.session.on('session_end', () => reset());
 
         if (this.session.type === 'send') {
-            this.setState({ modal: true });
+            this.options.onSend();
         } else {
             receiveFile();
         }
     }
 
     @bind
-    private sendFile(event: Event) {
-        this.setState({ modal: false });
-
+    public sendFile(files: FileList) {
         const { session, writeProgress, handleError } = this;
-        const files = (event.target as HTMLInputElement).files;
-
         Zmodem.Browser.send_files(session, files, {
             on_progress: (_, offer) => writeProgress(offer),
         })
@@ -182,7 +151,7 @@ export class ZmodemAddon extends Component<Props, State> implements ITerminalAdd
         const offset = offer.get_offset();
         const percent = ((100 * offset) / size).toFixed(2);
 
-        this.props.writer(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
+        this.options.writer(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
     }
 
     private bytesHuman(bytes: any, precision: number): string {
