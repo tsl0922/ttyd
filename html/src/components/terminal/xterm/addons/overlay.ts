@@ -59,15 +59,15 @@ position: absolute;
         if (this.overlayTimeout) clearTimeout(this.overlayTimeout);
         if (!timeout) return;
 
-        this.overlayTimeout = setTimeout(() => {
+        this.overlayTimeout = window.setTimeout(() => {
             overlayNode.style.opacity = '0';
-            this.overlayTimeout = setTimeout(() => {
+            this.overlayTimeout = window.setTimeout(() => {
                 if (overlayNode.parentNode) {
                     overlayNode.parentNode.removeChild(overlayNode);
                 }
                 this.overlayTimeout = undefined;
                 overlayNode.style.opacity = '0.75';
-            }, 200) as any;
-        }, timeout || 1500) as any;
+            }, 200);
+        }, timeout || 1500);
     }
 }

@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "prestart": "gulp clean",
-    "start": "webpack serve",
+    "start": "NODE_ENV=development && webpack serve",
     "build": "NODE_ENV=production webpack && gulp",
     "inline": "NODE_ENV=production webpack && gulp inline",
     "check": "gts check",

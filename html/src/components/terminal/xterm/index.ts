@@ -129,14 +129,15 @@ export class Xterm {
     }
 
     @bind
-    private onWindowUnload(event: BeforeUnloadEvent): any {
+    private onWindowUnload(event: BeforeUnloadEvent) {
+        event.preventDefault();
         const { socket } = this;
         if (socket && socket.readyState === WebSocket.OPEN) {
             const message = 'Close terminal? this will also terminate the command.';
             event.returnValue = message;
             return message;
         }
-        event.preventDefault();
+        return undefined;
     }
 
     @bind

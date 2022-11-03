@@ -43,7 +43,8 @@ export class ZmodemAddon implements ITerminalAddon {
                 this.sentry.consume(data);
             }
         } catch (e) {
-            this.handleError(e, 'consume');
+            console.error('[ttyd] zmodem consume: ', e);
+            this.reset();
         }
     }
 
@@ -51,12 +52,6 @@ export class ZmodemAddon implements ITerminalAddon {
     private reset() {
         this.terminal.options.disableStdin = false;
         this.terminal.focus();
-    }
-
-    @bind
-    private handleError(e: any, reason: string) {
-        console.error(`[ttyd] zmodem ${reason}: `, e);
-        this.reset();
     }
 
     @bind
@@ -100,12 +95,12 @@ export class ZmodemAddon implements ITerminalAddon {
 
     @bind
     private zmodemDetect(detection: Zmodem.Detection): void {
-        const { terminal, receiveFile, reset } = this;
+        const { terminal, receiveFile } = this;
         terminal.options.disableStdin = true;
 
         this.denier = () => detection.deny();
         this.session = detection.confirm();
-        this.session.on('session_end', () => reset());
+        this.session.on('session_end', () => this.reset());
 
         if (this.session.type === 'send') {
             this.options.onSend();
@@ -116,17 +111,17 @@ export class ZmodemAddon implements ITerminalAddon {
 
     @bind
     public sendFile(files: FileList) {
-        const { session, writeProgress, handleError } = this;
+        const { session, writeProgress } = this;
         Zmodem.Browser.send_files(session, files, {
             on_progress: (_, offer) => writeProgress(offer),
         })
             .then(() => session.close())
-            .catch(e => handleError(e, 'send'));
+            .catch(() => this.reset());
     }
 
     @bind
     private receiveFile() {
-        const { session, writeProgress, handleError } = this;
+        const { session, writeProgress } = this;
 
         session.on('offer', offer => {
             offer.on('input', () => writeProgress(offer));
@@ -136,7 +131,7 @@ export class ZmodemAddon implements ITerminalAddon {
                     const blob = new Blob(payloads, { type: 'application/octet-stream' });
                     saveAs(blob, offer.get_details().name);
                 })
-                .catch(e => handleError(e, 'receive'));
+                .catch(() => this.reset());
         });
 
         session.start();
@@ -154,6 +149,7 @@ export class ZmodemAddon implements ITerminalAddon {
         this.options.writer(`${name} ${percent}% ${bytesHuman(offset, 2)}/${bytesHuman(size, 2)}\r`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private bytesHuman(bytes: any, precision: number): string {
         if (!/^([-+])?|(\.\d+)(\d+(\.\d+)?|(\d+\.)|Infinity)$/.test(bytes)) {
             return '-';

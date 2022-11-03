@@ -2,6 +2,12 @@
   "extends": "./node_modules/gts/",
   "overrides": [
     {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "parserOptions": {
+        "jsxPragma": "h"
+      }
+    },
+    {
       "files": ["gulpfile.js", "webpack.config.js"],
       "rules": {
         "node/no-unpublished-require": "off"
