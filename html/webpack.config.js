@@ -73,9 +73,15 @@ const baseConfig = {
 const devConfig = {
     mode: 'development',
     devServer: {
-        contentBase: path.join(__dirname, 'dist'),
+        static: path.join(__dirname, 'dist'),
         compress: true,
         port: 9000,
+        client: {
+            overlay: {
+                errors: true,
+                warnings: false,
+            },
+        },
         proxy: [
             {
                 context: ['/token', '/ws'],
@@ -83,6 +89,12 @@ const devConfig = {
                 ws: true,
             },
         ],
+        webSocketServer: {
+            type: 'sockjs',
+            options: {
+                path: '/sockjs-node',
+            },
+        },
     },
     devtool: 'inline-source-map',
 };
