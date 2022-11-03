@@ -131,8 +131,7 @@ export class Xterm {
     @bind
     private onWindowUnload(event: BeforeUnloadEvent) {
         event.preventDefault();
-        const { socket } = this;
-        if (socket && socket.readyState === WebSocket.OPEN) {
+        if (this.socket?.readyState === WebSocket.OPEN) {
             const message = 'Close terminal? this will also terminate the command.';
             event.returnValue = message;
             return message;
@@ -142,8 +141,8 @@ export class Xterm {
 
     @bind
     public open(parent: HTMLElement) {
-        this.terminal = this.register(new Terminal(this.options.termOptions));
-        const { terminal, fitAddon, overlayAddon, register, sendData } = this;
+        this.terminal = new Terminal(this.options.termOptions);
+        const { terminal, fitAddon, overlayAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
@@ -153,6 +152,13 @@ export class Xterm {
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
 
+        terminal.open(parent);
+        fitAddon.fit();
+    }
+
+    @bind
+    private initListeners() {
+        const { terminal, fitAddon, overlayAddon, register, sendData } = this;
         register(
             terminal.onTitleChange(data => {
                 if (data && data !== '' && !this.titleFixed) {
@@ -182,9 +188,6 @@ export class Xterm {
         );
         register(addEventListener(window, 'resize', () => fitAddon.fit()));
         register(addEventListener(window, 'beforeunload', this.onWindowUnload));
-
-        terminal.open(parent);
-        fitAddon.fit();
     }
 
     @bind
@@ -213,7 +216,7 @@ export class Xterm {
     @bind
     public sendData(data: string | Uint8Array) {
         const { socket, textEncoder } = this;
-        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+        if (socket?.readyState !== WebSocket.OPEN) return;
 
         if (typeof data === 'string') {
             socket.send(textEncoder.encode(Command.INPUT + data));
@@ -254,7 +257,7 @@ export class Xterm {
         }
 
         this.doReconnect = this.reconnect;
-
+        this.initListeners();
         terminal.focus();
     }
 
@@ -264,6 +267,7 @@ export class Xterm {
 
         const { refreshToken, connect, doReconnect, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed');
+        this.dispose();
 
         // 1000: CLOSE_NORMAL
         if (event.code !== 1000 && doReconnect) {
