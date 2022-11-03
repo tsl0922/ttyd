@@ -62,6 +62,12 @@ sudo port install ttyd
 
 [Compile on Windows](https://github.com/tsl0922/ttyd/wiki/Compile-on-Windows).
 
+Install with [Scoop](https://scoop.sh/#/apps?q=ttyd&s=2&d=1&o=true):
+```
+scoop install ttyd
+```
+
+
 ## Install on OpenWrt
 
 ```bash
