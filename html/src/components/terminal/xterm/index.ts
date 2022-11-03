@@ -440,6 +440,10 @@ export class Xterm {
                 enableWebglRenderer();
                 break;
             case 'dom':
+                disposeWebglRenderer();
+                disposeCanvasRenderer();
+                console.log('[ttyd] dom renderer loaded');
+                break;
             default:
                 break;
         }
