@@ -318,17 +318,15 @@ export class Xterm {
     private applyPreferences(prefs: Preferences) {
         const { terminal, fitAddon, register } = this;
         if (prefs.enableZmodem || prefs.enableTrzsz) {
-            this.zmodemAddon = register(
-                new ZmodemAddon({
-                    zmodem: prefs.enableZmodem,
-                    trzsz: prefs.enableTrzsz,
-                    onSend: this.sendCb,
-                    sender: this.sendData,
-                    writer: this.writeData,
-                })
-            );
+            this.zmodemAddon = new ZmodemAddon({
+                zmodem: prefs.enableZmodem,
+                trzsz: prefs.enableTrzsz,
+                onSend: this.sendCb,
+                sender: this.sendData,
+                writer: this.writeData,
+            });
             this.writeFunc = data => this.zmodemAddon?.consume(data);
-            terminal.loadAddon(this.zmodemAddon);
+            terminal.loadAddon(register(this.zmodemAddon));
         }
         Object.keys(prefs).forEach(key => {
             const value = prefs[key];
@@ -366,7 +364,8 @@ export class Xterm {
                         const imageWorkerUrl = window.URL.createObjectURL(
                             new Blob([worker], { type: 'text/javascript' })
                         );
-                        terminal.loadAddon(new ImageAddon(imageWorkerUrl));
+                        register(toDisposable(() => window.URL.revokeObjectURL(imageWorkerUrl)));
+                        terminal.loadAddon(register(new ImageAddon(imageWorkerUrl)));
                         console.log('[ttyd] Sixel enabled');
                     }
                     break;
