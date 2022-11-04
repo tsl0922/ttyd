@@ -65,7 +65,6 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
   pty_process *process = (pty_process *) stream->data;
   if (n <= 0) {
     if (n == UV_ENOBUFS || n == 0) return;
-    if (n != UV_EOF) printf("== uv_read failed with error %ld: %s\n", n, uv_strerror(n));
     process->read_cb(process, NULL, true);
     goto done;
   }
