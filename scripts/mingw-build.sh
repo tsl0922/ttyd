@@ -16,7 +16,7 @@ build_libwebsockets() {
 build_libwebsockets
 
 # workaround for the lib name change
-cp /mingw64/lib/libuv_a.a /mingw64/lib/libuv.a
+cp ${MINGW_PREFIX}/lib/libuv_a.a ${MINGW_PREFIX}/lib/libuv.a
 
 rm -rf build && mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=RELEASE \

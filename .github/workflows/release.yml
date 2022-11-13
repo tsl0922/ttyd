@@ -34,16 +34,16 @@ jobs:
       - uses: actions/checkout@v3
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ucrt64
           install: >-
             base-devel
             subversion
-            mingw64/mingw-w64-x86_64-gcc
-            mingw64/mingw-w64-x86_64-cmake
-            mingw64/mingw-w64-x86_64-zlib
-            mingw64/mingw-w64-x86_64-libuv
-            mingw64/mingw-w64-x86_64-mbedtls
-            mingw64/mingw-w64-x86_64-json-c
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-libuv
+            mingw-w64-ucrt-x86_64-mbedtls
+            mingw-w64-ucrt-x86_64-json-c
           update: true
       - name: Build ttyd
         shell: msys2 {0}
