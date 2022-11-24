@@ -78,6 +78,7 @@ struct server {
   bool check_origin;       // whether allow websocket connection from different origin
   int max_clients;         // maximum clients to support
   bool once;               // whether accept only one client and exit on disconnection
+  bool exit_no_conn;       // whether exit on all clients disconnection
   char socket_path[255];   // UNIX domain socket path
   char terminal_type[30];  // terminal type to report
 
