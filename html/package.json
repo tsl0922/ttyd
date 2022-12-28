@@ -50,7 +50,7 @@
   "dependencies": {
     "decko": "^1.2.0",
     "file-saver": "^2.0.5",
-    "preact": "^10.11.2",
+    "preact": "^10.11.3",
     "trzsz": "^0.4.3",
     "whatwg-fetch": "^3.6.2",
     "xterm": "^5.1.0",
