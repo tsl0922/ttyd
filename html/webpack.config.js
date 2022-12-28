@@ -29,15 +29,6 @@ const baseConfig = {
                 test: /\.s?[ac]ss$/,
                 use: [devMode ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
             },
-            {
-                test: /xterm-addon-image-worker/,
-                type: 'asset/inline',
-                generator: {
-                    dataUrl: content => {
-                        return content.toString();
-                    },
-                },
-            },
         ],
     },
     resolve: {

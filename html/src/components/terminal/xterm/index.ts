@@ -9,7 +9,6 @@ import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
 
 import 'xterm/css/xterm.css';
-import worker from 'xterm-addon-image/lib/xterm-addon-image-worker';
 
 interface TtydTerminal extends Terminal {
     fit(): void;
@@ -361,11 +360,7 @@ export class Xterm {
                     break;
                 case 'enableSixel':
                     if (value) {
-                        const imageWorkerUrl = window.URL.createObjectURL(
-                            new Blob([worker], { type: 'text/javascript' })
-                        );
-                        register(toDisposable(() => window.URL.revokeObjectURL(imageWorkerUrl)));
-                        terminal.loadAddon(register(new ImageAddon(imageWorkerUrl)));
+                        terminal.loadAddon(register(new ImageAddon()));
                         console.log('[ttyd] Sixel enabled');
                     }
                     break;
