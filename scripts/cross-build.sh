@@ -34,6 +34,8 @@ build_json-c() {
             -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_TESTING=OFF \
+            -DDISABLE_THREAD_LOCAL_STORAGE=ON \
             ..
         make -j"$(nproc)" install
     popd
@@ -65,7 +67,7 @@ build_libuv() {
 
 install_cmake_cross_file() {
     cat << EOF > "${BUILD_DIR}/cross-${TARGET}.cmake"
-set(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_NAME $1)
 
 set(CMAKE_C_COMPILER "${TARGET}-gcc")
 set(CMAKE_CXX_COMPILER "${TARGET}-g++")
@@ -131,11 +133,18 @@ build() {
     STAGE_DIR="${STAGE_ROOT}/${TARGET}"
     BUILD_DIR="${BUILD_ROOT}/${TARGET}"
     MUSL_CC_URL="https://github.com/tsl0922/musl-toolchains/releases/download/2021-11-23"
+    COMPONENTS="1"
+    SYSTEM="Linux"
+
+    if [ "$ALIAS" = "win32" ]; then
+        COMPONENTS=2
+        SYSTEM="Windows"
+    fi
 
     echo "=== Installing toolchain ${ALIAS} (${TARGET})..."
 
     mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:/opt/cross/bin"
-    curl -fSsLo- "${MUSL_CC_URL}/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components 1
+    curl -fSsLo- "${MUSL_CC_URL}/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components=${COMPONENTS}
 
     echo "=== Building target ${ALIAS} (${TARGET})..."
 
@@ -143,7 +152,7 @@ build() {
     mkdir -p "${STAGE_DIR}" "${BUILD_DIR}"
     export PKG_CONFIG_PATH="${STAGE_DIR}/lib/pkgconfig"
 
-    install_cmake_cross_file
+    install_cmake_cross_file ${SYSTEM}
 
     build_zlib
     build_json-c
@@ -171,6 +180,9 @@ case ${BUILD_TARGET} in
         ;;
     armv7l)
         build armv7l-linux-musleabihf "${BUILD_TARGET}"
+        ;;
+    win32)
+        build x86_64-w64-mingw32 "${BUILD_TARGET}"
         ;;
     *)
         echo "unknown cross target: ${BUILD_TARGET}" && exit 1
