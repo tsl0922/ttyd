@@ -42,9 +42,14 @@ jobs:
             mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-zlib
             mingw-w64-ucrt-x86_64-libuv
-            mingw-w64-ucrt-x86_64-mbedtls
             mingw-w64-ucrt-x86_64-json-c
           update: true
+      - name: Download mbedtls v2.28.0
+        shell: msys2 {0}
+        run: curl -sLO https://mirror.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-mbedtls-2.28.0-1-any.pkg.tar.zst
+      - name: Install mbedtls v2.28.0
+        shell: msys2 {0}
+        run: pacman --noconfirm -U --needed mingw-w64-ucrt-x86_64-mbedtls-2.28.0-1-any.pkg.tar.zst
       - name: Build ttyd
         shell: msys2 {0}
         run: |
