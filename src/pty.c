@@ -354,6 +354,8 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
 
   if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, NULL, cwd, &process->si.StartupInfo, &pi)) {
     print_error("CreateProcessW");
+    DWORD exitCode = 0;
+    if (GetExitCodeProcess(pi.hProcess, &exitCode)) printf("== exit code: %d\n", exitCode);
     goto cleanup;
   }
 
