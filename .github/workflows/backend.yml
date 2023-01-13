@@ -18,6 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         lws-version: [4.3.2, 3.2.3]
     steps:
@@ -43,6 +44,7 @@ jobs:
   cross:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
     steps:

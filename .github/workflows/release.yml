@@ -9,8 +9,9 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
     steps:
       - uses: actions/checkout@v3
       - name: Install packages
@@ -26,32 +27,5 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           artifacts: build/ttyd.${{ matrix.target }}
-          allowUpdates: true
-          draft: true
-  win10:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: ucrt64
-          install: >-
-            base-devel
-            subversion
-            mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-zlib
-            mingw-w64-ucrt-x86_64-libuv
-            mingw-w64-ucrt-x86_64-mbedtls
-            mingw-w64-ucrt-x86_64-json-c
-          update: true
-      - name: Build ttyd
-        shell: msys2 {0}
-        run: |
-          ./scripts/mingw-build.sh
-          mv build/ttyd.exe build/ttyd.win10.exe
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: build/ttyd.win10.exe
           allowUpdates: true
           draft: true
