@@ -53,13 +53,8 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 ## Command-line Options
 
 ```
-ttyd is a tool for sharing terminal over the web
-
 USAGE:
     ttyd [options] <command> [<arguments...>]
-
-VERSION:
-    1.7.2
 
 OPTIONS:
     -p, --port              Port to listen (default: 7681, use `0` for random port)
@@ -87,8 +82,6 @@ OPTIONS:
     -d, --debug             Set log level (default: 7)
     -v, --version           Print the version and exit
     -h, --help              Print this text and exit
-
-Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
 ```
 
 Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Example-Usage).

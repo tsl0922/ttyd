@@ -21,11 +21,26 @@ jobs:
       - name: Cross build (${{ matrix.target }})
         env:
           BUILD_TARGET: ${{ matrix.target }}
-        run: |
-          ./scripts/cross-build.sh
-          mv build/ttyd build/ttyd.${{ matrix.target }}
+        run: ./scripts/cross-build.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ttyd.${{ matrix.target }}
+          path: build/ttyd*
+  publish:
+    needs: [build]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - run: |
+          mkdir build
+          for file in ttyd.*/*; do
+            target=$(echo $file | awk -F/ '{print $1}')
+            [[ $file == *.exe ]] && target="$target.exe"
+            mv $file build/$target
+          done
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: build/ttyd.${{ matrix.target }}
+          artifacts: build/*
           allowUpdates: true
           draft: true
