@@ -218,7 +218,10 @@ export class Xterm {
         if (socket?.readyState !== WebSocket.OPEN) return;
 
         if (typeof data === 'string') {
-            socket.send(textEncoder.encode(Command.INPUT + data));
+            const payload = new Uint8Array(data.length * 3 + 1);
+            payload[0] = Command.INPUT.charCodeAt(0);
+            const stats = textEncoder.encodeInto(data, payload.subarray(1));
+            socket.send(payload.subarray(0, (stats.written as number) + 1));
         } else {
             const payload = new Uint8Array(data.length + 1);
             payload[0] = Command.INPUT.charCodeAt(0);
