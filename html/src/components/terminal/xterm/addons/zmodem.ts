@@ -54,6 +54,11 @@ export class ZmodemAddon implements ITerminalAddon {
         this.terminal.focus();
     }
 
+    private addDisposableListener(target: EventTarget, type: string, listener: EventListener) {
+        target.addEventListener(type, listener);
+        this.disposables.push({ dispose: () => target.removeEventListener(type, listener) });
+    }
+
     @bind
     private trzszInit() {
         const { terminal } = this;
@@ -68,6 +73,15 @@ export class ZmodemAddon implements ITerminalAddon {
             },
             sendToServer: data => sender(data),
             terminalColumns: terminal.cols,
+        });
+        const element = terminal.element as EventTarget;
+        this.addDisposableListener(element, 'dragover', event => event.preventDefault());
+        this.addDisposableListener(element, 'drop', event => {
+            event.preventDefault();
+            this.trzszFilter
+                .uploadFiles((event as DragEvent).dataTransfer?.items as DataTransferItemList)
+                .then(() => console.log('[ttyd] upload success'))
+                .catch(err => console.log('[ttyd] upload failed: ' + err));
         });
         this.disposables.push(terminal.onResize(size => this.trzszFilter.setTerminalColumns(size.cols)));
     }
