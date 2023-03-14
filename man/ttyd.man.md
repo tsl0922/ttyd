@@ -54,7 +54,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
       Do not allow clients to write to the TTY
 
   -t, --client-option <key=value>
-      Send option to client (format: key=value), repeat to add more options, see **CLIENT OPTOINS** for details
+      Send option to client (format: key=value), repeat to add more options, see **CLIENT OPTIONS** for details
 
   -T, --terminal-type
       Terminal type to report, default: xterm-256color
@@ -104,7 +104,7 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -h, --help
       Print this text and exit
 
-# CLIENT OPTOINS
+# CLIENT OPTIONS
 ttyd has a mechanism to pass server side command-line arguments to the browser page which is called **client options**:
 
 ```bash
