@@ -7,6 +7,7 @@ import { TrzszFilter } from 'trzsz';
 export interface ZmodeOptions {
     zmodem: boolean;
     trzsz: boolean;
+    windows: boolean;
     onSend: () => void;
     sender: (data: string | Uint8Array) => void;
     writer: (data: string | Uint8Array) => void;
@@ -73,6 +74,7 @@ export class ZmodemAddon implements ITerminalAddon {
             },
             sendToServer: data => sender(data),
             terminalColumns: terminal.cols,
+            isWindowsShell: this.options.windows,
         });
         const element = terminal.element as EventTarget;
         this.addDisposableListener(element, 'dragover', event => event.preventDefault());

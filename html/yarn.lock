@@ -9232,13 +9232,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"trzsz@npm:^0.4.3":
-  version: 0.4.3
-  resolution: "trzsz@npm:0.4.3"
+"trzsz@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "trzsz@npm:1.0.0"
   bin:
     trz: bin/trz.js
     tsz: bin/tsz.js
-  checksum: b7c768b40eac4a0a3ea866bc79c1912191feb4315de5c752720cce4f712b18ea0ced8b16ac19ef873db915b462ac9a3c00e975d8a0d6d6e28fe850f38e40ca11
+  checksum: 721e29fbba061f475c7a19119745ca225e0cbfb0b5faf665b8c020eae8a1d7938613f0fcb84d491483b693f7080a2a3dbbebee8e14a5f1b2977c6bb8ea9b0462
   languageName: node
   linkType: hard
 
@@ -9307,7 +9307,7 @@ __metadata:
     style-loader: ^3.3.1
     terser-webpack-plugin: ^5.3.6
     through2: ^4.0.2
-    trzsz: ^0.4.3
+    trzsz: ^1.0.0
     ts-loader: ^9.4.1
     typescript: ^4.8.4
     util: ^0.12.5
@@ -9413,11 +9413,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.8.4#~builtin<compat/typescript>":
   version: 4.8.4
-  resolution: "typescript@patch:typescript@npm%3A4.8.4#~builtin<compat/typescript>::version=4.8.4&hash=0102e9"
+  resolution: "typescript@patch:typescript@npm%3A4.8.4#~builtin<compat/typescript>::version=4.8.4&hash=1a91c8"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 301459fc3eb3b1a38fe91bf96d98eb55da88a9cb17b4ef80b4d105d620f4d547ba776cc27b44cc2ef58b66eda23fe0a74142feb5e79a6fb99f54fc018a696afa
+  checksum: c981e82b77a5acdcc4e69af9c56cdecf5b934a87a08e7b52120596701e389a878b8e3f860e73ffb287bf649cc47a8c741262ce058148f71de4cdd88bb9c75153
   languageName: node
   linkType: hard
 
