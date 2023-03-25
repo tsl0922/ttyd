@@ -9232,13 +9232,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"trzsz@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "trzsz@npm:1.0.0"
+"trzsz@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "trzsz@npm:1.1.0"
   bin:
     trz: bin/trz.js
     tsz: bin/tsz.js
-  checksum: 721e29fbba061f475c7a19119745ca225e0cbfb0b5faf665b8c020eae8a1d7938613f0fcb84d491483b693f7080a2a3dbbebee8e14a5f1b2977c6bb8ea9b0462
+  checksum: 9d01e42984299b8fe79adcd67a227e86bed4953a70b0b02bf777e0e99389adc57d2a1b495964dbec365c84a9bd781f81d6d974ac2e1df3c208ffbe9757ace1a3
   languageName: node
   linkType: hard
 
@@ -9307,7 +9307,7 @@ __metadata:
     style-loader: ^3.3.1
     terser-webpack-plugin: ^5.3.6
     through2: ^4.0.2
-    trzsz: ^1.0.0
+    trzsz: ^1.1.0
     ts-loader: ^9.4.1
     typescript: ^4.8.4
     util: ^0.12.5
