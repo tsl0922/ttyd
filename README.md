@@ -1,6 +1,7 @@
 ![backend](https://github.com/tsl0922/ttyd/workflows/backend/badge.svg)
 ![frontend](https://github.com/tsl0922/ttyd/workflows/frontend/badge.svg)
 [![GitHub Releases](https://img.shields.io/github/downloads/tsl0922/ttyd/total)](https://github.com/tsl0922/ttyd/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/tsl0922/ttyd)](https://hub.docker.com/r/tsl0922/ttyd)
 [![Packaging status](https://repology.org/badge/tiny-repos/ttyd.svg)](https://repology.org/project/ttyd/versions)
 ![GitHub](https://img.shields.io/github/license/tsl0922/ttyd)
 
