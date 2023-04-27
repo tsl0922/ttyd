@@ -321,7 +321,7 @@ int main(int argc, char **argv) {
 #ifndef LWS_WITHOUT_EXTENSIONS
   info.extensions = extensions;
 #endif
-  info.max_http_header_data = 20480;
+  info.max_http_header_data = 65535;
 
   int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
   char iface[128] = "";
