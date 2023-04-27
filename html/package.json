@@ -51,7 +51,7 @@
     "decko": "^1.2.0",
     "file-saver": "^2.0.5",
     "preact": "^10.11.2",
-    "trzsz": "^0.4.3",
+    "trzsz": "^1.1.0",
     "whatwg-fetch": "^3.6.2",
     "xterm": "^5.1.0",
     "xterm-addon-canvas": "^0.3.0",

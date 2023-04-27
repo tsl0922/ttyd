@@ -334,6 +334,10 @@ int main(int argc, char **argv) {
 
   struct json_object *client_prefs = json_object_new_object();
 
+#ifdef _WIN32
+  json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
+#endif
+
   // parse command line options
   int c;
   while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {

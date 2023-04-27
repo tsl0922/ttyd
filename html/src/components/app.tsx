@@ -15,6 +15,7 @@ const clientOptions = {
     enableZmodem: false,
     enableTrzsz: false,
     enableSixel: false,
+    isWindows: false,
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
