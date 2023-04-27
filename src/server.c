@@ -324,7 +324,7 @@ int main(int argc, char **argv) {
   info.max_http_header_data = 65535;
 
   int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
-  char iface[128] = "";
+  char iface[128] = "127.0.0.1";
   char socket_owner[128] = "";
   bool browser = false;
   bool ssl = false;
