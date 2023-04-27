@@ -33,7 +33,7 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 - Build from source (debian/ubuntu):
     ```bash
     sudo apt-get update
-    sudo apt-get install build-essential cmake git libjson-c-dev libwebsockets-dev -y
+    sudo apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
     git clone https://github.com/tsl0922/ttyd.git
     cd ttyd && mkdir build && cd build
     cmake ..
