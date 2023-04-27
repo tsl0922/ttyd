@@ -199,13 +199,13 @@ export class Xterm {
             terminal.write(data, () => {
                 this.pending = Math.max(this.pending - 1, 0);
                 if (this.pending < lowWater) {
-                    this.socket?.send(textEncoder.encode(Command.PAUSE));
+                    this.socket?.send(textEncoder.encode(Command.RESUME));
                 }
             });
             this.pending++;
             this.written = 0;
             if (this.pending > highWater) {
-                this.socket?.send(textEncoder.encode(Command.RESUME));
+                this.socket?.send(textEncoder.encode(Command.PAUSE));
             }
         } else {
             terminal.write(data);
