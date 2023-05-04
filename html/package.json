@@ -54,7 +54,7 @@
     "trzsz": "^1.1.0",
     "whatwg-fetch": "^3.6.2",
     "xterm": "^5.2.0-beta.35",
-    "xterm-addon-canvas": "^0.4.0-beta.9",
+    "xterm-addon-canvas": "^0.4.0-beta.11",
     "xterm-addon-fit": "^0.7.0",
     "xterm-addon-image": "^0.4.0",
     "xterm-addon-web-links": "^0.8.0",
