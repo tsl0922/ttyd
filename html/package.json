@@ -58,7 +58,7 @@
     "xterm-addon-fit": "^0.7.0",
     "xterm-addon-image": "^0.4.0",
     "xterm-addon-web-links": "^0.8.0",
-    "xterm-addon-webgl": "^0.15.0-beta.8",
+    "xterm-addon-webgl": "^0.15.0-beta.10",
     "zmodem.js": "^0.1.10"
   },
   "resolutions": {
