@@ -65,10 +65,13 @@ USAGE:
 OPTIONS:
     -p, --port              Port to listen (default: 7681, use `0` for random port)
     -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
-    -c, --credential        Credential for Basic Authentication (format: username:password)
+    -U, --socket-owner      User owner of the UNIX domain socket file, when enabled (eg: user:group)
+    -c, --credential        Credential for basic authentication (format: username:password)
+    -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
     -u, --uid               User id to run with
     -g, --gid               Group id to run with
     -s, --signal            Signal to send to the command when exit it (default: 1, SIGHUP)
+    -w, --cwd               Working directory to be set for the child program
     -a, --url-arg           Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
     -W, --writable          Allow clients to write to the TTY (readonly by default)
     -t, --client-option     Send option to client (format: key=value), repeat to add more options
@@ -79,7 +82,7 @@ OPTIONS:
     -B, --browser           Open terminal with the default system browser
     -I, --index             Custom index.html path
     -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)
-    -P, --ping-interval     Websocket ping interval(sec) (default: 300)
+    -P, --ping-interval     Websocket ping interval(sec) (default: 5)
     -6, --ipv6              Enable IPv6 support
     -S, --ssl               Enable SSL
     -C, --ssl-cert          SSL certificate file path
