@@ -8,4 +8,4 @@ EXPOSE 7681
 WORKDIR /root
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["ttyd", "bash"]
+CMD ["ttyd", "-W", "bash"]

@@ -50,8 +50,8 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -a, --url-arg
       Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
 
-  -R, --readonly
-      Do not allow clients to write to the TTY
+  -W, --writable
+      Allow clients to write to the TTY (readonly by default)
 
   -t, --client-option <key=value>
       Send option to client (format: key=value), repeat to add more options, see **CLIENT OPTIONS** for details
