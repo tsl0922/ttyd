@@ -9468,7 +9468,7 @@ __metadata:
     webpack-dev-server: ^4.13.3
     webpack-merge: ^5.8.0
     whatwg-fetch: ^3.6.2
-    xterm: ^5.2.0-beta.35
+    xterm: ^5.2.0-beta.43
     xterm-addon-canvas: ^0.4.0-beta.9
     xterm-addon-fit: ^0.7.0
     xterm-addon-image: ^0.4.0
@@ -10240,10 +10240,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm@npm:^5.2.0-beta.35":
-  version: 5.2.0-beta.37
-  resolution: "xterm@npm:5.2.0-beta.37"
-  checksum: bb88ef112ec5144b7ecb1c3e00aeaedbbf94412a9a23051157e6949eb331fefa559f5a9a12f6c32964c7ca5bb182fdf3fcb2373c18ab5b1a70a5f6171bef22f1
+"xterm@npm:^5.2.0-beta.43":
+  version: 5.2.0-beta.43
+  resolution: "xterm@npm:5.2.0-beta.43"
+  checksum: cb8a877128f39ae548eaac90c23f29bcc850c9727540fb648da834b10e41d5ec09f53164125086dfbeccc036ba44b20f700b917f656cbe127d0ff14866c8352d
   languageName: node
   linkType: hard
 
