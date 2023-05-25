@@ -9473,7 +9473,7 @@ __metadata:
     xterm-addon-fit: ^0.7.0
     xterm-addon-image: ^0.4.0
     xterm-addon-web-links: ^0.8.0
-    xterm-addon-webgl: ^0.15.0-beta.8
+    xterm-addon-webgl: ^0.15.0-beta.16
     zmodem.js: ^0.1.10
   languageName: unknown
   linkType: soft
@@ -10231,12 +10231,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm-addon-webgl@npm:^0.15.0-beta.8":
-  version: 0.15.0-beta.8
-  resolution: "xterm-addon-webgl@npm:0.15.0-beta.8"
+"xterm-addon-webgl@npm:^0.15.0-beta.16":
+  version: 0.15.0-beta.16
+  resolution: "xterm-addon-webgl@npm:0.15.0-beta.16"
   peerDependencies:
     xterm: ^5.0.0
-  checksum: 24c807e27181d73d0aa610cf9a71a918201c264e26b5e1e2b43e05479c9e992787527e99303bd0eef56aae61aff9113c4647a0a48315510e8b98b568c6921731
+  checksum: e63d8a301c76a221d895457559d8e210325404bb41098ac184b7398394135ec40c02acd3617b51dfcf536093e41517caae64ddbba952ce9e2a5a6b7c1d538840
   languageName: node
   linkType: hard
 
