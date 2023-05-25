@@ -9469,7 +9469,7 @@ __metadata:
     webpack-merge: ^5.8.0
     whatwg-fetch: ^3.6.2
     xterm: ^5.2.0-beta.35
-    xterm-addon-canvas: ^0.4.0-beta.9
+    xterm-addon-canvas: ^0.4.0-beta.15
     xterm-addon-fit: ^0.7.0
     xterm-addon-image: ^0.4.0
     xterm-addon-web-links: ^0.8.0
@@ -10195,12 +10195,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm-addon-canvas@npm:^0.4.0-beta.9":
-  version: 0.4.0-beta.9
-  resolution: "xterm-addon-canvas@npm:0.4.0-beta.9"
+"xterm-addon-canvas@npm:^0.4.0-beta.15":
+  version: 0.4.0-beta.15
+  resolution: "xterm-addon-canvas@npm:0.4.0-beta.15"
   peerDependencies:
     xterm: ^5.0.0
-  checksum: 6d2ed0b16967dd24fe2f4ad9c2b0a0fb60ad45e8aadced9e698cb2d209007270224d7c9df99ae60c3fab8251e9031284514cd849b8d7b5c56038958f6880260f
+  checksum: e1e407e14fb654acefaefa7dd2779c93a78f756afac438528a42fa3d557324ef9ef0bcc5ace43e16835a3902bea76b7c4382c0d87283d6199446c8230d729bdb
   languageName: node
   linkType: hard
 
