@@ -9523,12 +9523,12 @@ __metadata:
     webpack-dev-server: ^4.15.0
     webpack-merge: ^5.8.0
     whatwg-fetch: ^3.6.2
-    xterm: ^5.2.0-beta.35
-    xterm-addon-canvas: ^0.4.0-beta.9
+    xterm: ^5.2.0
+    xterm-addon-canvas: ^0.4.0
     xterm-addon-fit: ^0.7.0
     xterm-addon-image: ^0.4.0
     xterm-addon-web-links: ^0.8.0
-    xterm-addon-webgl: ^0.15.0-beta.8
+    xterm-addon-webgl: ^0.15.0
     zmodem.js: ^0.1.10
   languageName: unknown
   linkType: soft
@@ -10250,12 +10250,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm-addon-canvas@npm:^0.4.0-beta.9":
-  version: 0.4.0-beta.9
-  resolution: "xterm-addon-canvas@npm:0.4.0-beta.9"
+"xterm-addon-canvas@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "xterm-addon-canvas@npm:0.4.0"
   peerDependencies:
     xterm: ^5.0.0
-  checksum: 6d2ed0b16967dd24fe2f4ad9c2b0a0fb60ad45e8aadced9e698cb2d209007270224d7c9df99ae60c3fab8251e9031284514cd849b8d7b5c56038958f6880260f
+  checksum: 2052b13e55d01c847dbfb9ce30220aeb8dc1a4507c407c0727781f01e7efa8cfe1c73afd2186881df3fdb95d20e3f0482a7a717676fba045b0a846a34d361f9e
   languageName: node
   linkType: hard
 
@@ -10286,19 +10286,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm-addon-webgl@npm:^0.15.0-beta.8":
-  version: 0.15.0-beta.8
-  resolution: "xterm-addon-webgl@npm:0.15.0-beta.8"
+"xterm-addon-webgl@npm:^0.15.0":
+  version: 0.15.0
+  resolution: "xterm-addon-webgl@npm:0.15.0"
   peerDependencies:
     xterm: ^5.0.0
-  checksum: 24c807e27181d73d0aa610cf9a71a918201c264e26b5e1e2b43e05479c9e992787527e99303bd0eef56aae61aff9113c4647a0a48315510e8b98b568c6921731
+  checksum: 08976a24814f5b1eb20786c9d4450a54854b087b084170e3e60fd65d63df0da6096ec9f3acfc92fa8c58bdb958b601f8762a3daf3b2127d49fa122d16b3a90e5
   languageName: node
   linkType: hard
 
-"xterm@npm:^5.2.0-beta.35":
-  version: 5.2.0-beta.37
-  resolution: "xterm@npm:5.2.0-beta.37"
-  checksum: bb88ef112ec5144b7ecb1c3e00aeaedbbf94412a9a23051157e6949eb331fefa559f5a9a12f6c32964c7ca5bb182fdf3fcb2373c18ab5b1a70a5f6171bef22f1
+"xterm@npm:^5.2.0":
+  version: 5.2.0
+  resolution: "xterm@npm:5.2.0"
+  checksum: d000875598360de8a18dfa4239cd557a3739825c5f14b499fad6c1ffac5655a959513339134e3c37acf0f64de3c58d107295ae5cb1b39a5091f21611018287ca
   languageName: node
   linkType: hard
 
