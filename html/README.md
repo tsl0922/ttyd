@@ -1,6 +1,8 @@
 ## Prerequisites
 
-install [Yarn](https://yarnpkg.com/getting-started/install), and run: `yarn install`.
+> **NOTE:** yarn v2 is required.
+
+Install [Yarn](https://yarnpkg.com/getting-started/install), and run: `yarn install`.
 
 ## Development
 
