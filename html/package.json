@@ -23,7 +23,7 @@
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
-    "css-minimizer-webpack-plugin": "^5.0.0",
+    "css-minimizer-webpack-plugin": "^5.0.1",
     "eslint-webpack-plugin": "^4.0.1",
     "gts": "^4.0.1",
     "gulp": "^4.0.2",
