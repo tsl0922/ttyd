@@ -151,6 +151,7 @@ static void print_config() {
   if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
   if (server->once) lwsl_notice("  once: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
+  if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
   if (!server->writable) lwsl_notice("The --writable option is not set, will start in readonly mode");
 }
 
