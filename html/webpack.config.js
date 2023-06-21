@@ -9,6 +9,17 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const devMode = process.env.NODE_ENV !== 'production';
 
+const inlineFont = () => {
+    if (process.env.INLINE_FONT != undefined) {
+        additionalData = '$inline_font: true;';
+        additionalData += '$inline_font_path:"' + process.env.INLINE_FONT + '";';
+        additionalData += '$inline_font_family:"' + path.parse(process.env.INLINE_FONT).base.split('.')[0] + '";';
+        return additionalData;
+    } else {
+        return '$inline_font: false;';
+    }
+};
+
 const baseConfig = {
     context: path.resolve(__dirname, 'src'),
     entry: {
@@ -27,7 +38,20 @@ const baseConfig = {
             },
             {
                 test: /\.s?[ac]ss$/,
-                use: [devMode ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+                use: [
+                    devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
+                    'css-loader',
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            additionalData: inlineFont(),
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.(woff|ttf)/,
+                type: 'asset/inline',
             },
         ],
     },

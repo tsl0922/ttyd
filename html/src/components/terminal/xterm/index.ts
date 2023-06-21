@@ -378,6 +378,15 @@ export class Xterm {
                 case 'isWindows':
                     if (value) console.log('[ttyd] is windows');
                     break;
+                case 'fontFamily': {
+                    const fontSize = prefs['fontSize'] || '13';
+                    document.fonts.load(`${fontSize}px "${value}"`).then(() => {
+                        console.log(`[ttyd] ${value} loaded`);
+                        terminal.options['fontFamily'] = value;
+                        fitAddon.fit();
+                    });
+                    break;
+                }
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
                     if (terminal.options[key] instanceof Object) {

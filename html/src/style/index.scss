@@ -16,3 +16,10 @@ body {
     height: calc(100% - 10px);
   }
 }
+
+@if $inline_font {
+  @font-face {
+    font-family: $inline_font_family;
+    src: url($inline_font_path);
+  }
+}
