@@ -8242,16 +8242,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sass@npm:^1.63.2":
-  version: 1.63.3
-  resolution: "sass@npm:1.63.3"
+"sass@npm:^1.63.6":
+  version: 1.63.6
+  resolution: "sass@npm:1.63.6"
   dependencies:
     chokidar: ">=3.0.0 <4.0.0"
     immutable: ^4.0.0
     source-map-js: ">=0.6.2 <2.0.0"
   bin:
     sass: sass.js
-  checksum: 41d1d7e875be738a8b5ef92bc722b20fd88f9fc8db61caa17dec37e0a53739cf28dc3b79481b1998c410c82c30247f473c2559e64cec7c4d851e5cea0434ec4e
+  checksum: 3372319904658eeafaf78a09a6fcb3368a68e6d76fe3c43c2d009f4f72e475ab22b82ef483ef5c00fcda3ab00066846c0bd88c36b42771b855f6ab80c7eda541
   languageName: node
   linkType: hard
 
@@ -9493,7 +9493,7 @@ __metadata:
     html-webpack-plugin: ^5.5.1
     mini-css-extract-plugin: ^2.7.6
     preact: ^10.15.1
-    sass: ^1.63.2
+    sass: ^1.63.6
     sass-loader: ^13.3.1
     scssfmt: ^1.0.7
     style-loader: ^3.3.3
