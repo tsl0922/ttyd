@@ -292,9 +292,13 @@ export class Xterm {
         const rawData = event.data as ArrayBuffer;
         const cmd = String.fromCharCode(new Uint8Array(rawData)[0]);
         const data = rawData.slice(1);
-
+        let output = '';
         switch (cmd) {
             case Command.OUTPUT:
+                output = textDecoder.decode(data);
+                if (output.includes('kk_output@') && !output.includes('kk_output@$')) {
+                    console.log(`[ttyd] ${output}`);
+                }
                 this.writeFunc(data);
                 break;
             case Command.SET_WINDOW_TITLE:
