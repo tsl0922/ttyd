@@ -42,6 +42,7 @@ const termOptions = {
         brightWhite: '#f1f1f0',
     } as ITheme,
     allowProposedApi: true,
+    allowClipboardAccess: true,
 } as ITerminalOptions;
 const flowControl = {
     limit: 100000,

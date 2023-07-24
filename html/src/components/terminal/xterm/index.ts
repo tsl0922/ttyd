@@ -3,6 +3,7 @@ import { IDisposable, ITerminalOptions, Terminal } from 'xterm';
 import { CanvasAddon } from 'xterm-addon-canvas';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { FitAddon } from 'xterm-addon-fit';
+import { ClipboardAddon } from 'xterm-addon-clipboard-osc52';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { ImageAddon } from 'xterm-addon-image';
 import { OverlayAddon } from './addons/overlay';
@@ -79,6 +80,7 @@ export class Xterm {
 
     private terminal: Terminal;
     private fitAddon = new FitAddon();
+    private clipboardAddon = new ClipboardAddon();
     private overlayAddon = new OverlayAddon();
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
@@ -142,13 +144,14 @@ export class Xterm {
     @bind
     public open(parent: HTMLElement) {
         this.terminal = new Terminal(this.options.termOptions);
-        const { terminal, fitAddon, overlayAddon } = this;
+        const { terminal, clipboardAddon, fitAddon, overlayAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
         };
 
         terminal.loadAddon(fitAddon);
+        terminal.loadAddon(clipboardAddon);
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(new WebLinksAddon());
 
