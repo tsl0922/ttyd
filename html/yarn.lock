@@ -9583,7 +9583,7 @@ __metadata:
     xterm: ^5.2.1
     xterm-addon-canvas: ^0.4.0
     xterm-addon-fit: ^0.7.0
-    xterm-addon-image: ^0.4.1
+    xterm-addon-image: ^0.4.3
     xterm-addon-web-links: ^0.8.0
     xterm-addon-webgl: ^0.15.0
     zmodem.js: ^0.1.10
@@ -10335,12 +10335,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xterm-addon-image@npm:^0.4.1":
-  version: 0.4.1
-  resolution: "xterm-addon-image@npm:0.4.1"
+"xterm-addon-image@npm:^0.4.3":
+  version: 0.4.3
+  resolution: "xterm-addon-image@npm:0.4.3"
   peerDependencies:
     xterm: ~5.2.0
-  checksum: 606b72f5afcac42696bb5ad5c027029bb10a2a18adfc3dbd4f7634ec257554ec462bcd03c055c03fdc3a6a4ca9e225bcd41ffe6bb61fe604e0f4b2189c85c19d
+  checksum: 027613c02206a959699113394bb28b7b8fa102a9eea00ed9f2b28a8ea8af8cb31294a9953debac6b57fc18c67565802cd7f8695646ea9b5db7dec0f4c21e5ecf
   languageName: node
   linkType: hard
 
