@@ -378,7 +378,12 @@ int main(int argc, char **argv) {
         }
         break;
       case 'i':
-        strncpy(iface, optarg, sizeof(iface) - 1);
+        if (strcmp(optarg, "all") == 0) {
+          strncpy(iface, "", sizeof(iface) - 1);
+        }
+        else {
+          strncpy(iface, optarg, sizeof(iface) - 1);
+        }
         iface[sizeof(iface) - 1] = '\0';
         break;
       case 'U':
