@@ -85,6 +85,10 @@ build_libwebsockets() {
     echo "=== Building libwebsockets-${LIBWEBSOCKETS_VERSION} (${TARGET})..."
     curl -fSsLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
+        if [ "${LIBWEBSOCKETS_VERSION}" = "4.3.2" ]; then
+            echo "Patching to fix disconnect caused by errant route deletion."
+            curl -fSsLo- "https://gist.github.com/mpb27/cabb08e4bd7aab06dc49987e23e0afb6/raw/31d9cea8a85f55d763697314d8c6f189e5fa1d07/0001-netlink-fix-errant-route-delete-on-NEWADDR.patch" | patch -p1 --ignore-whitespace
+        fi
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         sed -i '/PC_OPENSSL/d' lib/tls/CMakeLists.txt
         rm -rf build && mkdir -p build && cd build
