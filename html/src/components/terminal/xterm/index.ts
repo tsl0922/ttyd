@@ -95,7 +95,10 @@ export class Xterm {
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
-    constructor(private options: XtermOptions, private sendCb: () => void) {}
+    constructor(
+        private options: XtermOptions,
+        private sendCb: () => void
+    ) {}
 
     dispose() {
         for (const d of this.disposables) {
