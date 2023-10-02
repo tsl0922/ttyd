@@ -1,8 +1,12 @@
 FROM alpine
 
 ARG TARGETARCH
-COPY ./dist/${TARGETARCH}/ttyd /usr/bin/ttyd
+
+# Dependencies
 RUN apk add --no-cache bash tini
+
+# Application
+COPY ./dist/${TARGETARCH}/ttyd /usr/bin/ttyd
 
 EXPOSE 7681
 WORKDIR /root
