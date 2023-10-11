@@ -105,6 +105,7 @@ build_libwebsockets() {
             -DLWS_WITH_HTTP_BASIC_AUTH=OFF \
             -DLWS_WITH_UDP=OFF \
             -DLWS_WITHOUT_CLIENT=ON \
+            -DLWS_WITHOUT_EXTENSIONS=OFF \
             -DLWS_WITH_LEJP=OFF \
             -DLWS_WITH_LEJP_CONF=OFF \
             -DLWS_WITH_LWSAC=OFF \
