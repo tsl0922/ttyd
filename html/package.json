@@ -37,7 +37,7 @@
     "gulp-rename": "^2.0.0",
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.6",
-    "sass": "^1.68.0",
+    "sass": "^1.69.5",
     "sass-loader": "^13.3.2",
     "scssfmt": "^1.0.7",
     "style-loader": "^3.3.3",
