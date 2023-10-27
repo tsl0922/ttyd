@@ -135,7 +135,7 @@ static char **build_env(struct pss_tty *pss) {
   i++;
 
   // TTYD_USER
-  if (strlen(pss->user) > 0) {
+  if (pss->user[0] != '\0') {
     envp = xrealloc(envp, (++n) * sizeof(char *));
     envp[i] = xmalloc(40);
     snprintf(envp[i], 40, "TTYD_USER=%s", pss->user);

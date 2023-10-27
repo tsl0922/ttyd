@@ -173,9 +173,11 @@ static struct server *server_new(int argc, char **argv, int start) {
   ts->argv = xmalloc(sizeof(char *) * (cmd_argc + 1));
   for (int i = 0; i < cmd_argc; i++) {
     ts->argv[i] = strdup(cmd_argv[i]);
-    cmd_len += strlen(ts->argv[i]);
-    if (i != cmd_argc - 1) {
-      cmd_len++;  // for space
+    if (ts->argv[i]) {
+      cmd_len += strlen(ts->argv[i]);
+      if (i != cmd_argc - 1) {
+        cmd_len++;  // for space
+      }
     }
   }
   ts->argv[cmd_argc] = NULL;
@@ -211,7 +213,7 @@ static void server_free(struct server *ts) {
   for (; *p; p++) free(*p);
   free(ts->argv);
 
-  if (strlen(ts->socket_path) > 0) {
+  if (ts->socket_path[0] != '\0') {
     struct stat st;
     if (!stat(ts->socket_path, &st)) {
       unlink(ts->socket_path);
@@ -509,7 +511,7 @@ int main(int argc, char **argv) {
   server->prefs_json = strdup(json_object_to_json_string(client_prefs));
   json_object_put(client_prefs);
 
-  if (server->command == NULL || strlen(server->command) == 0) {
+  if (server->command == NULL || server->command[0] == '\0') {
     fprintf(stderr, "ttyd: missing start command\n");
     return -1;
   }
