@@ -13,36 +13,11 @@ on:
     - "CMakeLists.txt"
     - "src/*"
     - "scripts/*"
+  workflow_call:
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        lws-version: [4.3.2, 3.2.3]
-    steps:
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential cmake libjson-c-dev zlib1g-dev libssl-dev libuv1-dev
-      - name: Install libwebsockets-${{ matrix.lws-version }}
-        env:
-          LWS_VERSION: ${{ matrix.lws-version }}
-        run: |
-          cd $(mktemp -d)
-          curl -sLo- https://github.com/warmcat/libwebsockets/archive/v${LWS_VERSION}.tar.gz | tar xz
-          cd libwebsockets-${LWS_VERSION}
-          cmake -DLWS_WITH_LIBUV=ON -DLWS_UNIX_SOCK=ON -DLWS_IPV6=ON -DLWS_WITHOUT_TESTAPPS=ON -DCMAKE_BUILD_TYPE=RELEASE .
-          make && sudo make install && sudo ldconfig
-      - uses: actions/checkout@v3
-      - name: Build ttyd
-        run: |
-          cmake -DCMAKE_BUILD_TYPE=RELEASE .
-          make && sudo make install
-          ttyd -v
   cross:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:

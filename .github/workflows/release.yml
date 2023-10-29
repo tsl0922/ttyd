@@ -2,33 +2,14 @@ name: release
 
 on:
   push:
-    tags:
-    - "*"
+    tags: ["*"]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake build-essential cmake curl file libtool
-      - name: Cross build (${{ matrix.target }})
-        env:
-          BUILD_TARGET: ${{ matrix.target }}
-        run: ./scripts/cross-build.sh
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ttyd.${{ matrix.target }}
-          path: build/ttyd*
+    uses: ./.github/workflows/backend.yml
   publish:
     needs: [build]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3

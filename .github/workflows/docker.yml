@@ -3,11 +3,11 @@ name: docker
 on:
   push:
     branches: main
-    tags: "*"
+    tags: ["*"]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Install packages
