@@ -92,7 +92,10 @@ endif()
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
-target_compile_definitions(${PROJECT_NAME} PRIVATE TTYD_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    TTYD_VERSION="${PROJECT_VERSION}"
+    $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
+)
 
 include(GNUInstallDirs)
 
