@@ -45,6 +45,7 @@ export interface ClientOptions {
     enableSixel: boolean;
     titleFixed?: string;
     isWindows: boolean;
+    trzszDragInitTimeout: number;
 }
 
 export interface FlowControl {
@@ -328,6 +329,7 @@ export class Xterm {
                 zmodem: prefs.enableZmodem,
                 trzsz: prefs.enableTrzsz,
                 windows: prefs.isWindows,
+                trzszDragInitTimeout: prefs.trzszDragInitTimeout,
                 onSend: this.sendCb,
                 sender: this.sendData,
                 writer: this.writeData,
@@ -365,6 +367,9 @@ export class Xterm {
                     break;
                 case 'enableTrzsz':
                     if (value) console.log('[ttyd] trzsz enabled');
+                    break;
+                case 'trzszDragInitTimeout':
+                    if (value) console.log(`[ttyd] trzsz drag init timeout: ${value}`);
                     break;
                 case 'enableSixel':
                     if (value) {
