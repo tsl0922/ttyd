@@ -52,3 +52,6 @@ build
 
 # Project files
 !init.d
+
+.cache/
+compile_commands.json

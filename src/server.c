@@ -13,6 +13,10 @@
 
 #include "utils.h"
 
+#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
+#include "cert.h"
+#endif
+
 #ifndef TTYD_VERSION
 #define TTYD_VERSION "unknown"
 #endif
@@ -543,13 +547,21 @@ int main(int argc, char **argv) {
     }
   }
 
+  lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
+  print_config();
+
 #if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
   if (ssl) {
-    info.ssl_cert_filepath = cert_path;
-    info.ssl_private_key_filepath = key_path;
-    #ifndef LWS_WITH_MBEDTLS
+    if (strlen(cert_path) > 0 || strlen(key_path) > 0) {
+      info.ssl_cert_filepath = cert_path;
+      info.ssl_private_key_filepath = key_path;
+    } else {
+      generate_self_signed_cert(&info.server_ssl_cert_mem, &info.server_ssl_cert_mem_len,
+                                &info.server_ssl_private_key_mem, &info.server_ssl_private_key_mem_len);
+    }
+#ifndef LWS_WITH_MBEDTLS
     info.ssl_options_set = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
-    #endif
+#endif
     if (strlen(ca_path) > 0) {
       info.ssl_ca_filepath = ca_path;
       info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
@@ -557,9 +569,6 @@ int main(int argc, char **argv) {
     info.options |= LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT | LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
   }
 #endif
-
-  lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
-  print_config();
 
   // lws custom header requires lower case name, and terminating :
   if (server->auth_header != NULL) {

@@ -1,6 +1,9 @@
 #ifndef TTYD_UTIL_H
 #define TTYD_UTIL_H
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #define container_of(ptr, type, member)                \
   ({                                                   \
     const typeof(((type *)0)->member) *__mptr = (ptr); \
