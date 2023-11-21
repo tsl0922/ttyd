@@ -14,7 +14,7 @@ ZLIB_VERSION="${ZLIB_VERSION:-1.3}"
 JSON_C_VERSION="${JSON_C_VERSION:-0.17}"
 MBEDTLS_VERSION="${MBEDTLS_VERSION:-2.28.5}"
 LIBUV_VERSION="${LIBUV_VERSION:-1.44.2}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.3.2}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.3.3}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -86,6 +86,7 @@ build_libwebsockets() {
     curl -fSsLo- "https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
+        sed -i 's/ OR PC_OPENSSL_FOUND//g' lib/tls/CMakeLists.txt
         sed -i '/PC_OPENSSL/d' lib/tls/CMakeLists.txt
         rm -rf build && mkdir -p build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
@@ -101,7 +102,7 @@ build_libwebsockets() {
             -DLWS_UNIX_SOCK=ON \
             -DLWS_IPV6=ON \
             -DLWS_ROLE_RAW_FILE=OFF \
-            -DLWS_WITH_HTTP2=OFF \
+            -DLWS_WITH_HTTP2=ON \
             -DLWS_WITH_HTTP_BASIC_AUTH=OFF \
             -DLWS_WITH_UDP=OFF \
             -DLWS_WITHOUT_CLIENT=ON \
@@ -144,7 +145,7 @@ build() {
 
     echo "=== Installing toolchain ${ALIAS} (${TARGET})..."
 
-    mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:/opt/cross/bin"
+    mkdir -p "${CROSS_ROOT}" && export PATH="${PATH}:${CROSS_ROOT}/bin"
     curl -fSsLo- "${MUSL_CC_URL}/${TARGET}-cross.tgz" | tar xz -C "${CROSS_ROOT}" --strip-components=${COMPONENTS}
 
     echo "=== Building target ${ALIAS} (${TARGET})..."
