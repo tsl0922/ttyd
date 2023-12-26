@@ -38,7 +38,7 @@
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.6",
     "sass": "^1.69.5",
-    "sass-loader": "^13.3.2",
+    "sass-loader": "^13.3.3",
     "scssfmt": "^1.0.7",
     "style-loader": "^3.3.3",
     "terser-webpack-plugin": "^5.3.9",
