@@ -8,7 +8,7 @@ Suggested Usage
 4. Use the following command to launch ttyd
 
 ```
-./ttyd -W -t fontSize=16 -t fontFamily="JetBrains, SarasaNerd, Serif" -t rendererType=canvas -p 8022 /bin/zsh
+./ttyd -W -t fontSize=16 -t fontFamily="JetBrains, SarasaNerd, Serif" -p 8022 /bin/zsh
 ```
 
 The `-W` flag must be there or you won't be able to operate the terminal. Such behavior may not be the same with the stock version (e.g. Arch).
@@ -27,7 +27,7 @@ The `JetBrains, SarasaNerd, Serif` flag must be like this, do not ignore the `Se
 4. 使用如下命令启动：
 
 ```
-./ttyd -W -t fontSize=16 -t fontFamily="JetBrains, SarasaNerd, Serif" -t rendererType=canvas -p 8022 /bin/zsh
+./ttyd -W -t fontSize=16 -t fontFamily="JetBrains, SarasaNerd, Serif" -p 8022 /bin/zsh
 ```
 
 `-W` 标志不可省略，否则只读。这个可能与某些发行版的官方仓库版本不同（例如Arch）。
