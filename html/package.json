@@ -68,5 +68,5 @@
   "resolutions": {
     "zmodem.js@^0.1.10": "patch:zmodem.js@npm%3A0.1.10#./.yarn/patches/zmodem.js-npm-0.1.10-e5537fa2ed.patch"
   },
-  "packageManager": "yarn@3.6.3"
+  "packageManager": "yarn@3.7.0"
 }

@@ -1,3 +1,11 @@
+# Fork note
+
+A forked version of `ttyd` having built-in JetBrains font and nerd symbol support.
+
+See the [fork note](nerdForkUsage.md) for detailed usage.
+
+# === blow is the offical README.md form upstream ===
+
 ![backend](https://github.com/tsl0922/ttyd/workflows/backend/badge.svg)
 ![frontend](https://github.com/tsl0922/ttyd/workflows/frontend/badge.svg)
 [![GitHub Releases](https://img.shields.io/github/downloads/tsl0922/ttyd/total)](https://github.com/tsl0922/ttyd/releases)
@@ -36,15 +44,15 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
 - Install the snap: `sudo snap install ttyd --classic`
 - Build from source (debian/ubuntu):
-    ```bash
-    sudo apt-get update
-    sudo apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
-    git clone https://github.com/tsl0922/ttyd.git
-    cd ttyd && mkdir build && cd build
-    cmake ..
-    make && sudo make install
-    ```
-    You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
+  git clone https://github.com/tsl0922/ttyd.git
+  cd ttyd && mkdir build && cd build
+  cmake ..
+  make && sudo make install
+  ```
+  You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
 - Install on OpenWrt: `opkg install ttyd`
 - Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
 
@@ -101,5 +109,5 @@ Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#brows
 
 ## Alternatives
 
-* [Wetty](https://github.com/krishnasrinivas/wetty): [Node](https://nodejs.org) based web terminal (SSH/login)
-* [GoTTY](https://github.com/yudai/gotty): [Go](https://golang.org) based web terminal
+- [Wetty](https://github.com/krishnasrinivas/wetty): [Node](https://nodejs.org) based web terminal (SSH/login)
+- [GoTTY](https://github.com/yudai/gotty): [Go](https://golang.org) based web terminal

@@ -1,18 +1,32 @@
 html,
 body {
-  height: 100%;
-  min-height: 100%;
-  margin: 0;
-  overflow: hidden;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+@font-face {
+    font-family: SarasaNerd;
+    font-style: normal;
+    font-weight: normal;
+    src: url('webfont/sarasa-mono-sc-regular-nerd-font.woff2') format('WOFF2');
+}
+
+@font-face {
+    font-family: JetBrains;
+    font-style: normal;
+    font-weight: normal;
+    src: url('webfont/JetBrainsMono-Regular.woff2') format('WOFF2');
 }
 
 #terminal-container {
-  width: auto;
-  height: 100%;
-  margin: 0 auto;
-  padding: 0;
-  .terminal {
-    padding: 5px;
-    height: calc(100% - 10px);
-  }
+    width: auto;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0;
+    .terminal {
+        padding: 5px;
+        height: calc(100% - 10px);
+    }
 }
