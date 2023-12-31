@@ -1,8 +1,23 @@
 # Fork note
 
-A forked version of `ttyd` having built-in JetBrains font and nerd symbol support.
+## Quick start
+
+A forked version of `ttyd` having built-in web font and nerd symbol support.
+
+We currently has two embedded fonts: Nerd-patched `JetBrains` font, and Chinese font `Sarasa Mono SC`.
 
 See the [fork note](nerdForkUsage.md) for detailed usage.
+
+## Adding your font
+
+If you want other fonts, the simplest way is to replace the woff2 font file in `html/src/style/webfont` and compile it again.
+
+If you'd like also to change the font name, change the `@font-face` section in `html/src/style/index.scss`,
+**and also the ttyd launching command options**.
+
+Only woff2 files are accepted.
+
+---
 
 # === blow is the offical README.md form upstream ===
 
