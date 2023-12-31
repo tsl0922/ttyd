@@ -13,9 +13,14 @@ Suggested Usage below:
 ./ttyd -W -t fontSize=16 -t fontFamily="JetBrains, SarasaMono, Serif" -p 8022 /bin/zsh
 ```
 
-The `-W` flag must be there or you won't be able to operate the terminal. Such behavior may not be the same with the stock version (e.g. Arch).
+The `-W` flag must be there or you won't be able to operate the terminal.
+Such behavior may not be the same with the stock version (e.g. Arch).
 
-The `JetBrains, SarasaNerd, Serif` flag must be like this, do not ignore the `Serif` flag or every displayed character will be 2x wide.
+The `JetBrains, SarasaNerd, Serif` flag must be like this,
+do not ignore the `Serif` flag or each of the displayed character will be 2x wide.
+If the characters are still 2x width with the above command,
+check whether you are using a mobile browser or not.
+The page must be displayed in `Desktop` mode of mobile browsers.
 
 # 如何使用这个内置 nerd 字体的版本
 
@@ -35,3 +40,5 @@ The `JetBrains, SarasaNerd, Serif` flag must be like this, do not ignore the `Se
 `-W` 标志不可省略，否则只读。这个可能与某些发行版的官方仓库版本不同（例如Arch）。
 
 字体命令中的`Serif`不可省略，否则所有字体都将是双倍宽度显示。
+如果已经使用了上述选项，但字符显示仍然是双倍宽度，
+请关注你是不是正在移动设备浏览器上访问。如果是，尝试将浏览器设置为桌面模式。
