@@ -8,6 +8,8 @@ We currently has two embedded fonts: Nerd-patched `JetBrains` font, and Chinese 
 
 See the [fork note](nerdForkUsage.md) for detailed usage.
 
+For details (in Chinese)：[https://www.weiran.ink/oss/ttyd-with-nerd-font.html](https://www.weiran.ink/oss/ttyd-with-nerd-font.html)
+
 ## Adding your font
 
 If you want other fonts, the simplest way is to replace the woff2 font file in `html/src/style/webfont` and compile it again.

@@ -22,6 +22,8 @@ If the characters are still 2x width with the above command,
 check whether you are using a mobile browser or not.
 The page must be displayed in `Desktop` mode of mobile browsers.
 
+For details (in Chinese)：[https://www.weiran.ink/oss/ttyd-with-nerd-font.html](https://www.weiran.ink/oss/ttyd-with-nerd-font.html)
+
 # 如何使用这个内置 nerd 字体的版本
 
 以下是建议，爱折腾的话随意。
@@ -42,3 +44,5 @@ The page must be displayed in `Desktop` mode of mobile browsers.
 字体命令中的`Serif`不可省略，否则所有字体都将是双倍宽度显示。
 如果已经使用了上述选项，但字符显示仍然是双倍宽度，
 请关注你是不是正在移动设备浏览器上访问。如果是，尝试将浏览器设置为桌面模式。
+
+详情及作者主页：[https://www.weiran.ink/oss/ttyd-with-nerd-font.html](https://www.weiran.ink/oss/ttyd-with-nerd-font.html)
