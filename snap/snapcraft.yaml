@@ -40,9 +40,8 @@ parts:
       - libwebsockets-dev
       
     stage-packages:
-      - build-essential 
-      - libjson-c-dev 
-      - libwebsockets-dev
+      - libjson-c4
+      - libwebsockets15
       
   homeishome-launch:
     plugin: nil
