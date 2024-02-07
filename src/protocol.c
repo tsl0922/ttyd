@@ -194,6 +194,22 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   return true;
 }
 
+void *handle_timeout_for_idle_server(void *arg) {
+  int timeout = server->idle_server_timeout;
+    while (timeout > 0) {
+        sleep(1);
+        if (server->client_count > 0) {
+            lwsl_notice("New clients are connected within expected time of %d seconds. \n", server->idle_server_timeout);
+            pthread_exit(NULL);
+        }
+        timeout--;
+    }
+    lwsl_err("No new clients are connected within the connection timeout period of %d seconds, leading to an exit. \n", server->idle_server_timeout);
+    force_exit = true;
+    lws_cancel_service(context);
+    exit(0);
+}
+
 int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_tty *pss = (struct pss_tty *)user;
   char buf[256];
@@ -229,6 +245,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       break;
 
     case LWS_CALLBACK_ESTABLISHED:
+      // set connection_established to 1 which helps in identifying that a client is connected
+      connection_established = 1;
+      lwsl_notice("Connection is established.\n");
       pss->initialized = false;
       pss->authenticated = false;
       pss->wsi = wsi;
@@ -277,6 +296,15 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         pty_buf_free(pss->pty_buf);
         pss->pty_buf = NULL;
         pty_resume(pss->process);
+      }
+      time_t current_time = time(NULL);
+      double time_difference = difftime(current_time, pss->last_activity);
+      lwsl_notice("Time elapsed since the last command execution: %.2f seconds\n", time_difference);
+
+      if (time_difference > server->idle_session_timeout && server->idle_session_timeout != -1) {
+          lwsl_err("Closing the connection as there is no activity since last %d seconds\n", server->idle_session_timeout);
+          lws_close_reason(wsi, LWS_CLOSE_STATUS_NORMAL, NULL, 0);
+          return -1; // This will close the connection
       }
       break;
 
@@ -357,6 +385,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         free(pss->buffer);
         pss->buffer = NULL;
       }
+      pss->last_activity = time(NULL);
       break;
 
     case LWS_CALLBACK_CLOSED:
@@ -379,12 +408,26 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         }
       }
 
-      if (server->once && server->client_count == 0) {
-        lwsl_notice("exiting due to the --once option.\n");
-        force_exit = true;
-        lws_cancel_service(context);
-        exit(0);
+      if ((server->once || server->idle_server_timeout != -1) && server->client_count == 0) {
+          lwsl_err("All clients have been disconnected, prompting an exit as a result of the --once/idle-server-timeout set.\n");
+          lwsl_err("Waiting for %d seconds before exiting.\n", server->idle_server_timeout);
+
+          if (server->idle_server_timeout != -1) {
+              pthread_t thread_id;  // Thread identifier
+              int id = 1;  // Example data to pass to the thread (can be any data type)
+              connection_established = 0; 
+
+              // Create a new thread
+              if (pthread_create(&thread_id, NULL, handle_timeout_for_idle_server, &id) != 0) {
+                  fprintf(stderr, "Error creating thread\n");
+                  return 1;
+              }
+          } else {
+              // If idle_server_timeout is -1, no need to create a thread, just exit immediately
+              exit(0);
+          }
       }
+
       break;
 
     default:
