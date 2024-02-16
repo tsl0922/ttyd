@@ -341,7 +341,7 @@ export class Xterm {
             const value = prefs[key];
             switch (key) {
                 case 'rendererType':
-                    this.setRendererType(value);
+                    this.setRendererTypeSafely(value);
                     break;
                 case 'disableLeaveAlert':
                     if (value) {
@@ -399,6 +399,36 @@ export class Xterm {
         });
     }
 
+    @bind
+    private setRendererTypeSafely(value: RendererType) {
+        const isLikelyToSupportWebGL2 = () => {
+            // Preliminary browser checks to avoid attempting WebGL2 context creation in known incompatible browsers
+            const userAgent = window.navigator.userAgent;
+            const isOldSafari =
+                /Safari/.test(userAgent) &&
+                !/Chrome/.test(userAgent) &&
+                parseFloat(/Version\/(\d+\.\d+)/.exec(userAgent)?.[1] ?? '0') < 16;
+            if (isOldSafari) {
+                return false; // Early return for known incompatible browsers
+            }
+
+            // Feature detection for other browsers
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+            } catch (e) {
+                return false;
+            }
+        };
+
+        if (value === 'webgl' && !isLikelyToSupportWebGL2()) {
+            console.log('[ttyd] Falling back to canvas renderer due to lack of WebGL2 support');
+            this.setRendererType('canvas');
+        } else {
+            this.setRendererType(value);
+        }
+    }
+    
     @bind
     private setRendererType(value: RendererType) {
         const { terminal } = this;
