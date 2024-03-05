@@ -54,6 +54,8 @@ struct pss_tty {
   pty_buf_t *pty_buf;
 
   int lws_close_status;
+
+  time_t last_activity;
 };
 
 typedef struct {
@@ -63,6 +65,8 @@ typedef struct {
 
 struct server {
   int client_count;        // client count
+  int idle_session_timeout;// idle session timeout
+  int idle_server_timeout; // idle server timeout
   char *prefs_json;        // client preferences
   char *credential;        // encoded basic auth credential
   char *auth_header;       // header name used for auth proxy

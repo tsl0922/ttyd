@@ -91,6 +91,8 @@ OPTIONS:
     -d, --debug             Set log level (default: 7)
     -v, --version           Print the version and exit
     -h, --help              Print this text and exit
+    -z, --idle-session-timeout Maximum period of session inactivity ( Eg: --idle-session-timeout 10 indicates 10 seconds)
+    -Z, --idle-server-timeout Maximum period of server with no clients connected ( Eg: --idle-server-timeout 10 indicates 10 seconds)
 ```
 
 Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Example-Usage).

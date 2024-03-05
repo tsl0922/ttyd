@@ -101,6 +101,12 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -v, --version
       Print the version and exit
 
+  -z, --idle-session-timeout
+      Maximum period of session inactivity
+
+  -Z, --idle-server-timeout
+      Maximum period of server with no clients connected    
+
   -h, --help
       Print this text and exit
 

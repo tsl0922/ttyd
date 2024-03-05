@@ -21,6 +21,7 @@ volatile bool force_exit = false;
 struct lws_context *context;
 struct server *server;
 struct endpoints endpoints = {"/ws", "/", "/token", ""};
+int connection_established = 0;
 
 extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
@@ -65,6 +66,8 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
                                         {"ping-interval", required_argument, NULL, 'P'},
 #endif
+                                        {"idle-session-timeout", required_argument, NULL, 'z'},
+                                        {"idle-server-timeout", required_argument, NULL, 'Z'},
                                         {"ipv6", no_argument, NULL, '6'},
                                         {"ssl", no_argument, NULL, 'S'},
                                         {"ssl-cert", required_argument, NULL, 'C'},
@@ -82,7 +85,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:6aSC:K:A:Wt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:z:Z:6aSC:K:A:Wt:T:Om:oeBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -107,6 +110,8 @@ static void print_help() {
           "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
           "    -O, --check-origin      Do not allow websocket connection from different origin\n"
           "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
+          "    -z, --idle-session-timeout Maximum period of session inactivity (eg: --idle-session-timeout 10) \n"
+          "    -Z, --idle-server-timeout Maximum period of server with no clients connected (eg: --idle-server-timeout 10) \n"
           "    -o, --once              Accept only one client and exit on disconnection\n"
           "    -B, --browser           Open terminal with the default system browser\n"
           "    -I, --index             Custom index.html path\n"
@@ -152,7 +157,9 @@ static void print_config() {
   if (server->once) lwsl_notice("  once: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
   if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
-  if (!server->writable) lwsl_notice("The --writable option is not set, will start in readonly mode");
+  if (!server->writable) lwsl_notice("  The --writable option is not set, will start in readonly mode");
+  if (server->idle_session_timeout != 0) lwsl_notice("  Idle Session Timeout: %d seconds\n", server->idle_session_timeout);
+  if (server->idle_server_timeout != 0) lwsl_notice("  Idle Server Timeout: %d seconds\n", server->idle_server_timeout);
 }
 
 static struct server *server_new(int argc, char **argv, int start) {
@@ -295,6 +302,27 @@ static int calc_command_start(int argc, char **argv) {
   return start;
 }
 
+#include <stdbool.h>
+#include <time.h>
+
+void *handle_timeout_for_server_connection(void *arg) {
+    time_t start_time = time(NULL);
+    while (true) {
+        if (connection_established) {
+            lwsl_notice("Connection is established within expected time of %d seconds. \n", server->idle_server_timeout);
+            pthread_exit(NULL);
+        }
+
+        double elapsed_time = difftime(time(NULL), start_time);
+        if (elapsed_time >= server->idle_server_timeout) {
+            lwsl_err("No connections are established within the connection timeout period of %d seconds, leading to an exit. \n", server->idle_server_timeout);
+            exit(0);
+        }
+
+        sleep(1); // Sleep only if connection is not established and timeout hasn't occurred yet
+    }
+}
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     print_help();
@@ -309,6 +337,9 @@ int main(int argc, char **argv) {
 
   int start = calc_command_start(argc, argv);
   server = server_new(argc, argv, start);
+
+  server->idle_server_timeout = -1;
+  server->idle_session_timeout = -1;
 
   struct lws_context_creation_info info;
   memset(&info, 0, sizeof(info));
@@ -367,6 +398,22 @@ int main(int argc, char **argv) {
       case 'o':
         server->once = true;
         break;
+      case 'z': 
+        int idle_session_interval = parse_int("idle-session-timeout", optarg);
+        if (idle_session_interval < 0) {
+          fprintf(stderr, "ttyd: invalid idle session timeout: %s\n", optarg);
+          return -1;
+        }
+        server->idle_session_timeout = idle_session_interval;
+        break;
+      case 'Z': 
+       int idle_server_interval = parse_int("idle-server-timeout", optarg);
+        if (idle_server_interval < 0) {
+          fprintf(stderr, "ttyd: invalid idle server timeout: %s\n", optarg);
+          return -1;
+        }
+        server->idle_server_timeout = idle_server_interval;
+        break;    
       case 'B':
         browser = true;
         break;
@@ -601,6 +648,18 @@ int main(int argc, char **argv) {
     uv_signal_init(server->loop, &signals[i]);
     uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
   }
+
+  if (server->idle_server_timeout != -1) {
+    pthread_t thread_id;  // Thread identifier
+    int id = 1;  // Example data to pass to the thread (can be any data type)
+    connection_established = 0; 
+
+    // Create a new thread
+    if (pthread_create(&thread_id, NULL, handle_timeout_for_server_connection, &id) != 0) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+    }
+}
 
   lws_service(context, 0);
 
