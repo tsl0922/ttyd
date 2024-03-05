@@ -62,7 +62,7 @@
     "file-saver": "^2.0.5",
     "preact": "^10.18.1",
     "trzsz": "^1.1.4",
-    "whatwg-fetch": "^3.6.19",
+    "whatwg-fetch": "^3.6.20",
     "zmodem.js": "^0.1.10"
   },
   "resolutions": {
