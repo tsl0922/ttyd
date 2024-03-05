@@ -68,6 +68,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -o, --once
       Accept only one client and exit on disconnection
 
+  -q, --exit-no-conn
+      Exit on all clients disconnection
+
   -B, --browser
       Open terminal with the default system browser
 
