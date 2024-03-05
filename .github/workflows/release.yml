@@ -20,6 +20,7 @@ jobs:
             [[ $file == *.exe ]] && target="$target.exe"
             mv $file build/$target
           done
+          pushd build; sha256sum ttyd.* > SHA256SUMS; popd
       - uses: ncipollo/release-action@v1
         with:
           artifacts: build/*
