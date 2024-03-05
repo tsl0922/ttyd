@@ -16,6 +16,7 @@ const clientOptions = {
     enableTrzsz: false,
     enableSixel: false,
     isWindows: false,
+    unicodeVersion: '11',
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,

@@ -1120,6 +1120,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@xterm/addon-unicode11@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@xterm/addon-unicode11@npm:0.7.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.0.0
+  checksum: b8776b6646591ce5c8fa1d413bbd0f0b5c98928877259af97b38ba6d998c2f676d99aaf6dbc173b8d17b9b063bf597be82c5e66d5810a63583b3f0ce262b5a4e
+  languageName: node
+  linkType: hard
+
 "@xterm/addon-web-links@npm:^0.10.0":
   version: 0.10.0
   resolution: "@xterm/addon-web-links@npm:0.10.0"
@@ -10052,6 +10061,7 @@ __metadata:
     "@xterm/addon-canvas": ^0.6.0
     "@xterm/addon-fit": ^0.9.0
     "@xterm/addon-image": ^0.7.0
+    "@xterm/addon-unicode11": ^0.7.0
     "@xterm/addon-web-links": ^0.10.0
     "@xterm/addon-webgl": ^0.17.0
     "@xterm/xterm": ^5.4.0
