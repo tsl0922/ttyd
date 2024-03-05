@@ -1093,6 +1093,58 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@xterm/addon-canvas@npm:^0.6.0":
+  version: 0.6.0
+  resolution: "@xterm/addon-canvas@npm:0.6.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.0.0
+  checksum: 513e27891eadbcb9fd31f8c184bbc97bd64003077efbf4b0e99055926965527581c13bb2c050515df7e98902623b9e9d3275a103f0217f81d75eb2de5c93d4f2
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-fit@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "@xterm/addon-fit@npm:0.9.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.0.0
+  checksum: 2417b3f9a6e2cd671aac179df6d71570aed81f27a9e4fa704a7af002dc754dce7a8f28c9d7d5865d79b4ae45c3be099ea0aa8cac6bd093dd5cd56ad883d81800
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-image@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@xterm/addon-image@npm:0.7.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.2.0
+  checksum: cc5bac96b8cac39e211b41254058b2adf4508b6fab768e0d68fd79e89819d2b155b6cf4c7cf374c765c7cdaa2368d69bad40f360758f94d2e8c212519f580a5e
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-web-links@npm:^0.10.0":
+  version: 0.10.0
+  resolution: "@xterm/addon-web-links@npm:0.10.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.0.0
+  checksum: 8f1ee36143a5cb21ef7cd7746c1cbc8d97d69b9eb9e3d419326c02046fcfb5783a9687daec33fab362273cf996004a1dd337a5794ce855c58b59159b8407c054
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-webgl@npm:^0.17.0":
+  version: 0.17.0
+  resolution: "@xterm/addon-webgl@npm:0.17.0"
+  peerDependencies:
+    "@xterm/xterm": ^5.0.0
+  checksum: aaf5424c464ba422086f914b1263ee5606f36557562955dc2395c0f1550d9bcf77861302302e107d234089a8c0446b60d9dfd2165b5639ad004262eae63fd63f
+  languageName: node
+  linkType: hard
+
+"@xterm/xterm@npm:^5.4.0":
+  version: 5.4.0
+  resolution: "@xterm/xterm@npm:5.4.0"
+  checksum: 6d61cbd476591cdf1b86d5014bdc3b9656fb44c4f0d966dacd8856f06394aab60e8c3d502707f9f94c0336657341f0b9ee944a89d73edb0ec4280e0e1a4b775e
+  languageName: node
+  linkType: hard
+
 "@xtuc/ieee754@npm:^1.2.0":
   version: 1.2.0
   resolution: "@xtuc/ieee754@npm:1.2.0"
@@ -9997,6 +10049,12 @@ __metadata:
   resolution: "ttyd@workspace:."
   dependencies:
     "@typescript-eslint/eslint-plugin": ^6.9.0
+    "@xterm/addon-canvas": ^0.6.0
+    "@xterm/addon-fit": ^0.9.0
+    "@xterm/addon-image": ^0.7.0
+    "@xterm/addon-web-links": ^0.10.0
+    "@xterm/addon-webgl": ^0.17.0
+    "@xterm/xterm": ^5.4.0
     copy-webpack-plugin: ^11.0.0
     css-loader: ^6.8.1
     css-minimizer-webpack-plugin: ^5.0.1
@@ -10030,12 +10088,6 @@ __metadata:
     webpack-dev-server: ^4.15.1
     webpack-merge: ^5.10.0
     whatwg-fetch: ^3.6.19
-    xterm: ^5.3.0
-    xterm-addon-canvas: ^0.5.0
-    xterm-addon-fit: ^0.8.0
-    xterm-addon-image: ^0.5.0
-    xterm-addon-web-links: ^0.9.0
-    xterm-addon-webgl: ^0.16.0
     zmodem.js: ^0.1.10
   languageName: unknown
   linkType: soft
@@ -10765,58 +10817,6 @@ __metadata:
   version: 4.0.2
   resolution: "xtend@npm:4.0.2"
   checksum: ac5dfa738b21f6e7f0dd6e65e1b3155036d68104e67e5d5d1bde74892e327d7e5636a076f625599dc394330a731861e87343ff184b0047fef1360a7ec0a5a36a
-  languageName: node
-  linkType: hard
-
-"xterm-addon-canvas@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "xterm-addon-canvas@npm:0.5.0"
-  peerDependencies:
-    xterm: ^5.0.0
-  checksum: 22b756cc9088060a9c7afe77db4de1cae48a26ec11506342d170d3012943b432cfd30991310ad61354c3ea6c0df9fa6db7c14692c0cd71fc9dda04968a7936fa
-  languageName: node
-  linkType: hard
-
-"xterm-addon-fit@npm:^0.8.0":
-  version: 0.8.0
-  resolution: "xterm-addon-fit@npm:0.8.0"
-  peerDependencies:
-    xterm: ^5.0.0
-  checksum: 5af2041b442f7c804eda2e6f62e3b68b5159b0ae6bd96e2aa8d85b26441df57291cbfed653d1196d4af5d9b94bfc39993df8b409a25c35e0d36bdaf6f5cdfe5f
-  languageName: node
-  linkType: hard
-
-"xterm-addon-image@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "xterm-addon-image@npm:0.5.0"
-  peerDependencies:
-    xterm: ^5.2.0
-  checksum: 91e119719e799cc8bff6b88524ea062fcec215d785388aca0e0e28e90c96d9b20d346e8bb5bc74a93a169df63fd5aa64be024c7958c008a1eea9b5502e47dd21
-  languageName: node
-  linkType: hard
-
-"xterm-addon-web-links@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "xterm-addon-web-links@npm:0.9.0"
-  peerDependencies:
-    xterm: ^5.0.0
-  checksum: 192d1568ee732497e427cd209028bf4713e30c7307d62b3ff3c3a5deccf915725804cfbccd8b5374f9d3b9ac0bbf2e77da2a4adb7c4289addada87686623dd86
-  languageName: node
-  linkType: hard
-
-"xterm-addon-webgl@npm:^0.16.0":
-  version: 0.16.0
-  resolution: "xterm-addon-webgl@npm:0.16.0"
-  peerDependencies:
-    xterm: ^5.0.0
-  checksum: d270c3d7a8b33641a0dda2086ea0d7d2b50aec061c9f30657fad691d5eadb4a304c17d1f407d87b3c626fe471e26b715ad797adabdd08463df82fe6f406c2f2c
-  languageName: node
-  linkType: hard
-
-"xterm@npm:^5.3.0":
-  version: 5.3.0
-  resolution: "xterm@npm:5.3.0"
-  checksum: 1bdfdfe4cae4412128376180d85e476b43fb021cdd1114b18acad821c9ea44b5b600e0d88febf2b3572f38fad7741e5161ce0178a44369617cf937222cc6e011
   languageName: node
   linkType: hard
 
