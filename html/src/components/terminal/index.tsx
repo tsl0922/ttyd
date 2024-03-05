@@ -2,7 +2,7 @@ import { bind } from 'decko';
 import { Component, h } from 'preact';
 import { Xterm, XtermOptions } from './xterm';
 
-import 'xterm/css/xterm.css';
+import '@xterm/xterm/css/xterm.css';
 import { Modal } from '../modal';
 
 interface Props extends XtermOptions {

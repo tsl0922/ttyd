@@ -1,6 +1,6 @@
 import { h, Component } from 'preact';
 
-import { ITerminalOptions, ITheme } from 'xterm';
+import { ITerminalOptions, ITheme } from '@xterm/xterm';
 import { ClientOptions, FlowControl } from './terminal/xterm';
 import { Terminal } from './terminal';
 
