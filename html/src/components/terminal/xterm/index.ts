@@ -5,6 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { ImageAddon } from '@xterm/addon-image';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
 
@@ -46,6 +47,7 @@ export interface ClientOptions {
     titleFixed?: string;
     isWindows: boolean;
     trzszDragInitTimeout: number;
+    unicodeVersion: string;
 }
 
 export interface FlowControl {
@@ -385,6 +387,21 @@ export class Xterm {
                     break;
                 case 'isWindows':
                     if (value) console.log('[ttyd] is windows');
+                    break;
+                case 'unicodeVersion':
+                    switch (value) {
+                        case 6:
+                        case '6':
+                            console.log('[ttyd] setting Unicode version: 6');
+                            break;
+                        case 11:
+                        case '11':
+                        default:
+                            console.log('[ttyd] setting Unicode version: 11');
+                            terminal.loadAddon(new Unicode11Addon());
+                            terminal.unicode.activeVersion = '11';
+                            break;
+                    }
                     break;
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
