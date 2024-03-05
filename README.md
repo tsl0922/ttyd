@@ -34,6 +34,7 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 ## Install on Linux
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
+- [Brew.sh](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
 - Install the snap: `sudo snap install ttyd --classic`
 - Build from source (debian/ubuntu):
     ```bash
