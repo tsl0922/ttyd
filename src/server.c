@@ -77,13 +77,13 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"check-origin", no_argument, NULL, 'O'},
                                         {"max-clients", required_argument, NULL, 'm'},
                                         {"once", no_argument, NULL, 'o'},
-                                        {"exit-no-conn", no_argument, NULL, 'e'},
+                                        {"exit-no-conn", no_argument, NULL, 'q'},
                                         {"browser", no_argument, NULL, 'B'},
                                         {"debug", required_argument, NULL, 'd'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:6aSC:K:A:Wt:T:Om:oBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -109,7 +109,7 @@ static void print_help() {
           "    -O, --check-origin      Do not allow websocket connection from different origin\n"
           "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
           "    -o, --once              Accept only one client and exit on disconnection\n"
-          "    -e, --exit-no-conn      Exit on all clients disconnection\n"
+          "    -q, --exit-no-conn      Exit on all clients disconnection\n"
           "    -B, --browser           Open terminal with the default system browser\n"
           "    -I, --index             Custom index.html path\n"
           "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
       case 'o':
         server->once = true;
         break;
-      case 'e':
+      case 'q':
         server->exit_no_conn = true;
         break;
       case 'B':
