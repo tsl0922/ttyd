@@ -44,7 +44,7 @@
     "terser-webpack-plugin": "^5.3.9",
     "through2": "^4.0.2",
     "ts-loader": "^9.5.0",
-    "typescript": "^5.2.2",
+    "typescript": "^5.3.3",
     "util": "^0.12.5",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
