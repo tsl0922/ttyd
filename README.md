@@ -52,6 +52,7 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 ## Install on Windows
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
+- Install with [Winget](https://github.com/microsoft/winget-pkgs): `winget install tsl0922.ttyd`
 - Install with [Scoop](https://scoop.sh/#/apps?q=ttyd&s=2&d=1&o=true): `scoop install ttyd`
 - [Compile on Windows](https://github.com/tsl0922/ttyd/wiki/Compile-on-Windows)
 
