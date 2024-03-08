@@ -28,13 +28,13 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 
 ## Install on macOS
 
-- Install with [homebrew](http://brew.sh): `brew install ttyd`
+- Install with [Homebrew](http://brew.sh): `brew install ttyd`
 - Install with [MacPorts](https://www.macports.org): `sudo port install ttyd`
 
 ## Install on Linux
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
-- [Brew.sh](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
+- Install with [Homebrew](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
 - Install the snap: `sudo snap install ttyd --classic`
 - Build from source (debian/ubuntu):
     ```bash
@@ -52,7 +52,7 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 ## Install on Windows
 
 - Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
-- Install with [Winget](https://github.com/microsoft/winget-pkgs): `winget install tsl0922.ttyd`
+- Install with [WinGet](https://github.com/microsoft/winget-cli): `winget install tsl0922.ttyd`
 - Install with [Scoop](https://scoop.sh/#/apps?q=ttyd&s=2&d=1&o=true): `scoop install ttyd`
 - [Compile on Windows](https://github.com/tsl0922/ttyd/wiki/Compile-on-Windows)
 
