@@ -36,3 +36,4 @@ jobs:
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd*
+
