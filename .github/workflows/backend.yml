@@ -23,7 +23,7 @@ jobs:
       matrix:
         target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install packages
         run: |
           sudo apt-get update
