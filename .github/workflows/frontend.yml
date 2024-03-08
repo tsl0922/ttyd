@@ -26,3 +26,5 @@ jobs:
           yarn run check
           yarn run build
         working-directory: html
+
+        
