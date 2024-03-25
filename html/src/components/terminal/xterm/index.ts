@@ -1,5 +1,6 @@
 import { bind } from 'decko';
-import { IDisposable, ITerminalOptions, Terminal } from '@xterm/xterm';
+import type { IDisposable, ITerminalOptions } from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
@@ -21,7 +22,7 @@ declare global {
     }
 }
 
-const enum Command {
+enum Command {
     // server side
     OUTPUT = '0',
     SET_WINDOW_TITLE = '1',
@@ -297,6 +298,40 @@ export class Xterm {
     }
 
     @bind
+    private parseOptsFromUrlQuery(query: string): Preferences {
+        const { terminal } = this;
+        const { clientOptions } = this.options;
+        const prefs = {} as Preferences;
+        const queryObj = Array.from(new URLSearchParams(query) as unknown as Iterable<[string, string]>);
+
+        for (const [k, queryVal] of queryObj) {
+            let v = clientOptions[k];
+            if (v === undefined) v = terminal.options[k];
+            switch (typeof v) {
+                case 'boolean':
+                    prefs[k] = queryVal === 'true' || queryVal === '1';
+                    break;
+                case 'number':
+                case 'bigint':
+                    prefs[k] = Number.parseInt(queryVal, 10);
+                    break;
+                case 'string':
+                    prefs[k] = queryVal;
+                    break;
+                case 'object':
+                    prefs[k] = JSON.parse(queryVal);
+                    break;
+                default:
+                    console.warn(`[ttyd] maybe unknown option: ${k}=${queryVal}, treating as string`);
+                    prefs[k] = queryVal;
+                    break;
+            }
+        }
+
+        return prefs;
+    }
+
+    @bind
     private onSocketData(event: MessageEvent) {
         const { textDecoder } = this;
         const rawData = event.data as ArrayBuffer;
@@ -315,6 +350,7 @@ export class Xterm {
                 this.applyPreferences({
                     ...this.options.clientOptions,
                     ...JSON.parse(textDecoder.decode(data)),
+                    ...this.parseOptsFromUrlQuery(window.location.search),
                 } as Preferences);
                 break;
             default:
@@ -339,8 +375,8 @@ export class Xterm {
             this.writeFunc = data => this.zmodemAddon?.consume(data);
             terminal.loadAddon(register(this.zmodemAddon));
         }
-        Object.keys(prefs).forEach(key => {
-            const value = prefs[key];
+
+        for (const [key, value] of Object.entries(prefs)) {
             switch (key) {
                 case 'rendererType':
                     this.setRendererType(value);
@@ -413,7 +449,7 @@ export class Xterm {
                     if (key.indexOf('font') === 0) fitAddon.fit();
                     break;
             }
-        });
+        }
     }
 
     @bind
