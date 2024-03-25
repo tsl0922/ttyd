@@ -304,7 +304,6 @@ export class Xterm {
             new URLSearchParams(window.location.search) as unknown as Iterable<[string, string]>
         );
         for (const [k, queryVal] of queryObj) {
-            console.log(k, queryVal);
             if (queryVal === null) {
                 continue;
             }
