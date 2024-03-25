@@ -1,8 +1,9 @@
 import { h, Component } from 'preact';
 
-import { ITerminalOptions, ITheme } from '@xterm/xterm';
-import { ClientOptions, FlowControl } from './terminal/xterm';
 import { Terminal } from './terminal';
+
+import type { ITerminalOptions, ITheme } from '@xterm/xterm';
+import type { ClientOptions, FlowControl } from './terminal/xterm';
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const path = window.location.pathname.replace(/[/]+$/, '');

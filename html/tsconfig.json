@@ -10,6 +10,7 @@
     "declaration": false,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
+    "lib": ["es2019", "dom"],
   },
   "include": [
     "src/**/*.tsx",
