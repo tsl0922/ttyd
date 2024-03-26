@@ -357,7 +357,6 @@ export class Xterm {
 
     @bind
     private applyPreferences(prefs: Preferences) {
-        console.log(prefs);
         const { terminal, fitAddon, register } = this;
         if (prefs.enableZmodem || prefs.enableTrzsz) {
             this.zmodemAddon = new ZmodemAddon({
