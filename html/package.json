@@ -21,7 +21,7 @@
     "node": ">=12"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.10.0",
     "css-minimizer-webpack-plugin": "^6.0.0",
