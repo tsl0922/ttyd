@@ -1,28 +1,16 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.12.0)
 
-if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-    project(ttyd C) 
-    set(PROJECT_VERSION_MAJOR "1")
-    set(PROJECT_VERSION_MINOR "7")
-    set(PROJECT_VERSION_PATCH "4")
-    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-else()
-    cmake_policy(SET CMP0048 NEW)
-    project(ttyd VERSION 1.7.4 LANGUAGES C)
-endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(Git)
-if(GIT_FOUND)
-    execute_process(
-            COMMAND ${GIT_EXECUTABLE} --git-dir ${CMAKE_CURRENT_SOURCE_DIR}/.git rev-parse --short HEAD
-            RESULT_VARIABLE GIT_RET
-            OUTPUT_VARIABLE GIT_COMMIT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-    )
-    if("${GIT_RET}" STREQUAL "0")
-        set(PROJECT_VERSION "${PROJECT_VERSION}-${GIT_COMMIT}")
-    endif()
+include(GetGitVersion)
+
+get_git_version(GIT_VERSION SEM_VER)
+get_git_head(GIT_COMMIT)
+
+project(ttyd VERSION "${SEM_VER}" LANGUAGES C)
+
+if(NOT "{GIT_COMMIT}" STREQUAL "")
+    set(PROJECT_VERSION "${PROJECT_VERSION}-${GIT_COMMIT}")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
