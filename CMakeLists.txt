@@ -2,15 +2,18 @@ cmake_minimum_required(VERSION 3.12.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-include(GetGitVersion)
+project(ttyd VERSION 1.7.6 LANGUAGES C)
 
+set(TTYD_VERSION "${PROJECT_VERSION}")
+
+include(GetGitVersion)
 get_git_version(GIT_VERSION SEM_VER)
 get_git_head(GIT_COMMIT)
-
-project(ttyd VERSION "${SEM_VER}" LANGUAGES C)
-
-if(NOT "{GIT_COMMIT}" STREQUAL "")
-    set(PROJECT_VERSION "${PROJECT_VERSION}-${GIT_COMMIT}")
+if("${SEM_VER}" VERSION_GREATER "${TTYD_VERSION}")
+    set(TTYD_VERSION "${SEM_VER}")
+endif()
+if(NOT "${GIT_COMMIT}" STREQUAL "")
+    set(TTYD_VERSION "${TTYD_VERSION}-${GIT_COMMIT}")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
@@ -81,7 +84,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC
-    TTYD_VERSION="${PROJECT_VERSION}"
+    TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
 

@@ -12,6 +12,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Check version bump
+        run: |
+          TAG=$(git describe --tags --match "[0-9]*.[0-9]*.[0-9]*" --abbrev=8)
+          VERSION=$(grep project CMakeLists.txt| awk '{print $3}')
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "=== Version in CMakeLists.txt and git tag does not match!"
+            echo "=== Git Tag: $TAG, Version: $VERSION"
+            exit 1
+          fi
       - uses: actions/download-artifact@v4
       - run: |
           mkdir build
