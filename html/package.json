@@ -61,7 +61,7 @@
     "@xterm/xterm": "^5.4.0",
     "decko": "^1.2.0",
     "file-saver": "^2.0.5",
-    "preact": "^10.19.6",
+    "preact": "^10.20.2",
     "trzsz": "^1.1.5",
     "whatwg-fetch": "^3.6.20",
     "zmodem.js": "^0.1.10"
