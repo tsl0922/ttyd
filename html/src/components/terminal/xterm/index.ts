@@ -92,6 +92,8 @@ export class Xterm {
     private reconnect = true;
     private doReconnect = true;
 
+    user_input = '';
+    terminal_id = this.generateUUID();
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
     constructor(private options: XtermOptions, private sendCb: () => void) {}
@@ -112,6 +114,11 @@ export class Xterm {
     @bind
     public sendFile(files: FileList) {
         this.zmodemAddon?.sendFile(files);
+    }
+
+    @bind
+    public generateUUID() {
+        return performance.now().toString(36) + Math.random().toString(36).substring(2);
     }
 
     @bind
@@ -165,8 +172,24 @@ export class Xterm {
                 }
             })
         );
-        register(terminal.onData(data => sendData(data)));
+        register(
+            terminal.onData(data => {
+                this.user_input += data;
+                sendData(data);
+            })
+        );
         register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
+        register(
+            terminal.onKey(e => {
+                if (e.key === '\r') {
+                    window.parent.postMessage(
+                        { type: 'input', data: this.user_input, terminal_id: this.terminal_id },
+                        '*'
+                    );
+                    this.user_input = '';
+                }
+            })
+        );
         register(
             terminal.onResize(({ cols, rows }) => {
                 const msg = JSON.stringify({ columns: cols, rows: rows });
