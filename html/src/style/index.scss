@@ -7,17 +7,35 @@ body {
 }
 
 @font-face {
-    font-family: SarasaMono;
-    font-style: normal;
+    font-family: 'MesloLGS NF';
+    src: url('webfont/MesloLGS-NF-Italic.woff2') format('woff2');
     font-weight: normal;
-    src: url('webfont/SarasaMonoSC-Regular.woff2') format('WOFF2');
+    font-style: italic;
+    font-display: swap;
 }
 
 @font-face {
-    font-family: JetBrains;
+    font-family: 'MesloLGS NF';
+    src: url('webfont/MesloLGS-NF-Bold.woff2') format('woff2');
+    font-weight: bold;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'MesloLGS NF';
+    src: url('webfont/MesloLGS-NF-Bold-Italic.woff2') format('woff2');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'MesloLGS NF';
+    src: url('webfont/MesloLGS-NF-Regular.woff2') format('woff2');
     font-weight: normal;
-    src: url('webfont/JetBrainsMono-Regular.woff2') format('WOFF2');
+    font-style: normal;
+    font-display: swap;
 }
 
 #terminal-container {
