@@ -63,6 +63,7 @@ typedef struct {
 
 struct server {
   int client_count;        // client count
+  int serv_buffer_size;    // service buffer size
   char *prefs_json;        // client preferences
   char *credential;        // encoded basic auth credential
   char *auth_header;       // header name used for auth proxy

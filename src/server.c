@@ -82,8 +82,9 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"debug", required_argument, NULL, 'd'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
+                                        {"serv_buffer_size", required_argument, NULL, 'f'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:f:P:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -113,6 +114,7 @@ static void print_help() {
           "    -B, --browser           Open terminal with the default system browser\n"
           "    -I, --index             Custom index.html path\n"
           "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
+          "    -f, --serv_buffer_size  Maximum chunk of file that can be sent at once (eg: --service_buffer_size 4096 indicates 4KB)\n"
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
           "    -P, --ping-interval     Websocket ping interval(sec) (default: 5)\n"
 #endif
@@ -155,6 +157,7 @@ static void print_config() {
   if (server->exit_no_conn) lwsl_notice("  exit_no_conn: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
   if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
+  if (server->serv_buffer_size != 0) lwsl_notice("  Service buffer size: %d bytes\n", server->serv_buffer_size);
   if (!server->writable) lwsl_notice("The --writable option is not set, will start in readonly mode");
 }
 
@@ -327,6 +330,7 @@ int main(int argc, char **argv) {
 #endif
   info.max_http_header_data = 65535;
 
+
   int debug_level = LLL_ERR | LLL_WARN | LLL_NOTICE;
   char iface[128] = "";
   char socket_owner[128] = "";
@@ -383,6 +387,14 @@ int main(int argc, char **argv) {
           return -1;
         }
         break;
+      case 'f':
+       info.pt_serv_buf_size = parse_int("serv_buffer_size", optarg);
+       if (info.pt_serv_buf_size < 0) {
+         fprintf(stderr, "ttyd: invalid service buffer size: %s\n", optarg);
+         return -1;
+       }
+       server->serv_buffer_size = info.pt_serv_buf_size;
+       break;
       case 'i':
         strncpy(iface, optarg, sizeof(iface) - 1);
         iface[sizeof(iface) - 1] = '\0';
