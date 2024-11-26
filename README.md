@@ -94,6 +94,7 @@ OPTIONS:
     -d, --debug             Set log level (default: 7)
     -v, --version           Print the version and exit
     -h, --help              Print this text and exit
+    -f, --serv_buffer_size  Maximum chunk of file that can be sent at once
 ```
 
 Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Example-Usage).

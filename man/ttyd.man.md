@@ -98,6 +98,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -A, --ssl-ca <ca path>
       SSL CA file path for client certificate verification
 
+  -f, --serv_buffer_size <buffer size>
+      Maximum chunk of file that can be sent at once
+
   -d, --debug <level>
       Set log level (default: 7)
 
