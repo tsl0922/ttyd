@@ -1267,6 +1267,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@xterm/addon-clipboard@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@xterm/addon-clipboard@npm:0.1.0"
+  dependencies:
+    js-base64: ^3.7.5
+  peerDependencies:
+    "@xterm/xterm": ^5.4.0
+  checksum: fe33d28223ae7f9965653c6c946a68e06f1d884fba1d11e8bcb52dcc608dbb2240caf48573d6297daefa56696e88f963148a1035ccf034cb6fb4f88f506a2ec7
+  languageName: node
+  linkType: hard
+
 "@xterm/addon-fit@npm:^0.10.0":
   version: 0.10.0
   resolution: "@xterm/addon-fit@npm:0.10.0"
@@ -6431,6 +6442,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-base64@npm:^3.7.5":
+  version: 3.7.7
+  resolution: "js-base64@npm:3.7.7"
+  checksum: d1b02971db9dc0fd35baecfaf6ba499731fb44fe3373e7e1d6681fbd3ba665f29e8d9d17910254ef8104e2cb8b44117fe4202d3dc54c7cafe9ba300fe5433358
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -10475,6 +10493,7 @@ __metadata:
   dependencies:
     "@typescript-eslint/eslint-plugin": ^7.1.1
     "@xterm/addon-canvas": ^0.7.0
+    "@xterm/addon-clipboard": ^0.1.0
     "@xterm/addon-fit": ^0.10.0
     "@xterm/addon-image": ^0.8.0
     "@xterm/addon-unicode11": ^0.8.0
