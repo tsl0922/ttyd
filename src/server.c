@@ -155,7 +155,7 @@ static void print_config() {
   if (server->exit_no_conn) lwsl_notice("  exit_no_conn: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
   if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
-  if (!server->writable) lwsl_notice("The --writable option is not set, will start in readonly mode");
+  if (!server->writable) lwsl_warn("The --writable option is not set, will start in readonly mode\n");
 }
 
 static struct server *server_new(int argc, char **argv, int start) {
