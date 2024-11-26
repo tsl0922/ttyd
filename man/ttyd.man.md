@@ -150,7 +150,7 @@ ttyd -p 8080 bash -x
   Then open http://localhost:8080 with a browser, you will get a bash shell with debug mode enabled. More examples:
 
   - If you want to login with your system accounts on the web browser, run `ttyd login`.
-  - You can even run a none shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
+  - You can even run a non-shell command like vim, try: `ttyd vim`, the web browser will show you a vim editor.
   - Sharing single process with multiple clients: `ttyd tmux new -A -s ttyd vim`, run `tmux new -A -s ttyd` to connect to the tmux session from terminal.
 
 # SSL how-to
