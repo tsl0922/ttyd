@@ -16,6 +16,7 @@ const clientOptions = {
     enableZmodem: false,
     enableTrzsz: false,
     enableSixel: false,
+    closeOnDisconnect: false,
     isWindows: false,
     unicodeVersion: '11',
 } as ClientOptions;

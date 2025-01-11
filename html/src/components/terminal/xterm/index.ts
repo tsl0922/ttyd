@@ -50,6 +50,7 @@ export interface ClientOptions {
     isWindows: boolean;
     trzszDragInitTimeout: number;
     unicodeVersion: string;
+    closeOnDisconnect: boolean;
 }
 
 export interface FlowControl {
@@ -99,6 +100,7 @@ export class Xterm {
     private resizeOverlay = true;
     private reconnect = true;
     private doReconnect = true;
+    private closeOnDisconnect = false;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -287,6 +289,8 @@ export class Xterm {
         if (event.code !== 1000 && doReconnect) {
             overlayAddon.showOverlay('Reconnecting...');
             refreshToken().then(connect);
+        } else if (this.closeOnDisconnect) {
+            window.close();
         } else {
             const { terminal } = this;
             const keyDispose = terminal.onKey(e => {
@@ -417,6 +421,14 @@ export class Xterm {
                     if (value) {
                         terminal.loadAddon(register(new ImageAddon()));
                         console.log('[ttyd] Sixel enabled');
+                    }
+                    break;
+                case 'closeOnDisconnect':
+                    if (value) {
+                        console.log('[ttyd] close on disconnect enabled (Reconnect disabled)');
+                        this.closeOnDisconnect = true;
+                        this.reconnect = false;
+                        this.doReconnect = false;
                     }
                     break;
                 case 'titleFixed':
