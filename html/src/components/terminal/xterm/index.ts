@@ -50,6 +50,7 @@ export interface ClientOptions {
     isWindows: boolean;
     trzszDragInitTimeout: number;
     unicodeVersion: string;
+    closeOnDisconnect: boolean;
 }
 
 export interface FlowControl {
@@ -99,6 +100,7 @@ export class Xterm {
     private resizeOverlay = true;
     private reconnect = true;
     private doReconnect = true;
+    private closeOnDisconnect = false;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -287,6 +289,8 @@ export class Xterm {
         if (event.code !== 1000 && doReconnect) {
             overlayAddon.showOverlay('Reconnecting...');
             refreshToken().then(connect);
+        else if (this.closeOnDisconnect) {
+            window.close();
         } else {
             const { terminal } = this;
             const keyDispose = terminal.onKey(e => {
@@ -443,6 +447,8 @@ export class Xterm {
                             break;
                     }
                     break;
+                case 'closeOnDisconnect':
+                    this.closeOnDisconnect = value ?? false;
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
                     if (terminal.options[key] instanceof Object) {
