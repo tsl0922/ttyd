@@ -289,7 +289,7 @@ export class Xterm {
         if (event.code !== 1000 && doReconnect) {
             overlayAddon.showOverlay('Reconnecting...');
             refreshToken().then(connect);
-        else if (this.closeOnDisconnect) {
+        } else if (this.closeOnDisconnect) {
             window.close();
         } else {
             const { terminal } = this;
@@ -448,7 +448,9 @@ export class Xterm {
                     }
                     break;
                 case 'closeOnDisconnect':
+                    console.log('[ttyd] close on disconnect:', this.closeOnDisconnect);
                     this.closeOnDisconnect = value ?? false;
+                    break;
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
                     if (terminal.options[key] instanceof Object) {
