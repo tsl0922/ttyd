@@ -18,7 +18,7 @@ const clientOptions = {
     enableSixel: false,
     isWindows: false,
     unicodeVersion: '11',
-    closeOnDisconnect: true,
+    closeOnDisconnect: false,
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
