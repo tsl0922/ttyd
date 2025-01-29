@@ -189,9 +189,15 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 \[la]https://en.wikipedia.org/wiki/Sixel\[ra] image output support (Usage
 \[la]https://saitoha.github.io/libsixel/\[ra])
 .IP \(bu 2
+\fB\fC-t closeOnDisconnect=true\fR: close the terminal on disconnection, this will disable reconnect
+.IP \(bu 2
 \fB\fC-t titleFixed=hello\fR: set a fixed title for the browser window
 .IP \(bu 2
 \fB\fC-t fontSize=20\fR: change the font size of the terminal
+.IP \(bu 2
+\fB\fC-t unicodeVersion=11\fR: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
+.IP \(bu 2
+\fB\fC-t trzszDragInitTimeout=3000\fR: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
 
 .RE
 
