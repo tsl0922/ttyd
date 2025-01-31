@@ -65,6 +65,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
                                         {"ping-interval", required_argument, NULL, 'P'},
 #endif
+                                        {"srv-buf-size", required_argument, NULL, 'f'},
                                         {"ipv6", no_argument, NULL, '6'},
                                         {"ssl", no_argument, NULL, 'S'},
                                         {"ssl-cert", required_argument, NULL, 'C'},
@@ -83,7 +84,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -116,6 +117,7 @@ static void print_help() {
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
           "    -P, --ping-interval     Websocket ping interval(sec) (default: 5)\n"
 #endif
+          "    -f, --srv-buf-size      Maximum chunk of file (in bytes) that can be sent at once, a larger value may improve throughput (default: 4096)\n"
 #ifdef LWS_WITH_IPV6
           "    -6, --ipv6              Enable IPv6 support\n"
 #endif
@@ -463,6 +465,14 @@ int main(int argc, char **argv) {
         retry.secs_since_valid_hangup = interval + 7;
       } break;
 #endif
+      case 'f': {
+        int serv_buf_size = parse_int("srv-buf-size", optarg);
+        if (serv_buf_size < 0) {
+          fprintf(stderr, "ttyd: invalid srv-buf-size: %s\n", optarg);
+          return -1;
+        }
+        info.pt_serv_buf_size = serv_buf_size;
+      } break;
       case '6':
         info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);
         break;
@@ -553,9 +563,9 @@ int main(int argc, char **argv) {
   if (ssl) {
     info.ssl_cert_filepath = cert_path;
     info.ssl_private_key_filepath = key_path;
-    #ifndef LWS_WITH_MBEDTLS
+#ifndef LWS_WITH_MBEDTLS
     info.ssl_options_set = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
-    #endif
+#endif
     if (strlen(ca_path) > 0) {
       info.ssl_ca_filepath = ca_path;
       info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
