@@ -21,7 +21,7 @@ BEGIN
             VALUE "FileVersion", VERSION_STR
             VALUE "InternalName", "ttyd\0"
             VALUE "OriginalFilename", "ttyd.exe\0"
-            VALUE "LegalCopyright", "Copyright (C) 2016-2022 Shuanglei Tao\0"
+            VALUE "LegalCopyright", "Copyright (C) 2016-2025 Shuanglei Tao\0"
         VALUE "Comment", "\0"
         END
     END
