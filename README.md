@@ -20,6 +20,7 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 - SSL support based on [OpenSSL](https://www.openssl.org) / [Mbed TLS](https://github.com/Mbed-TLS/mbedtls)
 - Run any custom command with options
 - Basic authentication support and many other custom options
+- Two-factor authentication (2FA) in which the TOTP code is appended to the password
 - Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt](https://openwrt.org), Windows
 
 > ❤ Special thanks to [JetBrains](https://www.jetbrains.com/?from=ttyd) for sponsoring the opensource license to this project.
@@ -69,6 +70,7 @@ OPTIONS:
     -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
     -U, --socket-owner      User owner of the UNIX domain socket file, when enabled (eg: user:group)
     -c, --credential        Credential for basic authentication (format: username:password)
+    -1, --totp              Time-based one-time password secret (format: [DIGEST:]SECRET[:DIGITS[:INTERVAL[:OFFSET]]])
     -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
     -u, --uid               User id to run with
     -g, --gid               Group id to run with

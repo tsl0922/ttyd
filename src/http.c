@@ -1,10 +1,12 @@
 #include <libwebsockets.h>
 #include <string.h>
 #include <zlib.h>
+#include <time.h>
 
 #include "html.h"
 #include "server.h"
 #include "utils.h"
+#include "totp.h"
 
 enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 
@@ -33,9 +35,23 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
 
   if(server->credential != NULL) {
     char buf[256];
+    char expect[256];
+    char b64expect[256];
+    char code[16];
     int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
     if (len >= 7 && strstr(buf, "Basic ")) {
-      if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
+      if(server->totp != NULL && TOTP_GenerateFromSpec(server->totp, time(NULL), code, sizeof(code)) == 0) {
+        if (server->last_totp_code[0] == '\0' || strcmp(code, server->last_totp_code) != 0) {
+          snprintf(expect, sizeof(expect), "%s%s", server->credential_dec, code);
+          lws_b64_encode_string(expect, strlen(expect), b64expect, sizeof(b64expect));
+          if (!strcmp(buf + 6, b64expect)) {
+            strncpy(server->last_totp_code, code, sizeof(server->last_totp_code));
+            return AUTH_OK;
+          }
+        }
+      } else {
+        if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
+      }
     }
     return send_unauthorized(wsi, HTTP_STATUS_UNAUTHORIZED, WSI_TOKEN_HTTP_WWW_AUTHENTICATE);
   }
@@ -102,11 +118,14 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
       switch (check_auth(wsi, pss)) {
         case AUTH_OK:
+          lwsl_notice("AUTH_OK!!!\n");
           break;
         case AUTH_FAIL:
+          lwsl_notice("AUTH_FAIL!!!\n");
           return 0;
         case AUTH_ERROR:
         default:
+          lwsl_notice("AUTH_ERROR!!!\n");
           return 1;
       }
 

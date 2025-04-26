@@ -5,10 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
+#include "totp.h"
 
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
@@ -187,8 +189,24 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
 
   if (server->credential != NULL) {
     char buf[256];
+    char expect[256];
+    char b64expect[256];
+    char code[16];
     size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
+    if (n >= 7 && strstr(buf, "Basic ")) {
+      if(server->totp != NULL && TOTP_GenerateFromSpec(server->totp, time(NULL), code, sizeof(code)) == 0) {
+        snprintf(expect, sizeof(expect), "%s%s", server->credential_dec, server->last_totp_code);
+        lws_b64_encode_string(expect, strlen(expect), b64expect, sizeof(b64expect));
+        if (!strcmp(buf + 6, b64expect)) return true;
+      } else {
+        if (!strcmp(buf + 6, server->credential)) return true;
+      }
+    } else {
+      if(server->totp != NULL && TOTP_GenerateFromSpec(server->totp, time(NULL), code, sizeof(code)) == 0) {
+        if (!strcmp(code, server->last_totp_code)) return true;
+      }
+    }
+    return false;
   }
 
   return true;
@@ -209,7 +227,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
-      if (!check_auth(wsi, pss)) return 1;
+      if (!check_auth(wsi, pss)) {
+        lwsl_notice("AUTH_ERROR!!! (protocol.c)\n");
+        return 1;
+      } else {
+        lwsl_notice("AUTH_OK!!! (protocol.c)\n");
+      }
 
       n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
 #if defined(LWS_ROLE_H2)
