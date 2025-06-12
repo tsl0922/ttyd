@@ -83,8 +83,9 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"debug", required_argument, NULL, 'd'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
+                                        {"config", required_argument, NULL, 'F'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vhF:";
 
 static void print_help() {
   // clang-format off
@@ -128,6 +129,7 @@ static void print_help() {
           "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
 #endif
           "    -d, --debug             Set log level (default: 7)\n"
+          "    -F, --config            Path to config file\n"
           "    -v, --version           Print the version and exit\n"
           "    -h, --help              Print this text and exit\n\n"
           "Visit https://github.com/tsl0922/ttyd to get more information and report bugs.\n",
@@ -263,6 +265,219 @@ static int parse_int(char *name, char *str) {
   return (int)val;
 }
 
+static int parse_config_file(const char *file_path, struct server *ts, struct lws_context_creation_info *info, 
+                            char *iface, char *socket_owner, bool *browser, bool *ssl, 
+                            char *cert_path, char *key_path, char *ca_path, int *debug_level,
+                            struct json_object *client_prefs) {
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        fprintf(stderr, "ttyd: could not open config file: %s\n", file_path);
+        return -1;
+    }
+
+    // Get file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Read file content
+    char *buffer = malloc(file_size + 1);
+    if (buffer == NULL) {
+        fprintf(stderr, "ttyd: memory allocation failed\n");
+        fclose(file);
+        return -1;
+    }
+
+    size_t read_size = fread(buffer, 1, file_size, file);
+    buffer[read_size] = '\0';
+    fclose(file);
+
+    // Parse JSON
+    json_tokener *tok = json_tokener_new();
+    json_object *obj = json_tokener_parse_ex(tok, buffer, read_size);
+    free(buffer);
+
+    if (obj == NULL) {
+        fprintf(stderr, "ttyd: invalid JSON in config file\n");
+        json_tokener_free(tok);
+        return -1;
+    }
+
+    // Process each config option
+    json_object_object_foreach(obj, key, val) {
+        // Port
+        if (strcmp(key, "port") == 0) {
+            info->port = json_object_get_int(val);
+        }
+        // Interface
+        else if (strcmp(key, "interface") == 0) {
+            strncpy(iface, json_object_get_string(val), 127);
+            iface[127] = '\0';
+        }
+        // Socket owner
+        else if (strcmp(key, "socket-owner") == 0) {
+            strncpy(socket_owner, json_object_get_string(val), 127);
+            socket_owner[127] = '\0';
+        }
+        // Credential
+        else if (strcmp(key, "credential") == 0) {
+            const char *cred = json_object_get_string(val);
+            if (strchr(cred, ':') == NULL) {
+                fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
+                continue;
+            }
+            char b64_text[256];
+            lws_b64_encode_string(cred, strlen(cred), b64_text, sizeof(b64_text));
+            ts->credential = strdup(b64_text);
+        }
+        // Auth header
+        else if (strcmp(key, "auth-header") == 0) {
+            ts->auth_header = strdup(json_object_get_string(val));
+        }
+        // UID
+        else if (strcmp(key, "uid") == 0) {
+            info->uid = json_object_get_int(val);
+        }
+        // GID
+        else if (strcmp(key, "gid") == 0) {
+            info->gid = json_object_get_int(val);
+        }
+        // Signal
+        else if (strcmp(key, "signal") == 0) {
+            int sig = get_sig(json_object_get_string(val));
+            if (sig > 0) {
+                ts->sig_code = sig;
+                get_sig_name(sig, ts->sig_name, sizeof(ts->sig_name));
+            }
+        }
+        // Working directory
+        else if (strcmp(key, "cwd") == 0) {
+            ts->cwd = strdup(json_object_get_string(val));
+        }
+        // URL arg
+        else if (strcmp(key, "url-arg") == 0 && json_object_get_boolean(val)) {
+            ts->url_arg = true;
+        }
+        // Writable
+        else if (strcmp(key, "writable") == 0 && json_object_get_boolean(val)) {
+            ts->writable = true;
+        }
+        // Terminal type
+        else if (strcmp(key, "terminal-type") == 0) {
+            strncpy(ts->terminal_type, json_object_get_string(val), sizeof(ts->terminal_type) - 1);
+            ts->terminal_type[sizeof(ts->terminal_type) - 1] = '\0';
+        }
+        // Check origin
+        else if (strcmp(key, "check-origin") == 0 && json_object_get_boolean(val)) {
+            ts->check_origin = true;
+        }
+        // Max clients
+        else if (strcmp(key, "max-clients") == 0) {
+            ts->max_clients = json_object_get_int(val);
+        }
+        // Once
+        else if (strcmp(key, "once") == 0 && json_object_get_boolean(val)) {
+            ts->once = true;
+        }
+        // Exit no conn
+        else if (strcmp(key, "exit-no-conn") == 0 && json_object_get_boolean(val)) {
+            ts->exit_no_conn = true;
+        }
+        // Browser
+        else if (strcmp(key, "browser") == 0 && json_object_get_boolean(val)) {
+            *browser = true;
+        }
+        // Debug
+        else if (strcmp(key, "debug") == 0) {
+            *debug_level = json_object_get_int(val);
+        }
+        // SSL
+        else if (strcmp(key, "ssl") == 0 && json_object_get_boolean(val)) {
+            *ssl = true;
+        }
+        // SSL cert
+        else if (strcmp(key, "ssl-cert") == 0) {
+            strncpy(cert_path, json_object_get_string(val), 1023);
+            cert_path[1023] = '\0';
+        }
+        // SSL key
+        else if (strcmp(key, "ssl-key") == 0) {
+            strncpy(key_path, json_object_get_string(val), 1023);
+            key_path[1023] = '\0';
+        }
+        // SSL CA
+        else if (strcmp(key, "ssl-ca") == 0) {
+            strncpy(ca_path, json_object_get_string(val), 1023);
+            ca_path[1023] = '\0';
+        }
+        // Client options
+        else if (strcmp(key, "client-options") == 0 && json_object_get_type(val) == json_type_object) {
+            json_object_object_foreach(val, opt_key, opt_val) {
+                json_object_object_add(client_prefs, opt_key, json_object_get(opt_val));
+            }
+        }
+        // Command and arguments
+        else if (strcmp(key, "command") == 0 && json_object_get_type(val) == json_type_array) {
+            // This will be handled separately after parsing all other options
+        }
+    }
+
+    // Handle command and arguments if present
+    json_object *cmd_array;
+    if (json_object_object_get_ex(obj, "command", &cmd_array) && 
+        json_object_get_type(cmd_array) == json_type_array) {
+
+        int cmd_len = json_object_array_length(cmd_array);
+        if (cmd_len > 0) {
+            // Free existing command if any
+            if (ts->command) free(ts->command);
+            if (ts->argv) {
+                for (char **p = ts->argv; *p; p++) free(*p);
+                free(ts->argv);
+            }
+
+            // Allocate new command array
+            ts->argv = xmalloc(sizeof(char *) * (cmd_len + 1));
+            size_t total_len = 0;
+
+            // Copy command arguments
+            for (int i = 0; i < cmd_len; i++) {
+                json_object *item = json_object_array_get_idx(cmd_array, i);
+                const char *arg = json_object_get_string(item);
+                ts->argv[i] = strdup(arg);
+                total_len += strlen(ts->argv[i]);
+                if (i != cmd_len - 1) total_len++; // for space
+            }
+            ts->argv[cmd_len] = NULL;
+            ts->argc = cmd_len;
+
+            // Build command string
+            ts->command = xmalloc(total_len + 1);
+            char *ptr = ts->command;
+            for (int i = 0; i < cmd_len; i++) {
+                size_t len = strlen(ts->argv[i]);
+                ptr = memcpy(ptr, ts->argv[i], len + 1) + len;
+                if (i != cmd_len - 1) {
+                    *ptr++ = ' ';
+                }
+            }
+            *ptr = '\0';  // null terminator
+
+            // Reinitialize the event loop to ensure proper integration with libwebsockets
+            if (ts->loop) {
+                uv_loop_close(ts->loop);
+                free(ts->loop);
+            }
+            ts->loop = xmalloc(sizeof *ts->loop);
+            uv_loop_init(ts->loop);
+        }
+    }
+
+    json_object_put(obj);
+    json_tokener_free(tok);
+    return 0;
+}
+
 static int calc_command_start(int argc, char **argv) {
   // make a copy of argc and argv
   int argc_copy = argc;
@@ -344,7 +559,31 @@ int main(int argc, char **argv) {
   json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
 #endif
 
-  // parse command line options
+  // Check for config file
+  char config_path[1024] = "";
+  bool config_file_provided = false;
+
+  // First pass to check for config file
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-F") == 0) {
+      if (i + 1 < argc) {
+        strncpy(config_path, argv[i + 1], sizeof(config_path) - 1);
+        config_path[sizeof(config_path) - 1] = '\0';
+        config_file_provided = true;
+        break;
+      }
+    }
+  }
+
+  // If config file is provided, parse it first
+  if (config_file_provided) {
+    if (parse_config_file(config_path, server, &info, iface, socket_owner, &browser, &ssl, 
+                         cert_path, key_path, ca_path, &debug_level, client_prefs) < 0) {
+      return -1;
+    }
+  }
+
+  // parse command line options (they will override config file settings)
   int c;
   while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
     switch (c) {
@@ -356,6 +595,9 @@ int main(int argc, char **argv) {
         return 0;
       case 'd':
         debug_level = parse_int("debug", optarg);
+        break;
+      case 'F':
+        // Config file is already processed before the command-line options
         break;
       case 'a':
         server->url_arg = true;
