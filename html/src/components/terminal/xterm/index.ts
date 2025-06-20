@@ -10,6 +10,8 @@ import { ImageAddon } from '@xterm/addon-image';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
+import { SpeechRecognitionAddon } from './addons/speech';
+import { TextToSpeechAddon } from './addons/tts';
 
 import '@xterm/xterm/css/xterm.css';
 
@@ -46,6 +48,20 @@ export interface ClientOptions {
     enableZmodem: boolean;
     enableTrzsz: boolean;
     enableSixel: boolean;
+    enableSpeech: boolean;
+    speechLanguage: string;
+    openaiApiKey: string;
+    openaiBaseUrl: string;
+    speechModel: string;
+    maxRecordingTime: number;
+    enableTTS: boolean;
+    ttsVoice: string;
+    ttsRate: number;
+    ttsVolume: number;
+    ttsPitch: number;
+    ttsBufferDelay: number;
+    ttsSummary: boolean;
+    ttsSummaryModel: string;
     titleFixed?: string;
     isWindows: boolean;
     trzszDragInitTimeout: number;
@@ -91,6 +107,8 @@ export class Xterm {
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
     private zmodemAddon?: ZmodemAddon;
+    private speechAddon?: SpeechRecognitionAddon;
+    private ttsAddon?: TextToSpeechAddon;
 
     private socket?: WebSocket;
     private token: string;
@@ -208,6 +226,9 @@ export class Xterm {
         const { terminal, textEncoder } = this;
         const { limit, highWater, lowWater } = this.options.flowControl;
 
+        // Process data for TTS before writing to terminal
+        this.ttsAddon?.processOutput(data);
+
         this.written += data.length;
         if (this.written > limit) {
             terminal.write(data, () => {
@@ -245,6 +266,47 @@ export class Xterm {
     }
 
     @bind
+    private processVoiceCommand(text: string) {
+        const trimmedText = text.trim().toLowerCase();
+
+        // Check for voice commands
+        if (trimmedText === 'enter' || trimmedText === 'return') {
+            // Send Enter key
+            this.sendData('\r');
+        } else if (trimmedText === 'tab') {
+            // Send Tab key
+            this.sendData('\t');
+        } else if (trimmedText === 'escape') {
+            // Send Escape key
+            this.sendData('\x1b');
+        } else if (trimmedText === 'backspace') {
+            // Send Backspace key
+            this.sendData('\x7f');
+        } else if (trimmedText === 'delete') {
+            // Send Delete key
+            this.sendData('\x1b[3~');
+        } else if (trimmedText.startsWith('control ') || trimmedText.startsWith('ctrl ')) {
+            // Handle Ctrl+key combinations
+            const ctrlKey = trimmedText.replace(/^(control|ctrl)\s+/, '');
+            if (ctrlKey.length === 1) {
+                const charCode = ctrlKey.charCodeAt(0) - 96; // Convert a-z to control codes
+                if (charCode >= 1 && charCode <= 26) {
+                    this.sendData(String.fromCharCode(charCode));
+                }
+            } else if (ctrlKey === 'c') {
+                this.sendData('\x03'); // Ctrl+C
+            } else if (ctrlKey === 'd') {
+                this.sendData('\x04'); // Ctrl+D
+            } else if (ctrlKey === 'z') {
+                this.sendData('\x1a'); // Ctrl+Z
+            }
+        } else {
+            // Send the text as-is for regular input
+            this.sendData(text);
+        }
+    }
+
+    @bind
     public connect() {
         this.socket = new WebSocket(this.options.wsUrl, ['tty']);
         const { socket, register } = this;
@@ -270,6 +332,10 @@ export class Xterm {
             overlayAddon.showOverlay('Reconnected', 300);
         } else {
             this.opened = true;
+            // Auto-enter 'claude' command when terminal first opens
+            setTimeout(() => {
+                this.sendData('claude\r');
+            }, 500);
         }
 
         this.doReconnect = this.reconnect;
@@ -384,6 +450,56 @@ export class Xterm {
             terminal.loadAddon(register(this.zmodemAddon));
         }
 
+        if (prefs.enableSpeech) {
+            this.speechAddon = new SpeechRecognitionAddon({
+                language: prefs.speechLanguage || 'en',
+                openaiApiKey: prefs.openaiApiKey,
+                openaiBaseUrl: prefs.openaiBaseUrl || 'https://api.openai.com/v1',
+                model: prefs.speechModel || 'whisper-1',
+                maxRecordingTime: prefs.maxRecordingTime || 60000,
+                onStart: () => {
+                    this.overlayAddon.showOverlay('🎤 Recording...', 0);
+                },
+                onEnd: () => {
+                    this.overlayAddon.showOverlay('🎤 Processing...', 2000);
+                },
+                onResult: (text: string) => {
+                    // Process voice commands and send to terminal
+                    this.processVoiceCommand(text);
+                    this.overlayAddon.showOverlay('🎤 Transcribed', 1000);
+                },
+                onError: (error: string) => {
+                    this.overlayAddon.showOverlay(`🎤 Error: ${error}`, 3000);
+                },
+            });
+            terminal.loadAddon(register(this.speechAddon));
+        }
+
+        if (prefs.enableTTS) {
+            this.ttsAddon = new TextToSpeechAddon({
+                enabled: prefs.enableTTS,
+                voice: prefs.ttsVoice || '',
+                rate: prefs.ttsRate || 1.0,
+                volume: prefs.ttsVolume || 1.0,
+                pitch: prefs.ttsPitch || 1.0,
+                bufferDelay: prefs.ttsBufferDelay || 500,
+                openaiApiKey: prefs.openaiApiKey,
+                openaiBaseUrl: prefs.openaiBaseUrl || 'https://api.openai.com/v1',
+                enableSummary: prefs.ttsSummary !== false,
+                summaryModel: prefs.ttsSummaryModel || 'gpt-4o-mini',
+                onStart: () => {
+                    this.overlayAddon.showOverlay('🔊 TTS Speaking', 1000);
+                },
+                onEnd: () => {
+                    // Brief overlay when TTS finishes speaking
+                },
+                onError: (error: string) => {
+                    this.overlayAddon.showOverlay(`🔊 TTS Error: ${error}`, 3000);
+                },
+            });
+            terminal.loadAddon(register(this.ttsAddon));
+        }
+
         for (const [key, value] of Object.entries(prefs)) {
             switch (key) {
                 case 'rendererType':
@@ -422,6 +538,42 @@ export class Xterm {
                         terminal.loadAddon(register(new ImageAddon()));
                         console.log('[ttyd] Sixel enabled');
                     }
+                    break;
+                case 'enableSpeech':
+                    if (value) console.log('[ttyd] Speech recording enabled with OpenAI Whisper');
+                    break;
+                case 'speechLanguage':
+                    if (value) console.log(`[ttyd] Speech language: ${value}`);
+                    break;
+                case 'speechModel':
+                    if (value) console.log(`[ttyd] Speech model: ${value}`);
+                    break;
+                case 'maxRecordingTime':
+                    console.log(`[ttyd] Max recording time: ${value}ms`);
+                    break;
+                case 'enableTTS':
+                    if (value) console.log('[ttyd] Text-to-Speech enabled');
+                    break;
+                case 'ttsVoice':
+                    if (value) console.log(`[ttyd] TTS voice: ${value}`);
+                    break;
+                case 'ttsRate':
+                    if (value) console.log(`[ttyd] TTS rate: ${value}`);
+                    break;
+                case 'ttsVolume':
+                    if (value) console.log(`[ttyd] TTS volume: ${value}`);
+                    break;
+                case 'ttsPitch':
+                    if (value) console.log(`[ttyd] TTS pitch: ${value}`);
+                    break;
+                case 'ttsBufferDelay':
+                    if (value) console.log(`[ttyd] TTS buffer delay: ${value}ms`);
+                    break;
+                case 'ttsSummary':
+                    if (value) console.log('[ttyd] TTS summarization enabled');
+                    break;
+                case 'ttsSummaryModel':
+                    if (value) console.log(`[ttyd] TTS summary model: ${value}`);
                     break;
                 case 'closeOnDisconnect':
                     if (value) {

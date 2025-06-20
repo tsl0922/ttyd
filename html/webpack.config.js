@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const { merge } = require('webpack-merge');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -35,6 +36,9 @@ const baseConfig = {
         extensions: ['.tsx', '.ts', '.js'],
     },
     plugins: [
+        new webpack.DefinePlugin({
+            'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY || ''),
+        }),
         new ESLintPlugin({
             context: path.resolve(__dirname, '.'),
             extensions: ['js', 'jsx', 'ts', 'tsx'],
