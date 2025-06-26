@@ -20,7 +20,7 @@
 volatile bool force_exit = false;
 struct lws_context *context;
 struct server *server;
-struct endpoints endpoints = {"/ws", "/", "/token", ""};
+struct endpoints endpoints = {"/ws", "/", "/token", "", "/Bell.mp3"};
 
 extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
@@ -61,6 +61,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"signal", required_argument, NULL, 's'},
                                         {"cwd", required_argument, NULL, 'w'},
                                         {"index", required_argument, NULL, 'I'},
+                                        {"Bell", required_argument, NULL, 'e'},
                                         {"base-path", required_argument, NULL, 'b'},
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
                                         {"ping-interval", required_argument, NULL, 'P'},
@@ -84,7 +85,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:e:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -113,6 +114,7 @@ static void print_help() {
           "    -q, --exit-no-conn      Exit on all clients disconnection\n"
           "    -B, --browser           Open terminal with the default system browser\n"
           "    -I, --index             Custom index.html path\n"
+          "    -e, --Bell              Custom Bell.mp3 path\n"
           "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
           "    -P, --ping-interval     Websocket ping interval(sec) (default: 5)\n"
@@ -148,6 +150,7 @@ static void print_config() {
     lwsl_notice("  index    : %s\n", endpoints.index);
     lwsl_notice("  token    : %s\n", endpoints.token);
     lwsl_notice("  websocket: %s\n", endpoints.ws);
+    lwsl_notice("  Bell     : %s\n", endpoints.Bell);
   }
   if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
   if (server->check_origin) lwsl_notice("  check origin: true\n");
@@ -156,6 +159,7 @@ static void print_config() {
   if (server->once) lwsl_notice("  once: true\n");
   if (server->exit_no_conn) lwsl_notice("  exit_no_conn: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
+  if (server->Bell != NULL) lwsl_notice("  custom Bell.mp3: %s\n", server->Bell);
   if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
   if (!server->writable) lwsl_warn("The --writable option is not set, will start in readonly mode\n");
 }
@@ -442,6 +446,24 @@ int main(int argc, char **argv) {
           return -1;
         }
         break;
+      case 'e':
+        if (!strncmp(optarg, "~/", 2)) {
+          const char *home = getenv("HOME");
+          server->Bell = malloc(strlen(home) + strlen(optarg) - 1);
+          sprintf(server->Bell, "%s%s", home, optarg + 1);
+        } else {
+          server->Bell = strdup(optarg);
+        }
+        struct stat bst;
+        if (stat(server->Bell, &bst) == -1) {
+          fprintf(stderr, "Can not stat Bell.mp3: %s, error: %s\n", server->Bell, strerror(errno));
+          return -1;
+        }
+        if (S_ISDIR(bst.st_mode)) {
+          fprintf(stderr, "Invalid Bell.mp3 path: %s, is it a dir?\n", server->Bell);
+          return -1;
+        }
+        break;
       case 'b': {
         char path[128];
         strncpy(path, optarg, 128);
@@ -451,7 +473,7 @@ int main(int argc, char **argv) {
 #define sc(f)                                  \
   strncpy(path + len, endpoints.f, 128 - len); \
   endpoints.f = strdup(path);
-        sc(ws) sc(index) sc(token) sc(parent)
+        sc(ws) sc(index) sc(token) sc(parent) sc(Bell)
 #undef sc
       } break;
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
