@@ -22,6 +22,7 @@ struct endpoints {
   char *index;
   char *token;
   char *parent;
+  char *Bell;
 };
 
 extern volatile bool force_exit;
@@ -67,6 +68,7 @@ struct server {
   char *credential;        // encoded basic auth credential
   char *auth_header;       // header name used for auth proxy
   char *index;             // custom index.html
+  char *Bell;              // custom Bull.mp3
   char *command;           // full command line
   char **argv;             // command with arguments
   int argc;                // command + arguments count

@@ -3,6 +3,7 @@
 #include <zlib.h>
 
 #include "html.h"
+#include "beep.h"
 #include "server.h"
 #include "utils.h"
 
@@ -127,6 +128,32 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         pss->buffer = pss->ptr = strdup(buf);
         pss->len = n;
         lws_callback_on_writable(wsi);
+        break;
+      }
+
+      if (strcmp(pss->path, endpoints.Bell) == 0) {
+        const char *content_type = "audio/mpeg";
+        if (server->Bell != NULL) {
+          int n = lws_serve_http_file(wsi, server->Bell, content_type, NULL, 0);
+          if (n < 0 || (n > 0 && lws_http_transaction_completed(wsi))) return 1;
+        } else {
+          char *output = (char *)malloc(beep_mp3_len + 1);
+          size_t output_len = beep_mp3_len;
+          if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
+              lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, 
+                                            (const unsigned char *)content_type, 10, &p, end))
+            return 1;
+
+          if (lws_add_http_header_content_length(wsi, (unsigned long)output_len, &p, end) ||
+              lws_finalize_http_header(wsi, &p, end) ||
+              lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
+            return 1;
+
+          memcpy(output, beep_mp3, beep_mp3_len); 
+          pss->buffer = pss->ptr = output;
+          pss->len = output_len;
+          lws_callback_on_writable(wsi);
+        }
         break;
       }
 
