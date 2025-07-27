@@ -27,7 +27,7 @@ else()
     set(CMAKE_C_STANDARD 99)
 endif()
 
-set(SOURCE_FILES src/utils.c src/pty.c src/protocol.c src/http.c src/server.c)
+set(SOURCE_FILES src/totp.c src/utils.c src/pty.c src/protocol.c src/http.c src/server.c)
 
 include(FindPackageHandleStandardArgs)
 
@@ -79,6 +79,8 @@ else()
         list(APPEND LINK_LIBS util)
     endif()
 endif()
+
+list(APPEND LINK_LIBS m)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
