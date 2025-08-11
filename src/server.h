@@ -59,6 +59,8 @@ struct pss_tty {
 typedef struct {
   struct pss_tty *pss;
   bool ws_closed;
+  bool should_exit_on_close;  // Flag to indicate ttyd should exit when this process terminates
+  uv_timer_t *exit_timer;     // Timer to check process exit status (fallback for waitpid issues)
 } pty_ctx_t;
 
 struct server {
