@@ -73,10 +73,44 @@ static pty_ctx_t *pty_ctx_init(struct pss_tty *pss) {
   pty_ctx_t *ctx = xmalloc(sizeof(pty_ctx_t));
   ctx->pss = pss;
   ctx->ws_closed = false;
+  ctx->should_exit_on_close = false;
+  ctx->exit_timer = NULL;
   return ctx;
 }
 
-static void pty_ctx_free(pty_ctx_t *ctx) { free(ctx); }
+static void pty_ctx_free(pty_ctx_t *ctx) { 
+  if (ctx->exit_timer) {
+    uv_timer_stop(ctx->exit_timer);
+    uv_close((uv_handle_t*)ctx->exit_timer, (uv_close_cb)free);
+  }
+  free(ctx); 
+}
+
+static void exit_timer_cb(uv_timer_t *timer) {
+  pty_ctx_t *ctx = (pty_ctx_t *)timer->data;
+  
+  if (!ctx->should_exit_on_close) {
+    // Timer should not be running if should_exit_on_close is false
+    uv_timer_stop(timer);
+    return;
+  }
+  
+  // Check if process has become a zombie or exited
+  if (ctx->pss && ctx->pss->process) {
+    pid_t pid = ctx->pss->process->pid;
+    if (kill(pid, 0) != 0) {
+      // Process doesn't exist anymore, force exit
+      lwsl_notice("process %d no longer exists, exiting ttyd\n", pid);
+      lws_cancel_service(context);
+      exit(0);
+    }
+  } else {
+    // No process to wait for, exit immediately
+    lwsl_notice("no process to wait for, exiting ttyd\n");
+    lws_cancel_service(context);
+    exit(0);
+  }
+}
 
 static void process_read_cb(pty_process *process, pty_buf_t *buf, bool eof) {
   pty_ctx_t *ctx = (pty_ctx_t *)process->ctx;
@@ -94,8 +128,20 @@ static void process_read_cb(pty_process *process, pty_buf_t *buf, bool eof) {
 
 static void process_exit_cb(pty_process *process) {
   pty_ctx_t *ctx = (pty_ctx_t *)process->ctx;
+  
   if (ctx->ws_closed) {
     lwsl_notice("process killed with signal %d, pid: %d\n", process->exit_signal, process->pid);
+    // Check if we should exit ttyd when this process terminates
+    if (ctx->should_exit_on_close) {
+      lwsl_notice("exiting after process termination due to --once/--exit-no-conn option\n");
+      // Stop the timer since we're exiting normally
+      if (ctx->exit_timer) {
+        uv_timer_stop(ctx->exit_timer);
+      }
+      lws_cancel_service(context);
+      pty_ctx_free(ctx);
+      exit(0);
+    }
     goto done;
   }
 
@@ -382,6 +428,28 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if ((server->once || server->exit_no_conn) && server->client_count == 0) {
         lwsl_notice("exiting due to the --once/--exit-no-conn option.\n");
         force_exit = true;
+        // If there was a process, don't exit immediately for both --once and --exit-no-conn
+        // Let the process_exit_cb handle the final exit when the process terminates
+        if (pss->process != NULL) {
+          lwsl_notice("waiting for process to terminate before exiting...\n");
+          pty_ctx_t *ctx = (pty_ctx_t *)pss->process->ctx;
+          ctx->should_exit_on_close = true;
+          
+          // Start a timer to periodically check if process has exited
+          // This is a fallback mechanism in case waitpid() doesn't work properly
+          ctx->exit_timer = xmalloc(sizeof(uv_timer_t));
+          uv_timer_init(server->loop, ctx->exit_timer);
+          ctx->exit_timer->data = ctx;
+          uv_timer_start(ctx->exit_timer, exit_timer_cb, 1000, 1000); // Check every 1 second
+          
+          // If process is not running, it may have already terminated
+          if (!process_running(pss->process)) {
+            lwsl_notice("process already terminated, exiting immediately\n");
+            exit(0);
+          }
+          // Don't cancel service yet, let the event loop continue until process exits
+          break;
+        }
         lws_cancel_service(context);
         exit(0);
       }
