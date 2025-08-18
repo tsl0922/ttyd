@@ -42,7 +42,7 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
     }
     
     // Check for authorization in URL parameters
-    if (lws_get_urlarg_by_name(wsi, "authorization", urlarg_buf, sizeof(urlarg_buf)) == 0) {
+    if (lws_get_urlarg_by_name(wsi, "authorization", urlarg_buf, sizeof(urlarg_buf)) > 0) {
       if (!strcmp(urlarg_buf, server->credential)) return AUTH_OK;
     }
     
