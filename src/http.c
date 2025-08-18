@@ -33,10 +33,19 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
 
   if(server->credential != NULL) {
     char buf[256];
+    char urlarg_buf[256];
+
+    // Check for authorization in headers (default option)
     int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
     if (len >= 7 && strstr(buf, "Basic ")) {
       if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
     }
+    
+    // Check for authorization in URL parameters
+    if (lws_get_urlarg_by_name(wsi, "authorization", urlarg_buf, sizeof(urlarg_buf)) > 0) {
+      if (!strcmp(urlarg_buf, server->credential)) return AUTH_OK;
+    }
+    
     return send_unauthorized(wsi, HTTP_STATUS_UNAUTHORIZED, WSI_TOKEN_HTTP_WWW_AUTHENTICATE);
   }
 
