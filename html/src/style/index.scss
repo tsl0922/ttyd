@@ -15,4 +15,42 @@ body {
     padding: 5px;
     height: calc(100% - 10px);
   }
+  .xterm-viewport {
+    scrollbar-width: thin;
+    scrollbar-color: #8c8d8e transparent;
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+          background-color: #96999e; /* Light gray for light theme */
+          border-radius: 2px;
+          border: 2px solid transparent;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+          background-color: #747678; /* Darker gray on hover for light theme */
+        }
+
+        /* Firefox dark theme */
+    scrollbar-color: #444 transparent;
+
+        /* Chrome dark theme */
+     &::-webkit-scrollbar-thumb {
+          background-color: #444;
+          border-radius: 2px;
+          border: 2px solid transparent;
+
+
+        &::-webkit-scrollbar-thumb:hover {
+          background-color: #555;
+        }
+
+
+
 }
+  }}
