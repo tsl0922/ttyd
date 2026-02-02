@@ -247,6 +247,8 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
     case LWS_CALLBACK_HTTP_FILE_COMPLETION:
       goto try_to_reuse;
     case LWS_CALLBACK_CLOSED_HTTP:
+      // Clean up any stale entries in the post body list for this wsi
+      cleanup_post_body(wsi);
       if (pss->post_body) {
         free(pss->post_body);
         pss->post_body = NULL;

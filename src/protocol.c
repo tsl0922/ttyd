@@ -14,6 +14,9 @@
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
 // Storage for POST body data during WebSocket upgrade
+// Using pthread mutex to protect concurrent access
+#include <pthread.h>
+
 struct post_body_storage {
   struct lws *wsi;
   char *body;
@@ -22,18 +25,22 @@ struct post_body_storage {
 };
 
 static struct post_body_storage *post_body_list = NULL;
+static pthread_mutex_t post_body_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void store_post_body(struct lws *wsi, const char *body, size_t len) {
   struct post_body_storage *storage = malloc(sizeof(struct post_body_storage));
   if (storage) {
-    storage->wsi = wsi;
     storage->body = malloc(len + 1);
     if (storage->body) {
       memcpy(storage->body, body, len);
       storage->body[len] = '\0';
       storage->len = len;
+      storage->wsi = wsi;
+
+      pthread_mutex_lock(&post_body_mutex);
       storage->next = post_body_list;
       post_body_list = storage;
+      pthread_mutex_unlock(&post_body_mutex);
     } else {
       free(storage);
     }
@@ -41,20 +48,46 @@ void store_post_body(struct lws *wsi, const char *body, size_t len) {
 }
 
 char *retrieve_post_body(struct lws *wsi) {
+  char *body = NULL;
+
+  pthread_mutex_lock(&post_body_mutex);
   struct post_body_storage **prev = &post_body_list;
   struct post_body_storage *curr = post_body_list;
 
   while (curr) {
     if (curr->wsi == wsi) {
-      char *body = curr->body;
+      body = curr->body;
       *prev = curr->next;
       free(curr);
-      return body;
+      break;
     }
     prev = &curr->next;
     curr = curr->next;
   }
-  return NULL;
+  pthread_mutex_unlock(&post_body_mutex);
+
+  return body;
+}
+
+// Cleanup function to remove stale entries for a specific wsi
+void cleanup_post_body(struct lws *wsi) {
+  pthread_mutex_lock(&post_body_mutex);
+  struct post_body_storage **prev = &post_body_list;
+  struct post_body_storage *curr = post_body_list;
+
+  while (curr) {
+    if (curr->wsi == wsi) {
+      struct post_body_storage *to_free = curr;
+      *prev = curr->next;
+      curr = curr->next;
+      free(to_free->body);
+      free(to_free);
+    } else {
+      prev = &curr->next;
+      curr = curr->next;
+    }
+  }
+  pthread_mutex_unlock(&post_body_mutex);
 }
 
 static int hex_to_int(char c) {
