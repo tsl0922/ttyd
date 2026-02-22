@@ -65,6 +65,9 @@ struct server {
   int client_count;        // client count
   char *prefs_json;        // client preferences
   char *credential;        // encoded basic auth credential
+  char *credential_dec;    // decoded basic auth credential
+  char *totp;              // time-based one-time password secret
+  char last_totp_code[16]; // last-used TOTP code, max 8 digits + NUL
   char *auth_header;       // header name used for auth proxy
   char *index;             // custom index.html
   char *command;           // full command line
