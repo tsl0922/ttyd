@@ -10,6 +10,8 @@ jobs:
   publish:
     needs: [build]
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Check version bump
@@ -22,12 +24,17 @@ jobs:
             exit 1
           fi
       - uses: actions/download-artifact@v4
-      - run: |
-          mkdir build
-          for file in ttyd.*/*; do
-            target=$(echo $file | awk -F/ '{print $1}')
-            [[ $file == *.exe ]] && target="$target.exe"
-            mv $file build/$target
+        with:
+          path: artifacts
+      - name: Prepare release assets
+        run: |
+          mkdir -p build
+          for file in artifacts/ttyd.*/ttyd*; do
+            if [ -f "$file" ]; then
+              target=$(echo $file | awk -F'/' '{print $2}' | sed 's/ttyd\.//')
+              [[ $file == *.exe ]] && ext=".exe" || ext=""
+              mv "$file" "build/ttyd.$target$ext"
+            fi
           done
           pushd build; sha256sum ttyd.* > SHA256SUMS; popd
       - uses: ncipollo/release-action@v1
@@ -35,3 +42,31 @@ jobs:
           artifacts: build/*
           allowUpdates: true
           draft: true
+          generateReleaseNotes: true
+          name: 'ttyd v${{ github.ref_name }}'
+          body: |
+            ## Release ${{ github.ref_name }}
+
+            ### Available Static Binaries:
+
+            **Linux (musl static):**
+            - `ttyd.i686` - Linux 32-bit (i686)
+            - `ttyd.x86_64` - Linux 64-bit (AMD64)
+            - `ttyd.arm` - Linux ARM 32-bit (EABI)
+            - `ttyd.armhf` - Linux ARM 32-bit (hard-float)
+            - `ttyd.aarch64` - Linux ARM 64-bit
+            - `ttyd.mips` - Linux MIPS (big-endian)
+            - `ttyd.mipsel` - Linux MIPS (little-endian)
+            - `ttyd.mips64` - Linux MIPS 64-bit (big-endian)
+            - `ttyd.mips64el` - Linux MIPS 64-bit (little-endian)
+            - `ttyd.s390x` - Linux IBM S/390
+
+            **macOS:**
+            - `ttyd.macos.x86_64` - macOS Intel (10.15+)
+            - `ttyd.macos.arm64` - macOS Apple Silicon (11.0+)
+
+            **Windows:**
+            - `ttyd.win32.exe` - Windows 32-bit
+            - `ttyd.win64.exe` - Windows 64-bit
+
+            **Verification:** Use `SHA256SUMS` to validate file integrity.

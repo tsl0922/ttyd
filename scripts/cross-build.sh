@@ -138,7 +138,7 @@ build() {
     COMPONENTS="1"
     SYSTEM="Linux"
 
-    if [ "$ALIAS" = "win32" ]; then
+    if [ "$ALIAS" = "win32" ] || [ "$ALIAS" = "win64" ]; then
         COMPONENTS=2
         SYSTEM="Windows"
     fi
@@ -185,6 +185,9 @@ case ${BUILD_TARGET} in
         ;;
     win32)
         build x86_64-w64-mingw32 "${BUILD_TARGET}"
+        ;;
+    win64|x86_64-mingw)
+        build x86_64-w64-mingw32 "win64"
         ;;
     *)
         echo "unknown cross target: ${BUILD_TARGET}" && exit 1
