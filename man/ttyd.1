@@ -39,7 +39,7 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 .SH OPTIONS
 .PP
 -p, --port 
-      Port to listen (default: 7681, use \fB\fC0\fR for random port)
+      Port to listen (default: 7681, use \fB0\fR for random port)
 
 .PP
 -i, --interface 
@@ -162,46 +162,43 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 .PP
 ttyd has a mechanism to pass server side command-line arguments to the browser page which is called \fBclient options\fP:
 
-.PP
-.RS
-
-.nf
+.EX
 -t, --client-option     Send option to client (format: key=value), repeat to add more options
-
-.fi
-.RE
+.EE
 
 .SH Basic usage
 .RS
 .IP \(bu 2
-\fB\fC-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
+\fB-t rendererType=canvas\fR: use the \fBcanvas\fR renderer for xterm.js (default: \fBwebgl\fR)
 .IP \(bu 2
-\fB\fC-t disableLeaveAlert=true\fR: disable the leave page alert
+\fB-t disableLeaveAlert=true\fR: disable the leave page alert
 .IP \(bu 2
-\fB\fC-t disableResizeOverlay=true\fR: disable the terminal resize overlay
+\fB-t disableResizeOverlay=true\fR: disable the terminal resize overlay
 .IP \(bu 2
-\fB\fC-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
+\fB-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
 .IP \(bu 2
-\fB\fC-t enableZmodem=true\fR: enable ZMODEM
+\fB-t enableZmodem=true\fR: enable ZMODEM
 \[la]https://en.wikipedia.org/wiki/ZMODEM\[ra] / lrzsz
 \[la]https://ohse.de/uwe/software/lrzsz.html\[ra] file transfer support
 .IP \(bu 2
-\fB\fC-t enableTrzsz=true\fR: enable trzsz
+\fB-t enableTrzsz=true\fR: enable trzsz
 \[la]https://trzsz.github.io\[ra] file transfer support
 .IP \(bu 2
-\fB\fC-t enableSixel=true\fR: enable Sixel
+\fB-t enableSixel=true\fR: enable Sixel
 \[la]https://en.wikipedia.org/wiki/Sixel\[ra] image output support (Usage
 \[la]https://saitoha.github.io/libsixel/\[ra])
 .IP \(bu 2
-\fB\fC-t closeOnDisconnect=true\fR: close the terminal on disconnection, this will disable reconnect
+\fB-t closeOnDisconnect=true\fR: close the terminal on disconnection, this will disable reconnect
 .IP \(bu 2
-\fB\fC-t titleFixed=hello\fR: set a fixed title for the browser window
+\fB-t titleFixed=hello\fR: set a fixed title for the browser window
 .IP \(bu 2
-\fB\fC-t fontSize=20\fR: change the font size of the terminal
+\fB-t fontSize=20\fR: change the font size of the terminal
 .IP \(bu 2
-\fB\fC-t unicodeVersion=11\fR: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
+\fB-t unicodeVersion=11\fR: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
 .IP \(bu 2
-\fB\fC-t trzszDragInitTimeout=3000\fR: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+\fB-t trzszDragInitTimeout=3000\fR: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+.IP \(bu 2
+\fB-t postMessageOrigin=http://url\fR: set origin for postMessage to parent window on socket close
 
 .RE
 
@@ -212,50 +209,40 @@ You can use the client option to change all the settings of xterm defined in ITe
 
 .RS
 .IP \(bu 2
-\fB\fC-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
+\fB-t cursorStyle=bar\fR: set cursor style to \fBbar\fR
 .IP \(bu 2
-\fB\fC-t lineHeight=1.5\fR: set line-height to \fB\fC1.5\fR
+\fB-t lineHeight=1.5\fR: set line-height to \fB1.5\fR
 .IP \(bu 2
-\fB\fC-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
+\fB-t 'theme={"background": "green"}'\fR: set background color to \fBgreen\fR
 
 .RE
 
 .PP
 to try the example options above, run:
 
-.PP
-.RS
-
-.nf
+.EX
 ttyd -t cursorStyle=bar -t lineHeight=1.5 -t 'theme={"background": "green"}' bash
-
-.fi
-.RE
+.EE
 
 
 .SH EXAMPLES
 .PP
 ttyd starts web server at port 7681 by default, you can use the -p option to change it, the command will be started with arguments as options. For example, run:
 
-.PP
-.RS
-
-.nf
+.EX
 ttyd -p 8080 bash -x
-
-.fi
-.RE
+.EE
 
 .PP
 Then open http://localhost:8080 with a browser, you will get a bash shell with debug mode enabled. More examples:
 
 .RS
 .IP \(bu 2
-If you want to login with your system accounts on the web browser, run \fB\fCttyd login\fR\&.
+If you want to login with your system accounts on the web browser, run \fBttyd login\fR\&.
 .IP \(bu 2
-You can even run a non-shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
+You can even run a non-shell command like vim, try: \fBttyd vim\fR, the web browser will show you a vim editor.
 .IP \(bu 2
-Sharing single process with multiple clients: \fB\fCttyd tmux new -A -s ttyd vim\fR, run \fB\fCtmux new -A -s ttyd\fR to connect to the tmux session from terminal.
+Sharing single process with multiple clients: \fBttyd tmux new -A -s ttyd vim\fR, run \fBtmux new -A -s ttyd\fR to connect to the tmux session from terminal.
 
 .RE
 
@@ -264,10 +251,7 @@ Sharing single process with multiple clients: \fB\fCttyd tmux new -A -s ttyd vim
 .PP
 Generate SSL CA and self signed server/client certificates:
 
-.PP
-.RS
-
-.nf
+.EX
 # CA certificate (FQDN must be different from server/client)
 openssl genrsa -out ca.key 2048
 openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out ca.crt
@@ -281,36 +265,24 @@ openssl req -newkey rsa:2048 -nodes -keyout client.key -subj "/C=CN/ST=GD/L=SZ/O
 openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt
 openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
 openssl pkcs12 -in client.p12 -out client.pem -clcerts
-
-.fi
-.RE
+.EE
 
 .PP
 Then start ttyd:
 
-.PP
-.RS
-
-.nf
+.EX
 ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
-
-.fi
-.RE
+.EE
 
 .PP
 You may want to test the client certificate verification with \fIcurl\fP(1):
 
-.PP
-.RS
-
-.nf
+.EX
 curl --insecure --cert client.p12[:password] -v https://localhost:7681
-
-.fi
-.RE
+.EE
 
 .PP
-If you don't want to enable client certificate verification, remove the \fB\fC--ssl-ca\fR option.
+If you don't want to enable client certificate verification, remove the \fB--ssl-ca\fR option.
 
 
 .SH Docker and ttyd
@@ -328,12 +300,9 @@ Creating new docker container for each client: ttyd docker run -it --rm ubuntu.
 
 .SH Nginx reverse proxy
 .PP
-Sample config to proxy ttyd under the \fB\fC/ttyd\fR path:
+Sample config to proxy ttyd under the \fB/ttyd\fR path:
 
-.PP
-.RS
-
-.nf
+.EX
 location ~ ^/ttyd(.*)$ {
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -343,9 +312,7 @@ location ~ ^/ttyd(.*)$ {
     proxy_set_header Connection "upgrade";
     proxy_pass http://127.0.0.1:7681/$1;
 }
-
-.fi
-.RE
+.EE
 
 
 .SH AUTHOR
