@@ -187,8 +187,17 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
 
   if (server->credential != NULL) {
     char buf[256];
+    char urlarg_buf[256];
+
     size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
+    if (n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential)) return true;
+
+    // Check for authorization in URL parameters
+    if (lws_get_urlarg_by_name(wsi, "authorization", urlarg_buf, sizeof(urlarg_buf)) > 0) {
+      if (!strcmp(urlarg_buf, server->credential)) return true;
+    }
+
+    return false;
   }
 
   return true;
