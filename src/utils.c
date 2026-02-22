@@ -77,7 +77,7 @@ int get_sig(const char *sig_name) {
 int open_uri(char *uri) {
 #ifdef __APPLE__
   char command[256];
-  sprintf(command, "open %s > /dev/null 2>&1", uri);
+  snprintf(command, sizeof(command), "open %s > /dev/null 2>&1", uri);
   return system(command);
 #elif defined(_WIN32) || defined(__CYGWIN__)
   return ShellExecute(0, 0, uri, 0, 0, SW_SHOW) > (HINSTANCE)32 ? 0 : 1;
@@ -85,7 +85,7 @@ int open_uri(char *uri) {
   // check if X server is running
   if (system("xset -q > /dev/null 2>&1")) return 1;
   char command[256];
-  sprintf(command, "xdg-open %s > /dev/null 2>&1", uri);
+  snprintf(command, sizeof(command), "xdg-open %s > /dev/null 2>&1", uri);
   return system(command);
 #endif
 }

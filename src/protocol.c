@@ -23,10 +23,10 @@ static int send_initial_message(struct lws *wsi, int index) {
   switch (cmd) {
     case SET_WINDOW_TITLE:
       gethostname(buffer, sizeof(buffer) - 1);
-      n = sprintf((char *)p, "%c%s (%s)", cmd, server->command, buffer);
+      n = snprintf((char *)p, 1 + 4096, "%c%s (%s)", cmd, server->command, buffer);
       break;
     case SET_PREFERENCES:
-      n = sprintf((char *)p, "%c%s", cmd, server->prefs_json);
+      n = snprintf((char *)p, 1 + 4096, "%c%s", cmd, server->prefs_json);
       break;
     default:
       break;
@@ -57,9 +57,9 @@ static bool check_host_origin(struct lws *wsi) {
   int port;
   if (lws_parse_uri(buf, &prot, &address, &port, &path)) return false;
   if (port == 80 || port == 443) {
-    sprintf(buf, "%s", address);
+    snprintf(buf, sizeof(buf), "%s", address);
   } else {
-    sprintf(buf, "%s:%d", address, port);
+    snprintf(buf, sizeof(buf), "%s:%d", address, port);
   }
 
   char host_buf[256];

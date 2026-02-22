@@ -115,7 +115,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
       if (strcmp(pss->path, endpoints.token) == 0) {
         const char *credential = server->credential != NULL ? server->credential : "";
-        size_t n = sprintf(buf, "{\"token\": \"%s\"}", credential);
+        size_t n = snprintf(buf, sizeof(buf), "{\"token\": \"%s\"}", credential);
         if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
                                          (unsigned char *)"application/json;charset=utf-8", 30, &p, end) ||
