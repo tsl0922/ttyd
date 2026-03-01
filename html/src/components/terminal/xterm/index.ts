@@ -107,7 +107,7 @@ export class Xterm {
     constructor(
         private options: XtermOptions,
         private sendCb: () => void
-    ) {}
+    ) { }
 
     dispose() {
         for (const d of this.disposables) {
@@ -125,6 +125,68 @@ export class Xterm {
     @bind
     public sendFile(files: FileList) {
         this.zmodemAddon?.sendFile(files);
+    }
+
+    @bind
+    public sendEscape() {
+        this.sendData('\x1b');
+        this.terminal.focus();
+    }
+
+    @bind
+    public sendArrowUp() {
+        this.sendData('\x1b[A');
+        this.terminal.focus();
+    }
+
+    @bind
+    public sendArrowDown() {
+        this.sendData('\x1b[B');
+        this.terminal.focus();
+    }
+
+    @bind
+    public sendArrowRight() {
+        this.sendData('\x1b[C');
+        this.terminal.focus();
+    }
+
+    @bind
+    public sendArrowLeft() {
+        this.sendData('\x1b[D');
+        this.terminal.focus();
+    }
+
+    private ctrlModeListener?: (event: KeyboardEvent) => void;
+
+    @bind
+    public enableCtrlMode(callback: () => void) {
+        this.disableCtrlMode();
+        this.ctrlModeListener = (event: KeyboardEvent) => {
+            if (event.type !== 'keydown') return;
+            event.preventDefault();
+            event.stopPropagation();
+            this.terminal.textarea?.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    key: event.key,
+                    code: event.code,
+                    ctrlKey: true,
+                    bubbles: true,
+                    cancelable: true,
+                })
+            );
+            this.disableCtrlMode();
+            callback();
+        };
+        document.addEventListener('keydown', this.ctrlModeListener, true);
+    }
+
+    @bind
+    public disableCtrlMode() {
+        if (this.ctrlModeListener) {
+            document.removeEventListener('keydown', this.ctrlModeListener, true);
+            this.ctrlModeListener = undefined;
+        }
     }
 
     @bind
