@@ -406,7 +406,13 @@ export class Xterm {
     }
 
     @bind
+    private inApplicationCursorKeysMode() {
+        return this.terminal?.modes.applicationCursorKeysMode ?? false;
+    }
+
+    @bind
     private sendVirtualKey(key: VirtualKey, modifiers: ModifierFlags) {
+        const appCursorKeysMode = this.inApplicationCursorKeysMode();
         if (!this.hasModifiers(modifiers)) {
             switch (key) {
                 case 'esc':
@@ -416,22 +422,22 @@ export class Xterm {
                     this.sendData('\t');
                     return;
                 case 'up':
-                    this.sendData('\x1b[A');
+                    this.sendData(appCursorKeysMode ? '\x1bOA' : '\x1b[A');
                     return;
                 case 'down':
-                    this.sendData('\x1b[B');
+                    this.sendData(appCursorKeysMode ? '\x1bOB' : '\x1b[B');
                     return;
                 case 'right':
-                    this.sendData('\x1b[C');
+                    this.sendData(appCursorKeysMode ? '\x1bOC' : '\x1b[C');
                     return;
                 case 'left':
-                    this.sendData('\x1b[D');
+                    this.sendData(appCursorKeysMode ? '\x1bOD' : '\x1b[D');
                     return;
                 case 'home':
-                    this.sendData('\x1b[H');
+                    this.sendData(appCursorKeysMode ? '\x1bOH' : '\x1b[H');
                     return;
                 case 'end':
-                    this.sendData('\x1b[F');
+                    this.sendData(appCursorKeysMode ? '\x1bOF' : '\x1b[F');
                     return;
                 default:
                     return;
