@@ -10,6 +10,7 @@ import { ImageAddon } from '@xterm/addon-image';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
+import { MobileKeysController, ModifierFlags, VirtualKey } from './mobile-keys';
 
 import '@xterm/xterm/css/xterm.css';
 
@@ -51,6 +52,9 @@ export interface ClientOptions {
     trzszDragInitTimeout: number;
     unicodeVersion: string;
     closeOnDisconnect: boolean;
+    mobileKeysEnabled?: boolean;
+    mobileKeysOpacity?: number;
+    mobileKeysScale?: number;
 }
 
 export interface FlowControl {
@@ -91,6 +95,7 @@ export class Xterm {
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
     private zmodemAddon?: ZmodemAddon;
+    private mobileKeys?: MobileKeysController;
 
     private socket?: WebSocket;
     private token: string;
@@ -111,6 +116,8 @@ export class Xterm {
     ) {}
 
     dispose() {
+        this.mobileKeys?.dispose();
+        this.mobileKeys = undefined;
         for (const d of this.disposables) {
             d.dispose();
         }
@@ -171,6 +178,7 @@ export class Xterm {
         this.syncPageBackground();
         this.syncViewport();
         fitAddon.fit();
+        this.syncMobileKeys();
     }
 
     @bind
@@ -193,6 +201,47 @@ export class Xterm {
             this.parent.style.height = '';
             this.parent.style.top = '';
         }
+    }
+
+    @bind
+    private isTouchDevice() {
+        const supportsTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+        const coarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        return supportsTouch && coarsePointer;
+    }
+
+    @bind
+    private shouldEnableMobileKeys() {
+        const enabled = this.options.clientOptions.mobileKeysEnabled;
+        return enabled !== false && this.isTouchDevice();
+    }
+
+    @bind
+    private syncMobileKeys() {
+        if (!this.shouldEnableMobileKeys()) {
+            this.mobileKeys?.dispose();
+            this.mobileKeys = undefined;
+            return;
+        }
+
+        const opacity = this.options.clientOptions.mobileKeysOpacity ?? 0.72;
+        const scale = this.options.clientOptions.mobileKeysScale ?? 1;
+        if (!this.mobileKeys) {
+            this.mobileKeys = new MobileKeysController({
+                opacity,
+                scale,
+                onSendVirtualKey: this.sendVirtualKey,
+                onKeepFocus: this.keepTerminalFocus,
+            });
+            return;
+        }
+        this.mobileKeys.updateAppearance(opacity, scale);
+    }
+
+    @bind
+    private keepTerminalFocus() {
+        this.terminal?.focus();
+        window.setTimeout(() => this.terminal?.focus(), 0);
     }
 
     @bind
@@ -276,15 +325,151 @@ export class Xterm {
         if (socket?.readyState !== WebSocket.OPEN) return;
 
         if (typeof data === 'string') {
-            const payload = new Uint8Array(data.length * 3 + 1);
+            const outgoing = this.applyModifierToText(data);
+            const payload = new Uint8Array(outgoing.length * 3 + 1);
             payload[0] = Command.INPUT.charCodeAt(0);
-            const stats = textEncoder.encodeInto(data, payload.subarray(1));
+            const stats = textEncoder.encodeInto(outgoing, payload.subarray(1));
             socket.send(payload.subarray(0, (stats.written as number) + 1));
         } else {
             const payload = new Uint8Array(data.length + 1);
             payload[0] = Command.INPUT.charCodeAt(0);
             payload.set(data, 1);
             socket.send(payload);
+        }
+    }
+
+    @bind
+    private applyModifierToText(data: string) {
+        if (!data || data.length === 0) return data;
+        const modifiers = this.mobileKeys?.consumeModifiers();
+        if (!modifiers || (!modifiers.ctrl && !modifiers.alt && !modifiers.shift)) {
+            return data;
+        }
+
+        const chars = Array.from(data);
+        const first = chars.shift();
+        if (!first) return data;
+        const firstEncoded = this.encodeCharWithModifiers(first, modifiers);
+        return firstEncoded + chars.join('');
+    }
+
+    @bind
+    private encodeCharWithModifiers(char: string, modifiers: ModifierFlags) {
+        let value = modifiers.shift ? this.applyShift(char) : char;
+        if (modifiers.ctrl) value = this.applyCtrl(value);
+        if (modifiers.alt) value = `\x1b${value}`;
+        return value;
+    }
+
+    @bind
+    private applyShift(char: string) {
+        if (/^[a-z]$/.test(char)) return char.toUpperCase();
+        return char;
+    }
+
+    @bind
+    private applyCtrl(char: string) {
+        if (char.length !== 1) return char;
+        const code = char.charCodeAt(0);
+        if (code >= 97 && code <= 122) return String.fromCharCode(code - 96);
+        if (code >= 65 && code <= 90) return String.fromCharCode(code - 64);
+
+        switch (char) {
+            case ' ':
+            case '@':
+                return String.fromCharCode(0);
+            case '[':
+                return String.fromCharCode(27);
+            case '\\':
+                return String.fromCharCode(28);
+            case ']':
+                return String.fromCharCode(29);
+            case '^':
+                return String.fromCharCode(30);
+            case '_':
+                return String.fromCharCode(31);
+            case '?':
+                return String.fromCharCode(127);
+            default:
+                return char;
+        }
+    }
+
+    @bind
+    private hasModifiers(modifiers: ModifierFlags) {
+        return modifiers.ctrl || modifiers.alt || modifiers.shift;
+    }
+
+    @bind
+    private getCsiModifier(modifiers: ModifierFlags) {
+        return 1 + (modifiers.shift ? 1 : 0) + (modifiers.alt ? 2 : 0) + (modifiers.ctrl ? 4 : 0);
+    }
+
+    @bind
+    private sendVirtualKey(key: VirtualKey, modifiers: ModifierFlags) {
+        if (!this.hasModifiers(modifiers)) {
+            switch (key) {
+                case 'esc':
+                    this.sendData('\x1b');
+                    return;
+                case 'tab':
+                    this.sendData('\t');
+                    return;
+                case 'up':
+                    this.sendData('\x1b[A');
+                    return;
+                case 'down':
+                    this.sendData('\x1b[B');
+                    return;
+                case 'right':
+                    this.sendData('\x1b[C');
+                    return;
+                case 'left':
+                    this.sendData('\x1b[D');
+                    return;
+                case 'home':
+                    this.sendData('\x1b[H');
+                    return;
+                case 'end':
+                    this.sendData('\x1b[F');
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        const csiModifier = this.getCsiModifier(modifiers);
+        switch (key) {
+            case 'esc':
+                this.sendData(this.encodeCharWithModifiers('\x1b', modifiers));
+                return;
+            case 'tab':
+                if (modifiers.shift && !modifiers.ctrl && !modifiers.alt) {
+                    this.sendData('\x1b[Z');
+                    return;
+                }
+                this.sendData(`\x1b[1;${csiModifier}I`);
+                return;
+            case 'up':
+                this.sendData(`\x1b[1;${csiModifier}A`);
+                return;
+            case 'down':
+                this.sendData(`\x1b[1;${csiModifier}B`);
+                return;
+            case 'right':
+                this.sendData(`\x1b[1;${csiModifier}C`);
+                return;
+            case 'left':
+                this.sendData(`\x1b[1;${csiModifier}D`);
+                return;
+            case 'home':
+                this.sendData(`\x1b[1;${csiModifier}H`);
+                return;
+            case 'end':
+                this.sendData(`\x1b[1;${csiModifier}F`);
+                return;
+            default:
+                return;
         }
     }
 
@@ -481,6 +666,15 @@ export class Xterm {
                         this.doReconnect = false;
                     }
                     break;
+                case 'mobileKeysEnabled':
+                    this.options.clientOptions.mobileKeysEnabled = value;
+                    break;
+                case 'mobileKeysOpacity':
+                    this.options.clientOptions.mobileKeysOpacity = value;
+                    break;
+                case 'mobileKeysScale':
+                    this.options.clientOptions.mobileKeysScale = value;
+                    break;
                 case 'titleFixed':
                     if (!value || value === '') return;
                     console.log(`[ttyd] setting fixed title: ${value}`);
@@ -520,6 +714,7 @@ export class Xterm {
         }
 
         this.syncPageBackground();
+        this.syncMobileKeys();
         if (needsFit) fitAddon.fit();
     }
 

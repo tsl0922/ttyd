@@ -33,6 +33,97 @@ body {
   touch-action: pan-y;
 }
 
+.mobile-keys-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.mobile-keys-panel {
+  --mobile-keys-opacity: 0.72;
+  --mobile-keys-scale: 1;
+  --mobile-key-width: 63px;
+  --mobile-key-wide-width: calc((var(--mobile-key-width) * 3 + var(--mobile-key-gap)) / 2);
+  --mobile-key-height: 51px;
+  --mobile-key-gap: 9px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mobile-key-gap);
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.65);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  opacity: var(--mobile-keys-opacity);
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+  transform-origin: top left;
+}
+
+.mobile-keys-panel.is-dragging,
+.mobile-keys-panel.has-active-modifier {
+  opacity: 0.9;
+}
+
+.mobile-keys-dragbar {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 3px 0;
+  cursor: grab;
+}
+
+.mobile-keys-panel.is-dragging .mobile-keys-dragbar {
+  cursor: grabbing;
+}
+
+.mobile-keys-row {
+  display: grid;
+  gap: var(--mobile-key-gap);
+  justify-content: center;
+}
+
+.mobile-keys-row.row-3 {
+  grid-template-columns: repeat(3, var(--mobile-key-width));
+}
+
+.mobile-keys-row.row-2 {
+  grid-template-columns: repeat(2, var(--mobile-key-wide-width));
+}
+
+.mobile-keys-btn {
+  width: var(--mobile-key-width);
+  height: var(--mobile-key-height);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  color: #f1f1f1;
+  background: rgba(57, 57, 57, 0.86);
+  font-size: 21px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mobile-keys-btn:active {
+  background: rgba(99, 99, 99, 0.96);
+}
+
+.mobile-keys-btn.is-active {
+  background: rgba(22, 132, 219, 0.92);
+}
+
+.mobile-keys-btn.is-wide {
+  width: var(--mobile-key-wide-width);
+}
+
 @media (hover: none) and (pointer: coarse) {
   .xterm .xterm-viewport {
     scrollbar-width: none;
@@ -41,6 +132,12 @@ body {
   .xterm .xterm-viewport::-webkit-scrollbar {
     width: 0;
     height: 0;
+    display: none;
+  }
+}
+
+@media (hover: hover), (pointer: fine) {
+  .mobile-keys-overlay {
     display: none;
   }
 }

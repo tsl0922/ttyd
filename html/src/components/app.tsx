@@ -19,6 +19,9 @@ const clientOptions = {
     closeOnDisconnect: false,
     isWindows: false,
     unicodeVersion: '11',
+    mobileKeysEnabled: true,
+    mobileKeysOpacity: 0.72,
+    mobileKeysScale: 1,
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
