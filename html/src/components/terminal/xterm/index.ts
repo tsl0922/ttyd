@@ -55,6 +55,7 @@ export interface ClientOptions {
     mobileKeysEnabled?: boolean;
     mobileKeysOpacity?: number;
     mobileKeysScale?: number;
+    mobileTapSelectionEnabled?: boolean;
 }
 
 export interface FlowControl {
@@ -107,6 +108,10 @@ export class Xterm {
     private doReconnect = true;
     private closeOnDisconnect = false;
     private parent?: HTMLElement;
+    private touchTapCount = 0;
+    private lastTouchTapTime = 0;
+    private lastTouchTapX = 0;
+    private lastTouchTapY = 0;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -179,6 +184,7 @@ export class Xterm {
         this.syncViewport();
         fitAddon.fit();
         this.syncMobileKeys();
+        this.registerTouchSelection();
     }
 
     @bind
@@ -217,6 +223,12 @@ export class Xterm {
     }
 
     @bind
+    private shouldEnableMobileTapSelection() {
+        const enabled = this.options.clientOptions.mobileTapSelectionEnabled;
+        return enabled !== false && this.isTouchDevice();
+    }
+
+    @bind
     private syncMobileKeys() {
         if (!this.shouldEnableMobileKeys()) {
             this.mobileKeys?.dispose();
@@ -230,18 +242,180 @@ export class Xterm {
             this.mobileKeys = new MobileKeysController({
                 opacity,
                 scale,
+                onClipboardAction: this.handleClipboardAction,
                 onSendVirtualKey: this.sendVirtualKey,
-                onKeepFocus: this.keepTerminalFocus,
             });
+            this.syncClipboardButtonMode();
             return;
         }
         this.mobileKeys.updateAppearance(opacity, scale);
+        this.syncClipboardButtonMode();
     }
 
     @bind
     private keepTerminalFocus() {
         this.terminal?.focus();
         window.setTimeout(() => this.terminal?.focus(), 0);
+    }
+
+    @bind
+    private registerTouchSelection() {
+        if (!this.isTouchDevice()) return;
+        const element = this.terminal?.element;
+        if (!element) return;
+        this.register(addEventListener(element, 'touchend', this.onTouchSelectionEnd as EventListener));
+    }
+
+    @bind
+    private onTouchSelectionEnd(event: TouchEvent) {
+        if (!this.shouldEnableMobileTapSelection()) return;
+        const touch = event.changedTouches.item(0);
+        if (!touch) return;
+
+        const now = Date.now();
+        const withinTapWindow = now - this.lastTouchTapTime <= 300;
+        const closeEnough =
+            Math.abs(touch.clientX - this.lastTouchTapX) <= 24 && Math.abs(touch.clientY - this.lastTouchTapY) <= 24;
+
+        if (withinTapWindow && closeEnough) {
+            this.touchTapCount += 1;
+        } else {
+            this.touchTapCount = 1;
+        }
+
+        this.lastTouchTapTime = now;
+        this.lastTouchTapX = touch.clientX;
+        this.lastTouchTapY = touch.clientY;
+
+        if (this.touchTapCount === 2) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.dispatchTouchMultiClick(2, touch.clientX, touch.clientY);
+        } else if (this.touchTapCount === 3) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.dispatchTouchMultiClick(3, touch.clientX, touch.clientY);
+            this.touchTapCount = 0;
+        } else if (this.touchTapCount > 3) {
+            this.touchTapCount = 1;
+        }
+    }
+
+    @bind
+    private dispatchTouchMultiClick(detail: number, clientX: number, clientY: number) {
+        const element = this.terminal?.element;
+        if (!element) return;
+        const ownerDocument = element.ownerDocument ?? document;
+        const eventInit = {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            detail,
+            clientX,
+            clientY,
+            screenX: clientX,
+            screenY: clientY,
+            view: ownerDocument.defaultView ?? window,
+        };
+        element.dispatchEvent(new MouseEvent('mousedown', eventInit));
+        element.dispatchEvent(new MouseEvent('mouseup', eventInit));
+    }
+
+    @bind
+    private syncClipboardButtonMode() {
+        const selection = this.terminal?.getSelection() ?? '';
+        this.mobileKeys?.setClipboardButtonMode(selection === '' ? 'paste' : 'copy');
+    }
+
+    @bind
+    private onSelectionChange() {
+        this.syncClipboardButtonMode();
+        if (this.shouldEnableMobileKeys()) return;
+        const selection = this.terminal?.getSelection() ?? '';
+        if (selection === '') return;
+        void this.copySelection(selection);
+    }
+
+    @bind
+    private async handleClipboardAction() {
+        const selection = this.terminal?.getSelection() ?? '';
+        if (selection !== '') {
+            await this.copySelection(selection);
+            return;
+        }
+        await this.pasteFromClipboard();
+    }
+
+    @bind
+    private async copySelection(selection: string) {
+        if (selection === '') {
+            this.overlayAddon?.showOverlay('Nothing selected', 500);
+            return;
+        }
+        const hasClipboardWrite = typeof navigator.clipboard?.writeText === 'function';
+        if (hasClipboardWrite) {
+            try {
+                await navigator.clipboard.writeText(selection);
+                this.overlayAddon?.showOverlay('\u2702', 300);
+                return;
+            } catch (e) {
+                console.warn('[ttyd] clipboard api copy failed, fallback to execCommand', e);
+            }
+        }
+        if (this.copySelectionFallback(selection)) {
+            this.overlayAddon?.showOverlay('\u2702', 300);
+            return;
+        }
+        this.overlayAddon?.showOverlay(hasClipboardWrite ? 'Copy failed' : 'Copy unsupported', 700);
+    }
+
+    @bind
+    private copySelectionFallback(selection: string) {
+        const ownerDocument = this.terminal?.element?.ownerDocument ?? document;
+        if (!ownerDocument.body || typeof ownerDocument.execCommand !== 'function') return false;
+        const textarea = ownerDocument.createElement('textarea');
+        const activeElement = ownerDocument.activeElement as HTMLElement | null;
+        textarea.value = selection;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '-9999px';
+        textarea.style.opacity = '0';
+        ownerDocument.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, selection.length);
+        let copied = false;
+        try {
+            copied = ownerDocument.execCommand('copy');
+        } catch (e) {
+            console.warn('[ttyd] execCommand copy failed', e);
+        }
+        ownerDocument.body.removeChild(textarea);
+        activeElement?.focus();
+        this.keepTerminalFocus();
+        return copied;
+    }
+
+    @bind
+    private async pasteFromClipboard() {
+        if (!navigator.clipboard?.readText) {
+            this.overlayAddon?.showOverlay('Paste unsupported', 700);
+            return;
+        }
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text === '') {
+                this.overlayAddon?.showOverlay('Clipboard empty', 700);
+                return;
+            }
+            this.terminal?.paste(text);
+            this.overlayAddon?.showOverlay('Paste', 300);
+        } catch (e) {
+            console.warn('[ttyd] paste failed', e);
+            this.overlayAddon?.showOverlay('Paste failed', 700);
+        }
     }
 
     @bind
@@ -256,22 +430,12 @@ export class Xterm {
         );
         register(terminal.onData(data => sendData(data)));
         register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
+        register(terminal.onSelectionChange(this.onSelectionChange));
         register(
             terminal.onResize(({ cols, rows }) => {
                 const msg = JSON.stringify({ columns: cols, rows: rows });
                 this.socket?.send(this.textEncoder.encode(Command.RESIZE_TERMINAL + msg));
                 if (this.resizeOverlay) overlayAddon.showOverlay(`${cols}x${rows}`, 300);
-            })
-        );
-        register(
-            terminal.onSelectionChange(() => {
-                if (this.terminal.getSelection() === '') return;
-                try {
-                    document.execCommand('copy');
-                } catch (e) {
-                    return;
-                }
-                this.overlayAddon?.showOverlay('\u2702', 200);
             })
         );
         register(
@@ -680,6 +844,9 @@ export class Xterm {
                     break;
                 case 'mobileKeysScale':
                     this.options.clientOptions.mobileKeysScale = value;
+                    break;
+                case 'mobileTapSelectionEnabled':
+                    this.options.clientOptions.mobileTapSelectionEnabled = value;
                     break;
                 case 'titleFixed':
                     if (!value || value === '') return;

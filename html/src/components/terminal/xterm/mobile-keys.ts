@@ -11,8 +11,8 @@ type ModifierKey = keyof ModifierFlags;
 interface MobileKeysControllerOptions {
     opacity: number;
     scale: number;
+    onClipboardAction: () => void;
     onSendVirtualKey: (key: VirtualKey, modifiers: ModifierFlags) => void;
-    onKeepFocus: () => void;
 }
 
 const MODIFIER_KEYS: ModifierKey[] = ['ctrl', 'alt', 'shift'];
@@ -22,6 +22,9 @@ export class MobileKeysController {
     private panel: HTMLDivElement;
     private modifiers: ModifierFlags = { ctrl: false, alt: false, shift: false };
     private modifierButtons = new Map<ModifierKey, HTMLButtonElement>();
+    private copyButton?: HTMLButtonElement;
+    private clipboardButtonMode: 'copy' | 'paste' = 'paste';
+    private usesPointerPanelGuard = 'PointerEvent' in window;
     private dragging = false;
     private dragPointerId = -1;
     private dragStartX = 0;
@@ -56,6 +59,12 @@ export class MobileKeysController {
         this.panel.removeEventListener('pointermove', this.onDragMove);
         this.panel.removeEventListener('pointerup', this.onDragEnd);
         this.panel.removeEventListener('pointercancel', this.onDragEnd);
+        if (this.usesPointerPanelGuard) {
+            this.panel.removeEventListener('pointerdown', this.onPanelPointerDown);
+        } else {
+            this.panel.removeEventListener('touchstart', this.onPanelTouchStart as EventListener);
+            this.panel.removeEventListener('mousedown', this.onPanelMouseDown as EventListener);
+        }
         window.removeEventListener('resize', this.onWindowResize);
         window.visualViewport?.removeEventListener('resize', this.onViewportResize);
         window.visualViewport?.removeEventListener('scroll', this.onViewportScroll);
@@ -67,6 +76,14 @@ export class MobileKeysController {
         this.options.scale = scale;
         this.applyAppearance();
         window.requestAnimationFrame(() => this.ensureInBounds());
+    }
+
+    setClipboardButtonMode(mode: 'copy' | 'paste') {
+        this.clipboardButtonMode = mode;
+        if (!this.copyButton) return;
+        const label = mode === 'copy' ? 'Copy' : 'Paste';
+        this.copyButton.textContent = label;
+        this.copyButton.setAttribute('aria-label', label);
     }
 
     consumeModifiers(): ModifierFlags {
@@ -90,33 +107,65 @@ export class MobileKeysController {
         this.panel.appendChild(dragBar);
 
         const row1 = document.createElement('div');
-        row1.className = 'mobile-keys-row row-3';
-        row1.appendChild(this.createVirtualButton('Esc', 'esc'));
-        row1.appendChild(this.createModifierButton('ALT', 'alt'));
-        row1.appendChild(this.createModifierButton('SHFT', 'shift'));
+        row1.className = 'mobile-keys-row';
+        row1.appendChild(this.createVirtualButton('Home', 'home'));
+        row1.appendChild(this.createVirtualButton('↑', 'up'));
+        row1.appendChild(this.createVirtualButton('End', 'end'));
 
         const row2 = document.createElement('div');
-        row2.className = 'mobile-keys-row row-2';
-        row2.appendChild(this.createVirtualButton('Tab', 'tab', true));
-        row2.appendChild(this.createModifierButton('CTRL', 'ctrl', true));
+        row2.className = 'mobile-keys-row';
+        row2.appendChild(this.createVirtualButton('←', 'left'));
+        row2.appendChild(this.createVirtualButton('↓', 'down'));
+        row2.appendChild(this.createVirtualButton('→', 'right'));
 
         const row3 = document.createElement('div');
-        row3.className = 'mobile-keys-row row-3';
-        row3.appendChild(this.createVirtualButton('Home', 'home'));
-        row3.appendChild(this.createVirtualButton('↑', 'up'));
-        row3.appendChild(this.createVirtualButton('End', 'end'));
+        row3.className = 'mobile-keys-row';
+        row3.appendChild(this.createVirtualButton('Esc', 'esc'));
+        row3.appendChild(this.createModifierButton('Shift', 'shift'));
+        row3.appendChild(this.createModifierButton('Alt', 'alt'));
 
         const row4 = document.createElement('div');
-        row4.className = 'mobile-keys-row row-3';
-        row4.appendChild(this.createVirtualButton('←', 'left'));
-        row4.appendChild(this.createVirtualButton('↓', 'down'));
-        row4.appendChild(this.createVirtualButton('→', 'right'));
+        row4.className = 'mobile-keys-row';
+        row4.appendChild(this.createVirtualButton('Tab', 'tab'));
+        row4.appendChild(this.createModifierButton('Ctrl', 'ctrl'));
+        this.copyButton = this.createButton('Copy', 'copy-btn', this.options.onClipboardAction);
+        row4.appendChild(this.copyButton);
 
         this.panel.appendChild(row1);
         this.panel.appendChild(row2);
         this.panel.appendChild(row3);
         this.panel.appendChild(row4);
+        if (this.usesPointerPanelGuard) {
+            this.panel.addEventListener('pointerdown', this.onPanelPointerDown);
+        } else {
+            this.panel.addEventListener('touchstart', this.onPanelTouchStart as EventListener, { passive: false });
+            this.panel.addEventListener('mousedown', this.onPanelMouseDown as EventListener);
+        }
+        this.setClipboardButtonMode(this.clipboardButtonMode);
     }
+
+    private isInteractivePanelTarget(target: EventTarget | null) {
+        if (!(target instanceof Element)) return false;
+        return !!target.closest('.mobile-keys-btn, .mobile-keys-dragbar');
+    }
+
+    private swallowPanelGapEvent(event: Event) {
+        if (this.isInteractivePanelTarget(event.target)) return;
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    private onPanelPointerDown = (event: PointerEvent) => {
+        this.swallowPanelGapEvent(event);
+    };
+
+    private onPanelTouchStart = (event: TouchEvent) => {
+        this.swallowPanelGapEvent(event);
+    };
+
+    private onPanelMouseDown = (event: MouseEvent) => {
+        this.swallowPanelGapEvent(event);
+    };
 
     private createVirtualButton(label: string, key: VirtualKey, wide = false): HTMLButtonElement {
         return this.createButton(
@@ -156,7 +205,6 @@ export class MobileKeysController {
             event.preventDefault();
             event.stopPropagation();
             onClick();
-            this.options.onKeepFocus();
         };
         if ('PointerEvent' in window) {
             button.addEventListener('pointerdown', handlePress);

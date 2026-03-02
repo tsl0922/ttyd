@@ -44,6 +44,7 @@ body {
   --mobile-keys-opacity: 0.72;
   --mobile-keys-scale: 1;
   --mobile-key-width: 63px;
+  --mobile-key-uniform-width: calc(var(--mobile-key-width) * 1.2);
   --mobile-key-wide-width: calc((var(--mobile-key-width) * 3 + var(--mobile-key-gap)) / 2);
   --mobile-key-height: 51px;
   --mobile-key-gap: 9px;
@@ -77,7 +78,7 @@ body {
   color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  padding: 3px 0;
+  padding: 7px 0;
   cursor: grab;
 }
 
@@ -89,14 +90,7 @@ body {
   display: grid;
   gap: var(--mobile-key-gap);
   justify-content: center;
-}
-
-.mobile-keys-row.row-3 {
-  grid-template-columns: repeat(3, var(--mobile-key-width));
-}
-
-.mobile-keys-row.row-2 {
-  grid-template-columns: repeat(2, var(--mobile-key-wide-width));
+  grid-template-columns: repeat(3, var(--mobile-key-uniform-width));
 }
 
 .mobile-keys-btn {
@@ -110,6 +104,10 @@ body {
   font-size: 21px;
   line-height: 1;
   white-space: nowrap;
+}
+
+.mobile-keys-row > .mobile-keys-btn {
+  width: var(--mobile-key-uniform-width);
 }
 
 .mobile-keys-btn:active {

@@ -22,10 +22,12 @@ const clientOptions = {
     mobileKeysEnabled: true,
     mobileKeysOpacity: 0.72,
     mobileKeysScale: 1,
+    mobileTapSelectionEnabled: true,
 } as ClientOptions;
 const termOptions = {
-    fontSize: 13,
-    fontFamily: 'Consolas,Liberation Mono,Menlo,Courier,monospace',
+    fontSize: 14,
+    fontFamily: "Menlo,Monaco,'Courier New',monospace",
+    lineHeight: 1.2,
     theme: {
         foreground: '#d2d2d2',
         background: '#2b2b2b',
