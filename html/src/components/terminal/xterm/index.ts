@@ -56,6 +56,9 @@ export interface ClientOptions {
     mobileKeysOpacity?: number;
     mobileKeysScale?: number;
     mobileTapSelectionEnabled?: boolean;
+    mobileUpDownWheelOnHoldEnabled?: boolean;
+    mobileUpDownWheelHoldDelayMs?: number;
+    mobileUpDownWheelStepIntervalMs?: number;
 }
 
 export interface FlowControl {
@@ -238,17 +241,31 @@ export class Xterm {
 
         const opacity = this.options.clientOptions.mobileKeysOpacity ?? 0.72;
         const scale = this.options.clientOptions.mobileKeysScale ?? 1;
+        const wheelOnHoldEnabled = this.options.clientOptions.mobileUpDownWheelOnHoldEnabled !== false;
+        const wheelOnHoldDelayMs = Math.max(100, this.options.clientOptions.mobileUpDownWheelHoldDelayMs ?? 260);
+        const wheelOnHoldStepIntervalMs = Math.max(
+            30,
+            this.options.clientOptions.mobileUpDownWheelStepIntervalMs ?? 90
+        );
+        const mountElement = this.parent;
+        if (!mountElement) return;
         if (!this.mobileKeys) {
             this.mobileKeys = new MobileKeysController({
+                mountElement,
                 opacity,
                 scale,
                 onClipboardAction: this.handleClipboardAction,
                 onSendVirtualKey: this.sendVirtualKey,
+                onSendWheelStep: this.sendVirtualWheelStep,
+                wheelOnHoldEnabled,
+                wheelOnHoldDelayMs,
+                wheelOnHoldIntervalMs: wheelOnHoldStepIntervalMs,
             });
             this.syncClipboardButtonMode();
             return;
         }
         this.mobileKeys.updateAppearance(opacity, scale);
+        this.mobileKeys.updateWheelHoldBehavior(wheelOnHoldEnabled, wheelOnHoldDelayMs, wheelOnHoldStepIntervalMs);
         this.syncClipboardButtonMode();
     }
 
@@ -644,6 +661,32 @@ export class Xterm {
     }
 
     @bind
+    private sendVirtualWheelStep(direction: 1 | -1) {
+        const element = this.terminal?.element;
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
+        const clientX = rect.left + rect.width / 2;
+        const clientY = rect.top + rect.height / 2;
+        this.dispatchVirtualWheelStep(clientX, clientY, direction);
+    }
+
+    @bind
+    private dispatchVirtualWheelStep(clientX: number, clientY: number, direction: 1 | -1) {
+        const element = this.terminal?.element;
+        if (!element) return;
+        const wheelEvent = new WheelEvent('wheel', {
+            bubbles: true,
+            cancelable: true,
+            deltaMode: 0,
+            deltaX: 0,
+            deltaY: direction * 100,
+            clientX,
+            clientY,
+        });
+        element.dispatchEvent(wheelEvent);
+    }
+
+    @bind
     public connect() {
         this.socket = new WebSocket(this.options.wsUrl, ['tty']);
         const { socket, register } = this;
@@ -847,6 +890,15 @@ export class Xterm {
                     break;
                 case 'mobileTapSelectionEnabled':
                     this.options.clientOptions.mobileTapSelectionEnabled = value;
+                    break;
+                case 'mobileUpDownWheelOnHoldEnabled':
+                    this.options.clientOptions.mobileUpDownWheelOnHoldEnabled = value;
+                    break;
+                case 'mobileUpDownWheelHoldDelayMs':
+                    this.options.clientOptions.mobileUpDownWheelHoldDelayMs = value;
+                    break;
+                case 'mobileUpDownWheelStepIntervalMs':
+                    this.options.clientOptions.mobileUpDownWheelStepIntervalMs = value;
                     break;
                 case 'titleFixed':
                     if (!value || value === '') return;

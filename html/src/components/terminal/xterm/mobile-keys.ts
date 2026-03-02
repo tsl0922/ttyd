@@ -9,13 +9,21 @@ export type VirtualKey = 'esc' | 'tab' | 'up' | 'down' | 'left' | 'right' | 'hom
 type ModifierKey = keyof ModifierFlags;
 
 interface MobileKeysControllerOptions {
+    mountElement: HTMLElement;
     opacity: number;
     scale: number;
     onClipboardAction: () => void;
     onSendVirtualKey: (key: VirtualKey, modifiers: ModifierFlags) => void;
+    onSendWheelStep: (direction: 1 | -1) => void;
+    wheelOnHoldEnabled: boolean;
+    wheelOnHoldDelayMs: number;
+    wheelOnHoldIntervalMs: number;
 }
 
 const MODIFIER_KEYS: ModifierKey[] = ['ctrl', 'alt', 'shift'];
+
+const PANEL_INITIAL_MARGIN = 15;
+const PANEL_MIN_MARGIN = 10;
 
 export class MobileKeysController {
     private root: HTMLDivElement;
@@ -34,8 +42,11 @@ export class MobileKeysController {
     private panelX = 0;
     private panelY = 0;
     private initializedPosition = false;
-    private lastViewportOffsetLeft = 0;
-    private lastViewportOffsetTop = 0;
+    private ensureInBoundsRaf = -1;
+    private boundsResizeObserver?: ResizeObserver;
+    private wheelHoldDelayTimer = -1;
+    private wheelHoldIntervalTimer = -1;
+    private wheelHoldTriggered = false;
 
     constructor(private options: MobileKeysControllerOptions) {
         this.root = document.createElement('div');
@@ -47,18 +58,23 @@ export class MobileKeysController {
 
         this.render();
         this.applyAppearance();
-        document.body.appendChild(this.root);
-        this.syncViewportOffset();
+        this.options.mountElement.appendChild(this.root);
         this.initPosition();
+        if ('ResizeObserver' in window) {
+            this.boundsResizeObserver = new ResizeObserver(() => this.requestEnsureInBounds());
+            this.boundsResizeObserver.observe(this.options.mountElement);
+        }
         window.addEventListener('resize', this.onWindowResize);
         window.visualViewport?.addEventListener('resize', this.onViewportResize);
         window.visualViewport?.addEventListener('scroll', this.onViewportScroll);
     }
 
     dispose() {
+        this.stopWheelHoldTimers();
         this.panel.removeEventListener('pointermove', this.onDragMove);
         this.panel.removeEventListener('pointerup', this.onDragEnd);
         this.panel.removeEventListener('pointercancel', this.onDragEnd);
+        this.panel.removeEventListener('contextmenu', this.onPanelContextMenu);
         if (this.usesPointerPanelGuard) {
             this.panel.removeEventListener('pointerdown', this.onPanelPointerDown);
         } else {
@@ -68,6 +84,12 @@ export class MobileKeysController {
         window.removeEventListener('resize', this.onWindowResize);
         window.visualViewport?.removeEventListener('resize', this.onViewportResize);
         window.visualViewport?.removeEventListener('scroll', this.onViewportScroll);
+        if (this.ensureInBoundsRaf >= 0) {
+            window.cancelAnimationFrame(this.ensureInBoundsRaf);
+            this.ensureInBoundsRaf = -1;
+        }
+        this.boundsResizeObserver?.disconnect();
+        this.boundsResizeObserver = undefined;
         this.root.remove();
     }
 
@@ -76,6 +98,12 @@ export class MobileKeysController {
         this.options.scale = scale;
         this.applyAppearance();
         window.requestAnimationFrame(() => this.ensureInBounds());
+    }
+
+    updateWheelHoldBehavior(enabled: boolean, delayMs: number, intervalMs: number) {
+        this.options.wheelOnHoldEnabled = enabled;
+        this.options.wheelOnHoldDelayMs = delayMs;
+        this.options.wheelOnHoldIntervalMs = intervalMs;
     }
 
     setClipboardButtonMode(mode: 'copy' | 'paste') {
@@ -109,13 +137,13 @@ export class MobileKeysController {
         const row1 = document.createElement('div');
         row1.className = 'mobile-keys-row';
         row1.appendChild(this.createVirtualButton('Home', 'home'));
-        row1.appendChild(this.createVirtualButton('↑', 'up'));
+        row1.appendChild(this.createVirtualButton('S↑', 'up'));
         row1.appendChild(this.createVirtualButton('End', 'end'));
 
         const row2 = document.createElement('div');
         row2.className = 'mobile-keys-row';
         row2.appendChild(this.createVirtualButton('←', 'left'));
-        row2.appendChild(this.createVirtualButton('↓', 'down'));
+        row2.appendChild(this.createVirtualButton('S↓', 'down'));
         row2.appendChild(this.createVirtualButton('→', 'right'));
 
         const row3 = document.createElement('div');
@@ -135,6 +163,7 @@ export class MobileKeysController {
         this.panel.appendChild(row2);
         this.panel.appendChild(row3);
         this.panel.appendChild(row4);
+        this.panel.addEventListener('contextmenu', this.onPanelContextMenu);
         if (this.usesPointerPanelGuard) {
             this.panel.addEventListener('pointerdown', this.onPanelPointerDown);
         } else {
@@ -167,7 +196,15 @@ export class MobileKeysController {
         this.swallowPanelGapEvent(event);
     };
 
+    private onPanelContextMenu = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     private createVirtualButton(label: string, key: VirtualKey, wide = false): HTMLButtonElement {
+        if (key === 'up' || key === 'down') {
+            return this.createArrowButtonWithWheelHold(label, key, wide);
+        }
         return this.createButton(
             label,
             `key-${key}`,
@@ -177,6 +214,67 @@ export class MobileKeysController {
             },
             wide
         );
+    }
+
+    private createArrowButtonWithWheelHold(label: string, key: 'up' | 'down', wide = false): HTMLButtonElement {
+        const button = this.createBaseButton(label, `key-${key}`, wide);
+        const wheelDirection: 1 | -1 = key === 'up' ? -1 : 1;
+        let pressArmed = false;
+
+        const sendArrowKey = () => {
+            const modifiers = this.consumeModifiers();
+            this.options.onSendVirtualKey(key, modifiers);
+        };
+
+        const startHold = (event: Event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!this.options.wheelOnHoldEnabled || this.hasModifierOn()) {
+                pressArmed = false;
+                sendArrowKey();
+                return;
+            }
+
+            pressArmed = true;
+            this.stopWheelHoldTimers();
+            this.wheelHoldTriggered = false;
+            const delayMs = Math.max(100, this.options.wheelOnHoldDelayMs);
+            const intervalMs = Math.max(30, this.options.wheelOnHoldIntervalMs);
+            this.wheelHoldDelayTimer = window.setTimeout(() => {
+                this.wheelHoldTriggered = true;
+                this.options.onSendWheelStep(wheelDirection);
+                this.wheelHoldIntervalTimer = window.setInterval(() => {
+                    this.options.onSendWheelStep(wheelDirection);
+                }, intervalMs);
+            }, delayMs);
+        };
+
+        const stopHold = (event?: Event) => {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (!pressArmed) return;
+            pressArmed = false;
+            const triggered = this.wheelHoldTriggered;
+            this.stopWheelHoldTimers();
+            if (!triggered) sendArrowKey();
+        };
+
+        if ('PointerEvent' in window) {
+            button.addEventListener('pointerdown', startHold);
+            button.addEventListener('pointerup', stopHold as EventListener);
+            button.addEventListener('pointercancel', stopHold as EventListener);
+            button.addEventListener('pointerleave', stopHold as EventListener);
+        } else {
+            button.addEventListener('touchstart', startHold as EventListener, { passive: false });
+            button.addEventListener('touchend', stopHold as EventListener);
+            button.addEventListener('touchcancel', stopHold as EventListener);
+            button.addEventListener('mousedown', startHold as EventListener);
+            button.addEventListener('mouseup', stopHold as EventListener);
+            button.addEventListener('mouseleave', stopHold as EventListener);
+        }
+        button.addEventListener('click', event => event.preventDefault());
+        return button;
     }
 
     private createModifierButton(label: string, key: ModifierKey, wide = false): HTMLButtonElement {
@@ -194,13 +292,7 @@ export class MobileKeysController {
     }
 
     private createButton(label: string, className: string, onClick: () => void, wide = false): HTMLButtonElement {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = `mobile-keys-btn ${className}`;
-        if (wide) button.classList.add('is-wide');
-        button.textContent = label;
-        button.setAttribute('aria-label', label);
-        button.tabIndex = -1;
+        const button = this.createBaseButton(label, className, wide);
         const handlePress = (event: Event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -214,6 +306,29 @@ export class MobileKeysController {
         }
         button.addEventListener('click', event => event.preventDefault());
         return button;
+    }
+
+    private createBaseButton(label: string, className: string, wide: boolean): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `mobile-keys-btn ${className}`;
+        if (wide) button.classList.add('is-wide');
+        button.textContent = label;
+        button.setAttribute('aria-label', label);
+        button.tabIndex = -1;
+        return button;
+    }
+
+    private stopWheelHoldTimers() {
+        if (this.wheelHoldDelayTimer >= 0) {
+            window.clearTimeout(this.wheelHoldDelayTimer);
+            this.wheelHoldDelayTimer = -1;
+        }
+        if (this.wheelHoldIntervalTimer >= 0) {
+            window.clearInterval(this.wheelHoldIntervalTimer);
+            this.wheelHoldIntervalTimer = -1;
+        }
+        this.wheelHoldTriggered = false;
     }
 
     private syncModifierButtons() {
@@ -239,27 +354,20 @@ export class MobileKeysController {
         this.initializedPosition = true;
 
         const panelRect = this.panel.getBoundingClientRect();
-        const viewport = window.visualViewport;
-        const offsetLeft = Math.round(viewport?.offsetLeft ?? 0);
-        const offsetTop = Math.round(viewport?.offsetTop ?? 0);
-        const viewWidth = Math.round(viewport?.width ?? window.innerWidth);
-        this.panelX = Math.max(8, offsetLeft + viewWidth - panelRect.width - 12);
-        this.panelY = Math.max(8, offsetTop + 12);
+        const boundsRect = this.options.mountElement.getBoundingClientRect();
+        this.panelX = Math.max(PANEL_MIN_MARGIN, Math.round(boundsRect.width - panelRect.width - PANEL_INITIAL_MARGIN));
+        this.panelY = PANEL_INITIAL_MARGIN;
         this.applyPanelPosition();
         this.ensureInBounds();
     }
 
     private clampPosition(x: number, y: number): { x: number; y: number } {
-        const rect = this.panel.getBoundingClientRect();
-        const viewport = window.visualViewport;
-        const offsetLeft = Math.round(viewport?.offsetLeft ?? 0);
-        const offsetTop = Math.round(viewport?.offsetTop ?? 0);
-        const viewWidth = Math.round(viewport?.width ?? window.innerWidth);
-        const viewHeight = Math.round(viewport?.height ?? window.innerHeight);
-        const minX = offsetLeft + 8;
-        const minY = offsetTop + 8;
-        const maxX = Math.max(minX, offsetLeft + viewWidth - rect.width - 8);
-        const maxY = Math.max(minY, offsetTop + viewHeight - rect.height - 8);
+        const panelRect = this.panel.getBoundingClientRect();
+        const boundsRect = this.options.mountElement.getBoundingClientRect();
+        const minX = PANEL_MIN_MARGIN;
+        const minY = PANEL_MIN_MARGIN;
+        const maxX = Math.max(minX, Math.round(boundsRect.width - panelRect.width - PANEL_MIN_MARGIN));
+        const maxY = Math.max(minY, Math.round(boundsRect.height - panelRect.height - PANEL_MIN_MARGIN));
         return {
             x: Math.min(Math.max(minX, x), maxX),
             y: Math.min(Math.max(minY, y), maxY),
@@ -317,43 +425,31 @@ export class MobileKeysController {
 
     private onWindowResize = () => {
         if (!this.initializedPosition) return;
-        this.syncViewportOffset();
-        this.ensureInBounds();
+        this.requestEnsureInBounds();
     };
 
     private onViewportResize = () => {
         if (!this.initializedPosition) return;
-        this.syncViewportOffset();
-        this.ensureInBounds();
+        this.requestEnsureInBounds();
     };
 
     private onViewportScroll = () => {
         if (!this.initializedPosition) return;
-        const viewport = window.visualViewport;
-        if (!viewport) return;
-        const nextLeft = Math.round(viewport.offsetLeft);
-        const nextTop = Math.round(viewport.offsetTop);
-        const deltaLeft = nextLeft - this.lastViewportOffsetLeft;
-        const deltaTop = nextTop - this.lastViewportOffsetTop;
-        if (deltaLeft !== 0 || deltaTop !== 0) {
-            this.panelX += deltaLeft;
-            this.panelY += deltaTop;
-        }
-        this.lastViewportOffsetLeft = nextLeft;
-        this.lastViewportOffsetTop = nextTop;
-        this.ensureInBounds();
+        this.requestEnsureInBounds();
     };
+
+    private requestEnsureInBounds() {
+        if (this.ensureInBoundsRaf >= 0) return;
+        this.ensureInBoundsRaf = window.requestAnimationFrame(() => {
+            this.ensureInBoundsRaf = -1;
+            this.ensureInBounds();
+        });
+    }
 
     private ensureInBounds() {
         const clamped = this.clampPosition(this.panelX, this.panelY);
         this.panelX = clamped.x;
         this.panelY = clamped.y;
         this.applyPanelPosition();
-    }
-
-    private syncViewportOffset() {
-        const viewport = window.visualViewport;
-        this.lastViewportOffsetLeft = Math.round(viewport?.offsetLeft ?? 0);
-        this.lastViewportOffsetTop = Math.round(viewport?.offsetTop ?? 0);
     }
 }

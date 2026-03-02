@@ -23,6 +23,9 @@ const clientOptions = {
     mobileKeysOpacity: 0.72,
     mobileKeysScale: 1,
     mobileTapSelectionEnabled: true,
+    mobileUpDownWheelOnHoldEnabled: true,
+    mobileUpDownWheelHoldDelayMs: 260,
+    mobileUpDownWheelStepIntervalMs: 90,
 } as ClientOptions;
 const termOptions = {
     fontSize: 14,
