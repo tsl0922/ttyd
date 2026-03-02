@@ -130,7 +130,42 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 - `-t titleFixed=hello`: set a fixed title for the browser window
 - `-t fontSize=20`: change the font size of the terminal
 - `-t unicodeVersion=11`: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
-- `-t trzszDragInitTimeout=3000`: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000) 
+- `-t trzszDragInitTimeout=3000`: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+
+### Mobile Support
+
+Mobile touch devices are automatically detected and supported:
+
+- `-t mobileKeysEnabled=false`: disable the mobile virtual keyboard panel (default: true, auto-detect touch)
+- `-t mobileKeysOpacity=0.8`: set the keyboard panel opacity (default: 0.72, range: 0.0-1.0)
+- `-t mobileKeysScale=1.2`: set the keyboard panel scale (default: 1.0)
+- `-t mobileTapSelectionEnabled=false`: disable tap-based text selection (default: true, auto-detect touch)
+- `-t mobileUpDownWheelOnHoldEnabled=false`: disable scroll-on-hold for arrow keys (default: true)
+- `-t mobileUpDownWheelHoldDelayMs=300`: set scroll trigger delay in milliseconds (default: 260)
+- `-t mobileUpDownWheelStepIntervalMs=100`: set scroll interval in milliseconds (default: 90)
+
+## Mobile Gestures
+
+On touch devices, the following gestures are supported:
+
+**Virtual Keyboard Panel:**
+- A draggable on-screen keyboard appears automatically on touch devices
+- Provides Esc, Tab, Arrow keys, Home/End, and modifier keys (Ctrl, Alt, Shift)
+- Drag the "Drag" bar to reposition the panel anywhere on screen
+- Tap modifier keys to toggle their state (highlighted when active)
+- Copy/Paste button switches modes based on text selection
+
+**Tap Selection:**
+- Double-tap: Select the word under the cursor
+- Triple-tap: Select the entire line
+- Shift + Triple-tap: Select all visible lines in the current viewport
+- Alt + Triple-tap: Select all text in the terminal buffer
+
+**Scroll Simulation:**
+- Long-press Up/Down arrow keys: Scroll the terminal buffer continuously
+- Scroll starts after a short delay (default: 260ms)
+- Scrolling stops when you release the key or activate any modifier key
+- Configure delay and interval with `mobileUpDownWheelHoldDelayMs` and `mobileUpDownWheelStepIntervalMs`
 
 ## Advanced usage
 
