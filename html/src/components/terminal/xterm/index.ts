@@ -2,7 +2,6 @@ import { bind } from 'decko';
 import type { IDisposable, ITerminalOptions } from '@xterm/xterm';
 import { Terminal } from '@xterm/xterm';
 import { CanvasAddon } from '@xterm/addon-canvas';
-import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -76,6 +75,24 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
     return toDisposable(() => target.removeEventListener(type, listener));
 }
 
+function copyTextFallback(text: string): boolean {
+    try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const result = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return result;
+    } catch {
+        return false;
+    }
+}
+
 export class Xterm {
     private disposables: IDisposable[] = [];
     private textEncoder = new TextEncoder();
@@ -86,7 +103,6 @@ export class Xterm {
     private terminal: Terminal;
     private fitAddon = new FitAddon();
     private overlayAddon = new OverlayAddon();
-    private clipboardAddon = new ClipboardAddon();
     private webLinksAddon = new WebLinksAddon();
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
@@ -154,7 +170,7 @@ export class Xterm {
     @bind
     public open(parent: HTMLElement) {
         this.terminal = new Terminal(this.options.termOptions);
-        const { terminal, fitAddon, overlayAddon, clipboardAddon, webLinksAddon } = this;
+        const { terminal, fitAddon, overlayAddon, webLinksAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
@@ -162,11 +178,57 @@ export class Xterm {
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
-        terminal.loadAddon(clipboardAddon);
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
         fitAddon.fit();
+
+        // Handle OSC 52 escape sequences for clipboard access
+        terminal.parser.registerOscHandler(52, data => {
+            const args = data.split(';');
+            if (args.length < 2) return true;
+
+            const pc = args[0];
+            const pd = args[1];
+
+            if (pd === '?') {
+                if (navigator.clipboard) {
+                    navigator.clipboard
+                        .readText()
+                        .then(text => {
+                            const encoded = new TextEncoder().encode(text);
+                            const b64 = btoa(Array.from(encoded, b => String.fromCharCode(b)).join(''));
+                            terminal.input(`\x1b]52;${pc};${b64}\x07`, false);
+                        })
+                        .catch(() => {});
+                }
+                return true;
+            }
+
+            let text: string;
+            try {
+                text = new TextDecoder().decode(Uint8Array.from(atob(pd), c => c.charCodeAt(0)));
+            } catch {
+                return true;
+            }
+
+            if (navigator.clipboard) {
+                navigator.clipboard
+                    .writeText(text)
+                    .then(() => {
+                        overlayAddon.showOverlay('\u2702', 200);
+                    })
+                    .catch(() => {
+                        if (copyTextFallback(text)) {
+                            overlayAddon.showOverlay('\u2702', 200);
+                        }
+                    });
+            } else if (copyTextFallback(text)) {
+                overlayAddon.showOverlay('\u2702', 200);
+            }
+
+            return true;
+        });
     }
 
     @bind
