@@ -123,6 +123,20 @@ export class MobileKeysController {
         return consumed;
     }
 
+    consumeAltModifierForTapSelection(): boolean {
+        if (!this.modifiers.alt) return false;
+        this.modifiers.alt = false;
+        this.syncModifierButtons();
+        return true;
+    }
+
+    consumeShiftModifierForTapSelection(): boolean {
+        if (!this.modifiers.shift) return false;
+        this.modifiers.shift = false;
+        this.syncModifierButtons();
+        return true;
+    }
+
     private hasModifierOn(): boolean {
         return this.modifiers.ctrl || this.modifiers.alt || this.modifiers.shift;
     }

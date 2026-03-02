@@ -311,11 +311,29 @@ export class Xterm {
         } else if (this.touchTapCount === 3) {
             event.preventDefault();
             event.stopPropagation();
-            this.dispatchTouchMultiClick(3, touch.clientX, touch.clientY);
+            const shouldSelectVisible = this.mobileKeys?.consumeShiftModifierForTapSelection() ?? false;
+            const shouldSelectAll = this.mobileKeys?.consumeAltModifierForTapSelection() ?? false;
+            if (shouldSelectVisible) {
+                this.selectVisibleViewportLines();
+            } else if (shouldSelectAll) {
+                this.terminal?.selectAll();
+            } else {
+                this.dispatchTouchMultiClick(3, touch.clientX, touch.clientY);
+            }
             this.touchTapCount = 0;
         } else if (this.touchTapCount > 3) {
             this.touchTapCount = 1;
         }
+    }
+
+    @bind
+    private selectVisibleViewportLines() {
+        const terminal = this.terminal;
+        if (!terminal) return;
+        const start = Math.max(0, terminal.buffer.active.viewportY);
+        const end = Math.min(terminal.buffer.active.length - 1, start + Math.max(1, terminal.rows) - 1);
+        if (end < start) return;
+        terminal.selectLines(start, end);
     }
 
     @bind
