@@ -255,6 +255,7 @@ export class Xterm {
                 opacity,
                 scale,
                 onClipboardAction: this.handleClipboardAction,
+                onFocusTerminal: this.keepTerminalFocus,
                 onSendVirtualKey: this.sendVirtualKey,
                 onSendWheelStep: this.sendVirtualWheelStep,
                 wheelOnHoldEnabled,

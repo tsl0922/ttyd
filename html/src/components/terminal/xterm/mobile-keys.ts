@@ -13,6 +13,7 @@ interface MobileKeysControllerOptions {
     opacity: number;
     scale: number;
     onClipboardAction: () => void;
+    onFocusTerminal: () => void;
     onSendVirtualKey: (key: VirtualKey, modifiers: ModifierFlags) => void;
     onSendWheelStep: (direction: 1 | -1) => void;
     wheelOnHoldEnabled: boolean;
@@ -170,7 +171,7 @@ export class MobileKeysController {
         row4.className = 'mobile-keys-row';
         row4.appendChild(this.createVirtualButton('Tab', 'tab'));
         row4.appendChild(this.createModifierButton('Ctrl', 'ctrl'));
-        this.copyButton = this.createButton('Copy', 'copy-btn', this.options.onClipboardAction);
+        this.copyButton = this.createClickButton('Copy', 'copy-btn', this.options.onClipboardAction);
         row4.appendChild(this.copyButton);
 
         this.panel.appendChild(row1);
@@ -319,6 +320,26 @@ export class MobileKeysController {
             button.addEventListener('mousedown', handlePress as EventListener);
         }
         button.addEventListener('click', event => event.preventDefault());
+        return button;
+    }
+
+    private createClickButton(label: string, className: string, onClick: () => void, wide = false): HTMLButtonElement {
+        const button = this.createBaseButton(label, className, wide);
+        const preventButtonFocus = (event: Event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        };
+        if ('PointerEvent' in window) {
+            button.addEventListener('pointerdown', preventButtonFocus);
+        } else {
+            button.addEventListener('mousedown', preventButtonFocus as EventListener);
+        }
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClick();
+            this.options.onFocusTerminal();
+        });
         return button;
     }
 
