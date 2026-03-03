@@ -4,15 +4,140 @@ body {
   min-height: 100%;
   margin: 0;
   overflow: hidden;
+  overscroll-behavior: none;
+  background-color: #2b2b2b;
+  position: fixed;
+  inset: 0;
+  width: 100%;
 }
 
 #terminal-container {
-  width: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   height: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
+  overflow: hidden;
   .terminal {
     padding: 5px;
     height: calc(100% - 10px);
+  }
+}
+
+.xterm .xterm-viewport {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.mobile-keyboard-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.mobile-keyboard-panel {
+  --mobile-keyboard-opacity: 0.72;
+  --mobile-keyboard-scale: 1;
+  --mobile-key-width: 63px;
+  --mobile-key-uniform-width: calc(var(--mobile-key-width) * 1.2);
+  --mobile-key-height: 51px;
+  --mobile-key-gap: 9px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mobile-key-gap);
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.65);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  opacity: var(--mobile-keyboard-opacity);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transform-origin: top left;
+}
+
+.mobile-keyboard-panel.is-dragging,
+.mobile-keyboard-panel.has-active-modifier {
+  opacity: 0.9;
+}
+
+.mobile-keyboard-dragbar {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 7px 0;
+  cursor: grab;
+}
+
+.mobile-keyboard-panel.is-dragging .mobile-keyboard-dragbar {
+  cursor: grabbing;
+}
+
+.mobile-keyboard-row {
+  display: grid;
+  gap: var(--mobile-key-gap);
+  justify-content: center;
+  grid-template-columns: repeat(3, var(--mobile-key-uniform-width));
+}
+
+.mobile-keyboard-btn {
+  width: var(--mobile-key-width);
+  height: var(--mobile-key-height);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  color: #f1f1f1;
+  background: rgba(57, 57, 57, 0.86);
+  font-size: 21px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-keyboard-row > .mobile-keyboard-btn {
+  width: var(--mobile-key-uniform-width);
+}
+
+.mobile-keyboard-btn:active {
+  background: rgba(99, 99, 99, 0.96);
+}
+
+.mobile-keyboard-btn.is-active {
+  background: rgba(22, 132, 219, 0.92);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .xterm .xterm-viewport {
+    scrollbar-width: none;
+  }
+
+  .xterm .xterm-viewport::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+@media (hover: hover), (pointer: fine) {
+  .mobile-keyboard-overlay {
+    display: none;
   }
 }

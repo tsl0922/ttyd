@@ -4,6 +4,7 @@ import { Terminal } from './terminal';
 
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
 import type { ClientOptions, FlowControl } from './terminal/xterm';
+import { DEFAULT_DYNAMIC_LAYOUTS } from './terminal/xterm/mobile-keyboard';
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const path = window.location.pathname.replace(/[/]+$/, '');
@@ -19,6 +20,14 @@ const clientOptions = {
     closeOnDisconnect: false,
     isWindows: false,
     unicodeVersion: '11',
+    mobileTapSelectionEnabled: true,
+    mobileKeyboardEnabled: true,
+    mobileKeyboardOpacity: 0.72,
+    mobileKeyboardScale: 1,
+    mobileKeyboardLayouts: DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout]),
+    mobileKeyboardHoldDelayMs: 300,
+    mobileKeyboardHoldIntervalMs: 120,
+    mobileKeyboardHoldWheelIntervalMs: 120,
 } as ClientOptions;
 const termOptions = {
     fontSize: 13,
