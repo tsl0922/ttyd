@@ -140,7 +140,8 @@ Mobile touch devices are automatically detected and supported:
 - `-t mobileKeyboardEnabled=false`: disable the mobile virtual keyboard panel (default: true, auto-detect touch)
 - `-t mobileKeyboardOpacity=0.8`: set the keyboard panel opacity (default: 0.72, range: 0.0-1.0)
 - `-t mobileKeyboardScale=1.2`: set the keyboard panel scale (default: 1.0)
-- `-t 'mobileKeyboardLayouts=[[\"home\",\"up\",\"end\",\"left\",\"down\",\"right\"],[\"pageup\",\"up\",\"pagedown\",\"left\",\"down\",\"right\"],[\"wheel_up\",\"up\",\"wheel_down\",\"left\",\"down\",\"right\"]]'`: set dynamic layouts for the top two rows (6 keys per layout)
+- `-t 'mobileKeyboardCustomKeys=[{"id":"tmux_copy_mode","label":"C-b [","combo":["Ctrl+b","["]}]'`: define custom dynamic keys (array of `{id,label,combo}`; `combo` is a sequence like `Ctrl+b`, `[`). `id` must match `^[a-z][a-z0-9_]{0,31}$`, and `__proto__`, `prototype`, `constructor` are forbidden. The default web UI also predefines four additional tmux keys: `tmux_detach` (`C-b d`), `tmux_new_window` (`C-b c`), `tmux_next_window` (`C-b n`), `tmux_list_windows` (`C-b w`)
+- `-t 'mobileKeyboardLayouts=[["home","up","end","left","down","right"]]'`: set dynamic layouts for the top section (6 keys per layout). In the default web UI, 4 pages are active by default: page 1 `["home","up","end","left","down","right"]`, page 2 `["pageup","up","pagedown","left","down","right"]`, page 3 `["=","+","\\","|","~","#"]`, page 4 `["space","tmux_copy_mode","tmux_detach","tmux_new_window","tmux_next_window","tmux_list_windows"]`
 - `-t mobileKeyboardHoldDelayMs=300`: set hold trigger delay in milliseconds for mobile virtual keys (default: 300)
 - `-t mobileKeyboardHoldIntervalMs=120`: set hold repeat interval in milliseconds for non-wheel keys (default: 120)
 - `-t mobileKeyboardHoldWheelIntervalMs=120`: set hold repeat interval in milliseconds for wheel keys (default: 120)
@@ -153,10 +154,12 @@ On touch devices, ttyd supports the following interactions:
 
 - A draggable on-screen keyboard appears automatically on touch devices
 - Uses a dynamic top section (2 rows, 6 keys) and a fixed bottom section
-- Dynamic keys can be chosen from: `up/down/left/right/home/end/pageup/pagedown/wheel_up/wheel_down` and symbols `/ \\ - _ . : @ # | ~ [ ]`
+- Built-in dynamic keys: action keys `enter/space`, navigation keys `up/down/left/right/home/end/pageup/pagedown/wheel_up/wheel_down`, common symbols `! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _{ | } ~` plus backtick, and lowercase letters `a-z`
+- Custom key IDs from `mobileKeyboardCustomKeys` can also be used in `mobileKeyboardLayouts`
 - Fixed section provides `Esc`, `Tab`, `Shift`, `Alt`, `Ctrl`, and `Copy/Paste`
 - Drag the header bar to reposition the panel anywhere on screen
-- Double-tap (or double-click) the header bar to cycle dynamic layouts in configured order
+- Tap (or click) the header bar to cycle dynamic layouts in configured order
+- Double-tap (or double-click) the header bar to send `Enter`
 - Tap modifier keys to toggle their state (highlighted when active)
 - Copy/Paste button switches between copy and paste based on text selection
 

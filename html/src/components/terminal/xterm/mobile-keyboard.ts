@@ -10,9 +10,14 @@ export type KeyRole = 'action' | 'state' | 'clipboard';
 
 type RepeatPolicy = { kind: 'none' } | { kind: 'hold'; interval: 'default' | 'wheel' };
 
+export type ComboStep =
+    | { kind: 'virtual'; key: VirtualKey; modifiers: ModifierFlags }
+    | { kind: 'char'; char: string; modifiers: ModifierFlags };
+
 export type KeyBehavior =
     | { kind: 'send-virtual'; key: VirtualKey }
     | { kind: 'send-char'; char: string }
+    | { kind: 'send-combo'; combo: ComboStep[] }
     | { kind: 'wheel-step'; direction: 1 | -1 }
     | { kind: 'toggle-modifier'; modifier: keyof ModifierFlags }
     | { kind: 'clipboard-smart' };
@@ -27,251 +32,62 @@ type KeySpec = {
     className: string;
 };
 
-const KEY_REGISTRY = {
-    esc: {
-        id: 'esc',
-        label: 'Esc',
+function createActionVirtualKeySpec(
+    id: string,
+    label: string,
+    key: VirtualKey,
+    repeat: RepeatPolicy,
+    className: string
+): KeySpec {
+    return {
+        id,
+        label,
         role: 'action',
-        behavior: { kind: 'send-virtual', key: 'esc' },
+        behavior: { kind: 'send-virtual', key },
+        repeat,
+        consumesModifiers: true,
+        className,
+    };
+}
+
+function createActionCharKeySpec(id: string, label: string, char: string, className: string): KeySpec {
+    return {
+        id,
+        label,
+        role: 'action',
+        behavior: { kind: 'send-char', char },
         repeat: { kind: 'none' },
         consumesModifiers: true,
-        className: 'key-esc',
-    },
-    tab: {
-        id: 'tab',
-        label: 'Tab',
+        className,
+    };
+}
+
+function createWheelStepKeySpec(id: string, label: string, direction: 1 | -1, className: string): KeySpec {
+    return {
+        id,
+        label,
         role: 'action',
-        behavior: { kind: 'send-virtual', key: 'tab' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-tab',
-    },
-    up: {
-        id: 'up',
-        label: '↑',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'up' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-up',
-    },
-    down: {
-        id: 'down',
-        label: '↓',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'down' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-down',
-    },
-    left: {
-        id: 'left',
-        label: '←',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'left' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-left',
-    },
-    right: {
-        id: 'right',
-        label: '→',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'right' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-right',
-    },
-    home: {
-        id: 'home',
-        label: 'Home',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'home' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-home',
-    },
-    end: {
-        id: 'end',
-        label: 'End',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'end' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-end',
-    },
-    pageup: {
-        id: 'pageup',
-        label: 'PgUp',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'pageup' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-pageup',
-    },
-    pagedown: {
-        id: 'pagedown',
-        label: 'PgDn',
-        role: 'action',
-        behavior: { kind: 'send-virtual', key: 'pagedown' },
-        repeat: { kind: 'hold', interval: 'default' },
-        consumesModifiers: true,
-        className: 'key-pagedown',
-    },
-    wheel_up: {
-        id: 'wheel_up',
-        label: 'Wh↑',
-        role: 'action',
-        behavior: { kind: 'wheel-step', direction: -1 },
+        behavior: { kind: 'wheel-step', direction },
         repeat: { kind: 'hold', interval: 'wheel' },
         consumesModifiers: false,
-        className: 'key-wheel-up',
-    },
-    wheel_down: {
-        id: 'wheel_down',
-        label: 'Wh↓',
-        role: 'action',
-        behavior: { kind: 'wheel-step', direction: 1 },
-        repeat: { kind: 'hold', interval: 'wheel' },
-        consumesModifiers: false,
-        className: 'key-wheel-down',
-    },
-    '/': {
-        id: '/',
-        label: '/',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '/' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-slash',
-    },
-    '\\': {
-        id: '\\',
-        label: '\\',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '\\' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-backslash',
-    },
-    '-': {
-        id: '-',
-        label: '-',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '-' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-minus',
-    },
-    _: {
-        id: '_',
-        label: '_',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '_' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-underscore',
-    },
-    '.': {
-        id: '.',
-        label: '.',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '.' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-dot',
-    },
-    ':': {
-        id: ':',
-        label: ':',
-        role: 'action',
-        behavior: { kind: 'send-char', char: ':' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-colon',
-    },
-    '@': {
-        id: '@',
-        label: '@',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '@' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-at',
-    },
-    '#': {
-        id: '#',
-        label: '#',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '#' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-hash',
-    },
-    '|': {
-        id: '|',
-        label: '|',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '|' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-pipe',
-    },
-    '~': {
-        id: '~',
-        label: '~',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '~' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-tilde',
-    },
-    '[': {
-        id: '[',
-        label: '[',
-        role: 'action',
-        behavior: { kind: 'send-char', char: '[' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-left-bracket',
-    },
-    ']': {
-        id: ']',
-        label: ']',
-        role: 'action',
-        behavior: { kind: 'send-char', char: ']' },
-        repeat: { kind: 'none' },
-        consumesModifiers: true,
-        className: 'key-char-right-bracket',
-    },
-    shift: {
-        id: 'shift',
-        label: 'Shift',
+        className,
+    };
+}
+
+function createModifierToggleKeySpec(id: keyof ModifierFlags, label: string, className: string): KeySpec {
+    return {
+        id,
+        label,
         role: 'state',
-        behavior: { kind: 'toggle-modifier', modifier: 'shift' },
+        behavior: { kind: 'toggle-modifier', modifier: id },
         repeat: { kind: 'none' },
         consumesModifiers: false,
-        className: 'modifier-shift',
-    },
-    alt: {
-        id: 'alt',
-        label: 'Alt',
-        role: 'state',
-        behavior: { kind: 'toggle-modifier', modifier: 'alt' },
-        repeat: { kind: 'none' },
-        consumesModifiers: false,
-        className: 'modifier-alt',
-    },
-    ctrl: {
-        id: 'ctrl',
-        label: 'Ctrl',
-        role: 'state',
-        behavior: { kind: 'toggle-modifier', modifier: 'ctrl' },
-        repeat: { kind: 'none' },
-        consumesModifiers: false,
-        className: 'modifier-ctrl',
-    },
-    clipboard: {
+        className,
+    };
+}
+
+function createClipboardKeySpec(): KeySpec {
+    return {
         id: 'clipboard',
         label: 'Paste',
         role: 'clipboard',
@@ -279,12 +95,41 @@ const KEY_REGISTRY = {
         repeat: { kind: 'none' },
         consumesModifiers: false,
         className: 'copy-btn',
-    },
+    };
+}
+
+const KEY_REGISTRY = {
+    esc: createActionVirtualKeySpec('esc', 'Esc', 'esc', { kind: 'none' }, 'key-esc'),
+    tab: createActionVirtualKeySpec('tab', 'Tab', 'tab', { kind: 'none' }, 'key-tab'),
+    enter: createActionCharKeySpec('enter', 'Enter', '\r', 'key-enter'),
+    space: createActionCharKeySpec('space', 'Space', ' ', 'key-space'),
+    up: createActionVirtualKeySpec('up', '↑', 'up', { kind: 'hold', interval: 'default' }, 'key-up'),
+    down: createActionVirtualKeySpec('down', '↓', 'down', { kind: 'hold', interval: 'default' }, 'key-down'),
+    left: createActionVirtualKeySpec('left', '←', 'left', { kind: 'hold', interval: 'default' }, 'key-left'),
+    right: createActionVirtualKeySpec('right', '→', 'right', { kind: 'hold', interval: 'default' }, 'key-right'),
+    home: createActionVirtualKeySpec('home', 'Home', 'home', { kind: 'hold', interval: 'default' }, 'key-home'),
+    end: createActionVirtualKeySpec('end', 'End', 'end', { kind: 'hold', interval: 'default' }, 'key-end'),
+    pageup: createActionVirtualKeySpec('pageup', 'PgUp', 'pageup', { kind: 'hold', interval: 'default' }, 'key-pageup'),
+    pagedown: createActionVirtualKeySpec(
+        'pagedown',
+        'PgDn',
+        'pagedown',
+        { kind: 'hold', interval: 'default' },
+        'key-pagedown'
+    ),
+    wheel_up: createWheelStepKeySpec('wheel_up', 'Wh↑', -1, 'key-wheel-up'),
+    wheel_down: createWheelStepKeySpec('wheel_down', 'Wh↓', 1, 'key-wheel-down'),
+    shift: createModifierToggleKeySpec('shift', 'Shift', 'modifier-shift'),
+    alt: createModifierToggleKeySpec('alt', 'Alt', 'modifier-alt'),
+    ctrl: createModifierToggleKeySpec('ctrl', 'Ctrl', 'modifier-ctrl'),
+    clipboard: createClipboardKeySpec(),
 } as const satisfies Record<string, KeySpec>;
 
 type KeyId = keyof typeof KEY_REGISTRY;
 
-export const DYNAMIC_KEY_IDS = [
+const ACTION_CHAR_DYNAMIC_KEY_IDS = ['enter', 'space'] as const;
+
+const NAVIGATION_DYNAMIC_KEY_IDS = [
     'up',
     'down',
     'left',
@@ -295,22 +140,106 @@ export const DYNAMIC_KEY_IDS = [
     'pagedown',
     'wheel_up',
     'wheel_down',
-    '/',
-    '\\',
-    '-',
-    '_',
-    '.',
-    ':',
-    '@',
-    '#',
-    '|',
-    '~',
-    '[',
-    ']',
 ] as const;
 
-export type DynamicKeyId = (typeof DYNAMIC_KEY_IDS)[number];
-export type DynamicLayout = [DynamicKeyId, DynamicKeyId, DynamicKeyId, DynamicKeyId, DynamicKeyId, DynamicKeyId];
+const COMMON_SYMBOL_DYNAMIC_KEY_IDS = [
+    '!',
+    '"',
+    '#',
+    '$',
+    '%',
+    '&',
+    "'",
+    '(',
+    ')',
+    '*',
+    '+',
+    ',',
+    '-',
+    '.',
+    '/',
+    ':',
+    ';',
+    '<',
+    '=',
+    '>',
+    '?',
+    '@',
+    '[',
+    '\\',
+    ']',
+    '^',
+    '_',
+    '{',
+    '|',
+    '}',
+    '~',
+    '`',
+] as const;
+
+const ALPHABET_DYNAMIC_KEY_IDS = [
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+] as const;
+
+export const DYNAMIC_KEY_IDS = [
+    ...ACTION_CHAR_DYNAMIC_KEY_IDS,
+    ...NAVIGATION_DYNAMIC_KEY_IDS,
+    ...COMMON_SYMBOL_DYNAMIC_KEY_IDS,
+    ...ALPHABET_DYNAMIC_KEY_IDS,
+] as const;
+
+const BUILTIN_DYNAMIC_CHAR_KEY_SET = new Set<string>([...COMMON_SYMBOL_DYNAMIC_KEY_IDS, ...ALPHABET_DYNAMIC_KEY_IDS]);
+
+export const STATIC_KEY_IDS = ['esc', 'tab', 'shift', 'alt', 'ctrl', 'clipboard'] as const;
+
+const RESERVED_KEY_ID_SET = new Set<string>([...DYNAMIC_KEY_IDS, ...STATIC_KEY_IDS]);
+const FORBIDDEN_CUSTOM_KEY_IDS = new Set<string>(['__proto__', 'prototype', 'constructor']);
+const CUSTOM_KEY_ID_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
+
+export function isReservedMobileKeyId(id: string): boolean {
+    return RESERVED_KEY_ID_SET.has(id);
+}
+
+export function isValidMobileKeyboardCustomKeyId(id: string): boolean {
+    return CUSTOM_KEY_ID_PATTERN.test(id) && !FORBIDDEN_CUSTOM_KEY_IDS.has(id);
+}
+
+export type DynamicLayout = [string, string, string, string, string, string];
+export interface MobileKeyboardCustomKeySpec {
+    id: string;
+    label: string;
+    combo: string[];
+}
+export type MobileKeyboardCustomKey = {
+    id: string;
+    label: string;
+    combo: ComboStep[];
+};
 
 type ModifierKey = keyof ModifierFlags;
 
@@ -319,33 +248,232 @@ interface MobileKeyboardControllerOptions {
     opacity: number;
     scale: number;
     dynamicLayouts: DynamicLayout[];
+    customKeys: MobileKeyboardCustomKey[];
     onDispatchAction: (action: KeyBehavior, modifiers: ModifierFlags) => void;
     holdDelayMs: number;
     holdIntervalMs: number;
     holdWheelIntervalMs: number;
 }
 
+type PressState = {
+    pressArmed: boolean;
+    holdSpec: KeySpec;
+    holdModifiers: ModifierFlags;
+};
+
 const MODIFIER_KEYS: ModifierKey[] = ['ctrl', 'alt', 'shift'];
 
-const PANEL_INITIAL_MARGIN = 15;
-const PANEL_MIN_MARGIN = 10;
+const PANEL_INITIAL_MARGIN = 24;
+const PANEL_MIN_MARGIN = 18;
 const DOUBLE_TAP_INTERVAL_MS = 320;
 const TAP_MOVE_THRESHOLD_PX = 8;
 
 export const DEFAULT_DYNAMIC_LAYOUTS: DynamicLayout[] = [
     ['home', 'up', 'end', 'left', 'down', 'right'],
     ['pageup', 'up', 'pagedown', 'left', 'down', 'right'],
-    ['wheel_up', 'up', 'wheel_down', 'left', 'down', 'right'],
+    ['=', '+', '\\', '|', '~', '#'],
 ];
 
-const DYNAMIC_KEY_ID_SET = new Set<DynamicKeyId>(DYNAMIC_KEY_IDS);
+export function cloneDefaultMobileKeyboardLayouts(): DynamicLayout[] {
+    return DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as DynamicLayout);
+}
 
-export function isDynamicKeyId(value: unknown): value is DynamicKeyId {
-    return typeof value === 'string' && DYNAMIC_KEY_ID_SET.has(value as DynamicKeyId);
+function sanitizeClassName(id: string) {
+    return id.replace(/[^a-zA-Z0-9_-]/g, char => `u${char.codePointAt(0)!.toString(16).padStart(4, '0')}`);
+}
+
+function getBuiltinDynamicCharClassName(keyId: string): string {
+    return `key-char-${sanitizeClassName(keyId)}`;
+}
+
+export function createBuiltinDynamicCharKeySpec(keyId: string): KeySpec | null {
+    if (keyId.length !== 1 || !BUILTIN_DYNAMIC_CHAR_KEY_SET.has(keyId)) return null;
+    return {
+        id: keyId,
+        label: keyId,
+        role: 'action',
+        behavior: { kind: 'send-char', char: keyId },
+        repeat: { kind: 'none' },
+        consumesModifiers: true,
+        className: getBuiltinDynamicCharClassName(keyId),
+    };
 }
 
 function emptyModifiers(): ModifierFlags {
     return { ctrl: false, alt: false, shift: false };
+}
+
+export function parseMobileKeyComboStep(rawStep: string): ComboStep | null {
+    const step = rawStep.trim();
+    if (step === '') return null;
+
+    const rawParts = step.split('+').map(part => part.trim());
+    if (rawParts.length === 0) return null;
+
+    // Trailing "++" means the actual key is "+" (e.g. "Ctrl++").
+    const plusKeyAtEnd =
+        rawParts.length === 2
+            ? rawParts[0] === '' && rawParts[1] === ''
+            : rawParts.length >= 3 && rawParts[rawParts.length - 1] === '' && rawParts[rawParts.length - 2] === '';
+
+    const modifierTokens = plusKeyAtEnd ? rawParts.slice(0, -2) : rawParts.slice(0, -1);
+    const keyRaw = plusKeyAtEnd ? '+' : rawParts[rawParts.length - 1];
+    if (keyRaw === '' || modifierTokens.some(token => token === '')) return null;
+
+    const modifiers: ModifierFlags = { ctrl: false, alt: false, shift: false };
+    if (modifierTokens.length > 0) {
+        for (const modifierToken of modifierTokens) {
+            switch (modifierToken.toLowerCase()) {
+                case 'ctrl':
+                case 'control':
+                    modifiers.ctrl = true;
+                    break;
+                case 'alt':
+                case 'option':
+                    modifiers.alt = true;
+                    break;
+                case 'shift':
+                    modifiers.shift = true;
+                    break;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    const keyToken = keyRaw.toLowerCase();
+    switch (keyToken) {
+        case 'esc':
+        case 'escape':
+            return { kind: 'virtual', key: 'esc', modifiers };
+        case 'tab':
+            return { kind: 'virtual', key: 'tab', modifiers };
+        case 'up':
+        case 'arrowup':
+            return { kind: 'virtual', key: 'up', modifiers };
+        case 'down':
+        case 'arrowdown':
+            return { kind: 'virtual', key: 'down', modifiers };
+        case 'left':
+        case 'arrowleft':
+            return { kind: 'virtual', key: 'left', modifiers };
+        case 'right':
+        case 'arrowright':
+            return { kind: 'virtual', key: 'right', modifiers };
+        case 'home':
+            return { kind: 'virtual', key: 'home', modifiers };
+        case 'end':
+            return { kind: 'virtual', key: 'end', modifiers };
+        case 'pageup':
+        case 'pgup':
+            return { kind: 'virtual', key: 'pageup', modifiers };
+        case 'pagedown':
+        case 'pgdn':
+            return { kind: 'virtual', key: 'pagedown', modifiers };
+        case 'enter':
+        case 'return':
+            return { kind: 'char', char: '\r', modifiers };
+        case 'space':
+            return { kind: 'char', char: ' ', modifiers };
+        default:
+            break;
+    }
+
+    if ([...keyRaw].length === 1) {
+        return { kind: 'char', char: keyRaw, modifiers };
+    }
+    return null;
+}
+
+export function parseMobileKeyComboSteps(steps: unknown): ComboStep[] | null {
+    if (!Array.isArray(steps) || steps.length === 0) return null;
+    const combo: ComboStep[] = [];
+    for (const rawStep of steps) {
+        if (typeof rawStep !== 'string') return null;
+        const parsed = parseMobileKeyComboStep(rawStep);
+        if (!parsed) return null;
+        combo.push(parsed);
+    }
+    return combo.length > 0 ? combo : null;
+}
+
+export function normalizeMobileKeyboardCustomKeys(value: unknown): {
+    valid: boolean;
+    keys: MobileKeyboardCustomKey[];
+} {
+    if (value === undefined) {
+        return { valid: true, keys: [] };
+    }
+    if (!Array.isArray(value)) {
+        return { valid: false, keys: [] };
+    }
+
+    const usedCustomIds = new Set<string>();
+    const keys: MobileKeyboardCustomKey[] = [];
+    for (const keySpec of value) {
+        if (typeof keySpec !== 'object' || keySpec === null) return { valid: false, keys: [] };
+        const id = typeof keySpec.id === 'string' ? keySpec.id.trim() : '';
+        const label = typeof keySpec.label === 'string' ? keySpec.label.trim() : '';
+        if (id === '' || label === '') return { valid: false, keys: [] };
+        if (!isValidMobileKeyboardCustomKeyId(id)) return { valid: false, keys: [] };
+        if (isReservedMobileKeyId(id) || usedCustomIds.has(id)) return { valid: false, keys: [] };
+        const combo = parseMobileKeyComboSteps(keySpec.combo);
+        if (!combo) return { valid: false, keys: [] };
+        usedCustomIds.add(id);
+        keys.push({ id, label, combo });
+    }
+    return { valid: true, keys };
+}
+
+export function normalizeMobileKeyboardLayouts(
+    value: unknown,
+    allowedLayoutKeyIds: Set<string>
+): {
+    valid: boolean;
+    layouts: DynamicLayout[];
+} {
+    if (!Array.isArray(value) || value.length === 0) {
+        return { valid: true, layouts: cloneDefaultMobileKeyboardLayouts() };
+    }
+    const layouts: DynamicLayout[] = [];
+    for (const layout of value) {
+        if (!Array.isArray(layout) || layout.length !== 6) return { valid: false, layouts: [] };
+        const normalized = layout.map(item => (typeof item === 'string' ? item.trim() : ''));
+        if (normalized.some(item => item === '' || !allowedLayoutKeyIds.has(item))) {
+            return { valid: false, layouts: [] };
+        }
+        layouts.push(normalized as DynamicLayout);
+    }
+    if (layouts.length === 0) {
+        return { valid: false, layouts: [] };
+    }
+    return { valid: true, layouts };
+}
+
+export function resolveMobileKeyboardConfig(
+    layoutValue: unknown,
+    customKeyValue: unknown
+): {
+    layouts: DynamicLayout[];
+    customKeys: MobileKeyboardCustomKey[];
+} {
+    const normalizedCustomKeys = normalizeMobileKeyboardCustomKeys(customKeyValue);
+    if (!normalizedCustomKeys.valid) {
+        console.warn('[ttyd] invalid mobileKeyboardCustomKeys, fallback to default mobile keyboard');
+        return { layouts: cloneDefaultMobileKeyboardLayouts(), customKeys: [] };
+    }
+
+    const allowedLayoutKeyIds = new Set<string>([...DYNAMIC_KEY_IDS, ...normalizedCustomKeys.keys.map(key => key.id)]);
+    const normalizedLayouts = normalizeMobileKeyboardLayouts(layoutValue, allowedLayoutKeyIds);
+    if (!normalizedLayouts.valid) {
+        console.warn('[ttyd] invalid mobileKeyboardLayouts, fallback to default mobile keyboard');
+        return { layouts: cloneDefaultMobileKeyboardLayouts(), customKeys: [] };
+    }
+
+    return {
+        layouts: normalizedLayouts.layouts,
+        customKeys: normalizedCustomKeys.keys,
+    };
 }
 
 export class MobileKeyboardController {
@@ -358,6 +486,7 @@ export class MobileKeyboardController {
     private clipboardButton?: HTMLButtonElement;
     private clipboardButtonMode: 'copy' | 'paste' = 'paste';
     private usesPointerPanelGuard = 'PointerEvent' in window;
+    private keyRegistry: Record<string, KeySpec>;
     private dynamicLayouts: DynamicLayout[];
     private currentLayoutIndex = 0;
     private dragging = false;
@@ -379,8 +508,11 @@ export class MobileKeyboardController {
     private holdIntervalTimer = -1;
     private holdTriggered = false;
     private lastDragTapTime = 0;
+    private pendingSingleTapTimer = -1;
 
+    // Lifecycle
     constructor(private options: MobileKeyboardControllerOptions) {
+        this.keyRegistry = this.buildRuntimeKeyRegistry(options.customKeys);
         this.dynamicLayouts = this.cloneLayouts(options.dynamicLayouts);
         this.currentLayoutIndex = 0;
 
@@ -406,6 +538,7 @@ export class MobileKeyboardController {
 
     dispose() {
         this.stopHoldTimers();
+        this.clearPendingSingleTap();
         this.panel.removeEventListener('pointermove', this.onDragMove);
         this.panel.removeEventListener('pointerup', this.onDragEnd);
         this.panel.removeEventListener('pointercancel', this.onDragEnd);
@@ -414,10 +547,10 @@ export class MobileKeyboardController {
             this.dragBar.removeEventListener('pointerdown', this.onDragStart);
         }
         if (this.usesPointerPanelGuard) {
-            this.panel.removeEventListener('pointerdown', this.onPanelPointerDown);
+            this.panel.removeEventListener('pointerdown', this.onPanelPressStart);
         } else {
-            this.panel.removeEventListener('touchstart', this.onPanelTouchStart as EventListener);
-            this.panel.removeEventListener('mousedown', this.onPanelMouseDown as EventListener);
+            this.panel.removeEventListener('touchstart', this.onPanelPressStart as EventListener);
+            this.panel.removeEventListener('mousedown', this.onPanelPressStart as EventListener);
         }
         window.removeEventListener('resize', this.onBoundsChange);
         window.visualViewport?.removeEventListener('resize', this.onBoundsChange);
@@ -445,7 +578,8 @@ export class MobileKeyboardController {
         this.stopHoldTimers();
     }
 
-    updateLayouts(dynamicLayouts: DynamicLayout[]) {
+    updateDynamicConfig(dynamicLayouts: DynamicLayout[], customKeys: MobileKeyboardCustomKey[]) {
+        this.keyRegistry = this.buildRuntimeKeyRegistry(customKeys);
         this.dynamicLayouts = this.cloneLayouts(dynamicLayouts);
         this.currentLayoutIndex = 0;
         this.syncDynamicButtons();
@@ -460,6 +594,7 @@ export class MobileKeyboardController {
         this.clipboardButton.setAttribute('aria-label', label);
     }
 
+    // Public state operations
     consumeModifiers(): ModifierFlags {
         const consumed = { ...this.modifiers };
         if (consumed.ctrl || consumed.alt || consumed.shift) {
@@ -482,6 +617,7 @@ export class MobileKeyboardController {
         return true;
     }
 
+    // Key registry and layout resolution
     private hasModifierOn(): boolean {
         return this.modifiers.ctrl || this.modifiers.alt || this.modifiers.shift;
     }
@@ -490,20 +626,40 @@ export class MobileKeyboardController {
         return dynamicLayouts.map(layout => [...layout] as DynamicLayout);
     }
 
+    private buildRuntimeKeyRegistry(customKeys: MobileKeyboardCustomKey[]): Record<string, KeySpec> {
+        const registry = Object.assign(Object.create(null), KEY_REGISTRY) as Record<string, KeySpec>;
+        customKeys.forEach(customKey => {
+            const classSuffix = sanitizeClassName(customKey.id);
+            registry[customKey.id] = {
+                id: customKey.id,
+                label: customKey.label,
+                role: 'action',
+                behavior: { kind: 'send-combo', combo: customKey.combo },
+                repeat: { kind: 'none' },
+                consumesModifiers: false,
+                className: `key-custom-${classSuffix}`,
+            };
+        });
+        return registry;
+    }
+
     private getCurrentLayout(): DynamicLayout {
         if (this.dynamicLayouts.length === 0) {
-            return DEFAULT_DYNAMIC_LAYOUTS[0];
+            return [...DEFAULT_DYNAMIC_LAYOUTS[0]];
         }
         return this.dynamicLayouts[this.currentLayoutIndex % this.dynamicLayouts.length];
     }
 
-    private getDynamicKeyBySlot(slot: number): DynamicKeyId {
+    private getDynamicKeyBySlot(slot: number): string {
         const layout = this.getCurrentLayout();
         return layout[slot] ?? layout[0];
     }
 
-    private getKeySpecById(keyId: KeyId): KeySpec {
-        return KEY_REGISTRY[keyId];
+    private getKeySpecById(keyId: string): KeySpec {
+        if (this.keyRegistry[keyId]) return this.keyRegistry[keyId];
+        const builtinCharSpec = createBuiltinDynamicCharKeySpec(keyId);
+        if (builtinCharSpec) return builtinCharSpec;
+        return KEY_REGISTRY.up;
     }
 
     private getDynamicKeySpecBySlot(slot: number): KeySpec {
@@ -529,10 +685,14 @@ export class MobileKeyboardController {
             const current = this.currentLayoutIndex + 1;
             const total = Math.max(1, this.dynamicLayouts.length);
             this.dragBar.textContent = `Drag · L${current}/${total}`;
-            this.dragBar.setAttribute('aria-label', `Drag bar, layout ${current} of ${total}`);
+            this.dragBar.setAttribute(
+                'aria-label',
+                `Drag bar, layout ${current} of ${total}. Tap to cycle layout, double-tap to send Enter`
+            );
         }
     }
 
+    // Key dispatch and press/hold handling
     private getHoldDelayMs() {
         return Math.max(100, this.options.holdDelayMs);
     }
@@ -564,50 +724,27 @@ export class MobileKeyboardController {
         this.dispatchWithModifiers(spec, modifiers);
     }
 
+    private stopHoldTimers() {
+        if (this.holdDelayTimer >= 0) {
+            window.clearTimeout(this.holdDelayTimer);
+            this.holdDelayTimer = -1;
+        }
+        if (this.holdIntervalTimer >= 0) {
+            window.clearInterval(this.holdIntervalTimer);
+            this.holdIntervalTimer = -1;
+        }
+        this.holdTriggered = false;
+    }
+
     private bindPressEvents(button: HTMLButtonElement, resolveSpec: () => KeySpec) {
-        let pressArmed = false;
-        let holdSpec = resolveSpec();
-        let holdModifiers = emptyModifiers();
-
-        const startPress = (event: Event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            holdSpec = resolveSpec();
-            const repeat = holdSpec.repeat;
-            if (repeat.kind === 'none') {
-                this.dispatchSinglePress(holdSpec);
-                return;
-            }
-
-            pressArmed = true;
-            holdModifiers = emptyModifiers();
-            this.stopHoldTimers();
-            this.holdTriggered = false;
-
-            const delayMs = this.getHoldDelayMs();
-            const intervalMs = this.getHoldIntervalMs(holdSpec);
-            this.holdDelayTimer = window.setTimeout(() => {
-                this.holdTriggered = true;
-                holdModifiers = this.resolveModifiers(holdSpec);
-                this.dispatchWithModifiers(holdSpec, holdModifiers);
-                this.holdIntervalTimer = window.setInterval(() => {
-                    this.dispatchWithModifiers(holdSpec, holdModifiers);
-                }, intervalMs);
-            }, delayMs);
+        const pressState: PressState = {
+            pressArmed: false,
+            holdSpec: resolveSpec(),
+            holdModifiers: emptyModifiers(),
         };
 
-        const stopPress = (event?: Event) => {
-            event?.preventDefault();
-            event?.stopPropagation();
-            if (!pressArmed) return;
-            pressArmed = false;
-            const triggered = this.holdTriggered;
-            this.stopHoldTimers();
-            if (!triggered) {
-                this.dispatchSinglePress(holdSpec);
-            }
-        };
+        const startPress = (event: Event) => this.startButtonPress(event, resolveSpec, pressState);
+        const stopPress = (event?: Event) => this.stopButtonPress(event, pressState);
 
         if ('PointerEvent' in window) {
             button.addEventListener('pointerdown', startPress);
@@ -625,6 +762,45 @@ export class MobileKeyboardController {
         button.addEventListener('click', event => event.preventDefault());
     }
 
+    private startButtonPress(event: Event, resolveSpec: () => KeySpec, state: PressState) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        state.holdSpec = resolveSpec();
+        if (state.holdSpec.repeat.kind === 'none') {
+            this.dispatchSinglePress(state.holdSpec);
+            return;
+        }
+
+        state.pressArmed = true;
+        state.holdModifiers = emptyModifiers();
+        this.stopHoldTimers();
+
+        const delayMs = this.getHoldDelayMs();
+        const intervalMs = this.getHoldIntervalMs(state.holdSpec);
+        this.holdDelayTimer = window.setTimeout(() => {
+            this.holdTriggered = true;
+            state.holdModifiers = this.resolveModifiers(state.holdSpec);
+            this.dispatchWithModifiers(state.holdSpec, state.holdModifiers);
+            this.holdIntervalTimer = window.setInterval(() => {
+                this.dispatchWithModifiers(state.holdSpec, state.holdModifiers);
+            }, intervalMs);
+        }, delayMs);
+    }
+
+    private stopButtonPress(event: Event | undefined, state: PressState) {
+        event?.preventDefault();
+        event?.stopPropagation();
+        if (!state.pressArmed) return;
+        state.pressArmed = false;
+        const triggered = this.holdTriggered;
+        this.stopHoldTimers();
+        if (!triggered) {
+            this.dispatchSinglePress(state.holdSpec);
+        }
+    }
+
+    // DOM rendering and button wiring
     private render() {
         this.dragBar = document.createElement('div');
         this.dragBar.className = 'mobile-keyboard-dragbar';
@@ -661,10 +837,10 @@ export class MobileKeyboardController {
         this.panel.appendChild(row4);
         this.panel.addEventListener('contextmenu', this.onPanelContextMenu);
         if (this.usesPointerPanelGuard) {
-            this.panel.addEventListener('pointerdown', this.onPanelPointerDown);
+            this.panel.addEventListener('pointerdown', this.onPanelPressStart);
         } else {
-            this.panel.addEventListener('touchstart', this.onPanelTouchStart as EventListener, { passive: false });
-            this.panel.addEventListener('mousedown', this.onPanelMouseDown as EventListener);
+            this.panel.addEventListener('touchstart', this.onPanelPressStart as EventListener, { passive: false });
+            this.panel.addEventListener('mousedown', this.onPanelPressStart as EventListener);
         }
         this.setClipboardButtonMode(this.clipboardButtonMode);
         this.syncDynamicButtons();
@@ -716,15 +892,7 @@ export class MobileKeyboardController {
         event.stopPropagation();
     }
 
-    private onPanelPointerDown = (event: PointerEvent) => {
-        this.swallowPanelGapEvent(event);
-    };
-
-    private onPanelTouchStart = (event: TouchEvent) => {
-        this.swallowPanelGapEvent(event);
-    };
-
-    private onPanelMouseDown = (event: MouseEvent) => {
+    private onPanelPressStart = (event: Event) => {
         this.swallowPanelGapEvent(event);
     };
 
@@ -733,6 +901,7 @@ export class MobileKeyboardController {
         event.stopPropagation();
     };
 
+    // General UI helpers
     private createBaseButton(label: string, className: string): HTMLButtonElement {
         const button = document.createElement('button');
         button.type = 'button';
@@ -743,16 +912,24 @@ export class MobileKeyboardController {
         return button;
     }
 
-    private stopHoldTimers() {
-        if (this.holdDelayTimer >= 0) {
-            window.clearTimeout(this.holdDelayTimer);
-            this.holdDelayTimer = -1;
+    private clearPendingSingleTap() {
+        if (this.pendingSingleTapTimer >= 0) {
+            window.clearTimeout(this.pendingSingleTapTimer);
+            this.pendingSingleTapTimer = -1;
         }
-        if (this.holdIntervalTimer >= 0) {
-            window.clearInterval(this.holdIntervalTimer);
-            this.holdIntervalTimer = -1;
-        }
-        this.holdTriggered = false;
+    }
+
+    private scheduleSingleTapLayoutCycle() {
+        this.clearPendingSingleTap();
+        this.pendingSingleTapTimer = window.setTimeout(() => {
+            this.pendingSingleTapTimer = -1;
+            this.lastDragTapTime = 0;
+            this.cycleLayout();
+        }, DOUBLE_TAP_INTERVAL_MS);
+    }
+
+    private dispatchHeaderEnter() {
+        this.options.onDispatchAction({ kind: 'send-char', char: '\r' }, emptyModifiers());
     }
 
     private syncModifierButtons() {
@@ -812,6 +989,7 @@ export class MobileKeyboardController {
     private onDragStart = (event: PointerEvent) => {
         if (this.dragging) return;
         event.preventDefault();
+        this.clearPendingSingleTap();
         this.dragging = true;
         this.dragPointerId = event.pointerId;
         this.dragStartX = event.clientX;
@@ -858,13 +1036,7 @@ export class MobileKeyboardController {
         );
         const now = Date.now();
 
-        this.dragging = false;
-        this.panel.classList.remove('is-dragging');
-        this.panel.releasePointerCapture(this.dragPointerId);
-        this.panel.removeEventListener('pointermove', this.onDragMove);
-        this.panel.removeEventListener('pointerup', this.onDragEnd);
-        this.panel.removeEventListener('pointercancel', this.onDragEnd);
-        this.dragPointerId = -1;
+        this.finishDrag();
 
         const clamped = this.clampPosition(this.panelX, this.panelY);
         this.panelX = clamped.x;
@@ -872,16 +1044,39 @@ export class MobileKeyboardController {
         this.applyPanelPosition();
 
         if (movedDistance > TAP_MOVE_THRESHOLD_PX) {
+            this.clearPendingSingleTap();
             this.lastDragTapTime = 0;
             return;
         }
         if (now - this.lastDragTapTime <= DOUBLE_TAP_INTERVAL_MS) {
+            this.clearPendingSingleTap();
             this.lastDragTapTime = 0;
-            this.cycleLayout();
+            this.dispatchHeaderEnter();
             return;
         }
         this.lastDragTapTime = now;
+        this.scheduleSingleTapLayoutCycle();
     };
+
+    private finishDrag() {
+        this.dragging = false;
+        this.panel.classList.remove('is-dragging');
+        this.releaseDragPointerCapture(this.dragPointerId);
+        this.panel.removeEventListener('pointermove', this.onDragMove);
+        this.panel.removeEventListener('pointerup', this.onDragEnd);
+        this.panel.removeEventListener('pointercancel', this.onDragEnd);
+        this.dragPointerId = -1;
+    }
+
+    private releaseDragPointerCapture(pointerId: number) {
+        if (pointerId < 0) return;
+        try {
+            if (!this.panel.hasPointerCapture(pointerId)) return;
+            this.panel.releasePointerCapture(pointerId);
+        } catch {
+            // Ignore pointer capture race conditions on some browsers.
+        }
+    }
 
     private onBoundsChange = () => {
         if (!this.initializedPosition) return;

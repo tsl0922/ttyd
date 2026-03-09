@@ -11,14 +11,13 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
 import {
-    DEFAULT_DYNAMIC_LAYOUTS,
-    DynamicKeyId,
-    DynamicLayout,
+    ComboStep,
     KeyBehavior,
-    isDynamicKeyId,
+    MobileKeyboardCustomKeySpec,
     MobileKeyboardController,
     ModifierFlags,
     VirtualKey,
+    resolveMobileKeyboardConfig,
 } from './mobile-keyboard';
 
 import '@xterm/xterm/css/xterm.css';
@@ -65,7 +64,8 @@ export interface ClientOptions {
     mobileKeyboardEnabled?: boolean;
     mobileKeyboardOpacity?: number;
     mobileKeyboardScale?: number;
-    mobileKeyboardLayouts?: DynamicKeyId[][];
+    mobileKeyboardLayouts?: string[][];
+    mobileKeyboardCustomKeys?: MobileKeyboardCustomKeySpec[];
     mobileKeyboardHoldDelayMs?: number;
     mobileKeyboardHoldIntervalMs?: number;
     mobileKeyboardHoldWheelIntervalMs?: number;
@@ -255,7 +255,10 @@ export class Xterm {
 
         const opacity = this.options.clientOptions.mobileKeyboardOpacity ?? 0.72;
         const scale = this.options.clientOptions.mobileKeyboardScale ?? 1;
-        const dynamicLayouts = this.normalizeDynamicLayouts(this.options.clientOptions.mobileKeyboardLayouts);
+        const mobileKeyboardConfig = resolveMobileKeyboardConfig(
+            this.options.clientOptions.mobileKeyboardLayouts,
+            this.options.clientOptions.mobileKeyboardCustomKeys
+        );
         const holdDelayMs = Math.max(100, this.options.clientOptions.mobileKeyboardHoldDelayMs ?? 300);
         const holdIntervalMs = Math.max(30, this.options.clientOptions.mobileKeyboardHoldIntervalMs ?? 120);
         const holdWheelIntervalMs = Math.max(30, this.options.clientOptions.mobileKeyboardHoldWheelIntervalMs ?? 120);
@@ -266,7 +269,8 @@ export class Xterm {
                 mountElement,
                 opacity,
                 scale,
-                dynamicLayouts,
+                dynamicLayouts: mobileKeyboardConfig.layouts,
+                customKeys: mobileKeyboardConfig.customKeys,
                 onDispatchAction: this.onMobileKeyboardAction,
                 holdDelayMs,
                 holdIntervalMs,
@@ -276,28 +280,9 @@ export class Xterm {
             return;
         }
         this.mobileKeyboard.updateAppearance(opacity, scale);
-        this.mobileKeyboard.updateLayouts(dynamicLayouts);
+        this.mobileKeyboard.updateDynamicConfig(mobileKeyboardConfig.layouts, mobileKeyboardConfig.customKeys);
         this.mobileKeyboard.updateHoldBehavior(holdDelayMs, holdIntervalMs, holdWheelIntervalMs);
         this.syncClipboardButtonMode();
-    }
-
-    @bind
-    private normalizeDynamicLayouts(value: ClientOptions['mobileKeyboardLayouts']): DynamicLayout[] {
-        if (!Array.isArray(value) || value.length === 0) {
-            return DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as DynamicLayout);
-        }
-        const layouts: DynamicLayout[] = [];
-        for (const layout of value) {
-            if (!Array.isArray(layout) || layout.length !== 6) continue;
-            const normalized = layout.map(item => (isDynamicKeyId(item) ? item : null));
-            if (normalized.some(item => item === null)) continue;
-            layouts.push(normalized as DynamicLayout);
-        }
-        if (layouts.length === 0) {
-            console.warn('[ttyd] invalid mobileKeyboardLayouts, fallback to defaults');
-            return DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as DynamicLayout);
-        }
-        return layouts;
     }
 
     @bind
@@ -634,6 +619,10 @@ export class Xterm {
             case 'send-char':
                 this.sendDynamicChar(action.char, modifiers);
                 return;
+            case 'send-combo':
+                this.mobileKeyboard?.clearModifiers();
+                this.sendDynamicCombo(action.combo);
+                return;
             case 'wheel-step':
                 this.sendVirtualWheelStep(action.direction);
                 return;
@@ -738,6 +727,23 @@ export class Xterm {
             return;
         }
         this.sendData(this.encodeCharWithModifiers(char, modifiers));
+    }
+
+    @bind
+    private sendDynamicCombo(combo: ComboStep[]) {
+        if (!Array.isArray(combo) || combo.length === 0) return;
+        combo.forEach(step => {
+            switch (step.kind) {
+                case 'virtual':
+                    this.sendVirtualKey(step.key, step.modifiers);
+                    return;
+                case 'char':
+                    this.sendDynamicChar(step.char, step.modifiers);
+                    return;
+                default:
+                    return;
+            }
+        });
     }
 
     @bind
@@ -979,6 +985,9 @@ export class Xterm {
                     break;
                 case 'mobileKeyboardLayouts':
                     this.options.clientOptions.mobileKeyboardLayouts = value;
+                    break;
+                case 'mobileKeyboardCustomKeys':
+                    this.options.clientOptions.mobileKeyboardCustomKeys = value;
                     break;
                 case 'mobileKeyboardHoldDelayMs':
                     this.options.clientOptions.mobileKeyboardHoldDelayMs = value;

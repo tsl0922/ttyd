@@ -24,7 +24,17 @@ const clientOptions = {
     mobileKeyboardEnabled: true,
     mobileKeyboardOpacity: 0.72,
     mobileKeyboardScale: 1,
-    mobileKeyboardLayouts: DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout]),
+    mobileKeyboardCustomKeys: [
+        { id: 'tmux_copy_mode', label: 'C-b [', combo: ['Ctrl+b', '['] },
+        { id: 'tmux_detach', label: 'C-b d', combo: ['Ctrl+b', 'd'] },
+        { id: 'tmux_new_window', label: 'C-b c', combo: ['Ctrl+b', 'c'] },
+        { id: 'tmux_next_window', label: 'C-b n', combo: ['Ctrl+b', 'n'] },
+        { id: 'tmux_list_windows', label: 'C-b w', combo: ['Ctrl+b', 'w'] },
+    ],
+    mobileKeyboardLayouts: [
+        ...DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout]),
+        ['space', 'tmux_copy_mode', 'tmux_detach', 'tmux_new_window', 'tmux_next_window', 'tmux_list_windows'],
+    ],
     mobileKeyboardHoldDelayMs: 300,
     mobileKeyboardHoldIntervalMs: 120,
     mobileKeyboardHoldWheelIntervalMs: 120,

@@ -219,7 +219,9 @@ Mobile touch devices are automatically detected and supported:
 .IP \(bu 2
 \fB\fC\-t mobileKeyboardScale=1.2\fR: set the keyboard panel scale (default: 1.0)
 .IP \(bu 2
-\fB\fC\-t 'mobileKeyboardLayouts=[[\\"home\\",\\"up\\",\\"end\\",\\"left\\",\\"down\\",\\"right\\"],[\\"pageup\\",\\"up\\",\\"pagedown\\",\\"left\\",\\"down\\",\\"right\\"],[\\"wheel\_up\\",\\"up\\",\\"wheel\_down\\",\\"left\\",\\"down\\",\\"right\\"]]'\fR: set dynamic layouts for the top two rows (6 keys per layout)
+\fB\fC\-t 'mobileKeyboardCustomKeys=[{"id":"tmux\_copy\_mode","label":"C\-b [","combo":["Ctrl+b","["]}]'\fR: define custom dynamic keys (array of \fB\fC{id,label,combo}\fR; \fB\fCcombo\fR is a sequence like \fB\fCCtrl+b\fR, \fB\fC[\fR). \fB\fCid\fR must match \fB\fC^[a\-z][a\-z0\-9\_]{0,31}$\fR, and \fB\fC\_\_proto\_\_\fR, \fB\fCprototype\fR, \fB\fCconstructor\fR are forbidden. The default web UI also predefines four additional tmux keys: \fB\fCtmux\_detach\fR (\fB\fCC\-b d\fR), \fB\fCtmux\_new\_window\fR (\fB\fCC\-b c\fR), \fB\fCtmux\_next\_window\fR (\fB\fCC\-b n\fR), \fB\fCtmux\_list\_windows\fR (\fB\fCC\-b w\fR)
+.IP \(bu 2
+\fB\fC\-t 'mobileKeyboardLayouts=[["home","up","end","left","down","right"]]'\fR: set dynamic layouts for the top section (6 keys per layout). In the default web UI, 4 pages are active by default: page 1 \fB\fC["home","up","end","left","down","right"]\fR, page 2 \fB\fC["pageup","up","pagedown","left","down","right"]\fR, page 3 \fB\fC["=","+","\\\\","|","\~","#"]\fR, page 4 \fB\fC["space","tmux\_copy\_mode","tmux\_detach","tmux\_new\_window","tmux\_next\_window","tmux\_list\_windows"]\fR
 .IP \(bu 2
 \fB\fC\-t mobileKeyboardHoldDelayMs=300\fR: set hold trigger delay in milliseconds for mobile virtual keys (default: 300)
 .IP \(bu 2
@@ -242,13 +244,17 @@ A draggable on\-screen keyboard appears automatically on touch devices
 .IP \(bu 2
 Uses a dynamic top section (2 rows, 6 keys) and a fixed bottom section
 .IP \(bu 2
-Dynamic keys can be chosen from: \fB\fCup/down/left/right/home/end/pageup/pagedown/wheel\_up/wheel\_down\fR and symbols \fB\fC/ \\\\ \- \_ . : @ # | \~ [ ]\fR
+Built\-in dynamic keys: action keys \fB\fCenter/space\fR, navigation keys \fB\fCup/down/left/right/home/end/pageup/pagedown/wheel\_up/wheel\_down\fR, common symbols \fB\fC! " # $ % \& ' ( ) * + , \- . / : ; < = > ? @ [ \\\\ ] ^ \_{ | } \~\fR plus backtick, and lowercase letters \fB\fCa\-z\fR
+.IP \(bu 2
+Custom key IDs from \fB\fCmobileKeyboardCustomKeys\fR can also be used in \fB\fCmobileKeyboardLayouts\fR
 .IP \(bu 2
 Fixed section provides \fB\fCEsc\fR, \fB\fCTab\fR, \fB\fCShift\fR, \fB\fCAlt\fR, \fB\fCCtrl\fR, and \fB\fCCopy/Paste\fR
 .IP \(bu 2
 Drag the header bar to reposition the panel anywhere on screen
 .IP \(bu 2
-Double\-tap (or double\-click) the header bar to cycle dynamic layouts in configured order
+Tap (or click) the header bar to cycle dynamic layouts in configured order
+.IP \(bu 2
+Double\-tap (or double\-click) the header bar to send \fB\fCEnter\fR
 .IP \(bu 2
 Tap modifier keys to toggle their state (highlighted when active)
 .IP \(bu 2
