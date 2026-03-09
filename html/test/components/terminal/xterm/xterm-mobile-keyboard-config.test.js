@@ -13,6 +13,17 @@ const {
     resolveMobileKeyboardConfig,
 } = require(path.join(outDir, 'src/components/terminal/xterm/mobile-keyboard.js'));
 
+function toResolvedLayout(layout, pageMap = {}) {
+    return layout.map((keyId, index) => ({
+        keyId,
+        switchToLayoutIndex: Object.prototype.hasOwnProperty.call(pageMap, index) ? pageMap[index] : null,
+    }));
+}
+
+function resolveDefaultLayouts() {
+    return cloneDefaultMobileKeyboardLayouts().map(layout => toResolvedLayout(layout));
+}
+
 test('parseComboStep supports virtual keys, aliases and char mappings', () => {
     assert.deepEqual(parseMobileKeyComboStep('Ctrl+b'), {
         kind: 'char',
@@ -153,25 +164,70 @@ test('normalizeDynamicLayouts validates shape and allowed key ids', () => {
         allowed
     );
     assert.equal(valid.valid, true);
-    assert.deepEqual(valid.layouts[0], ['pageup', 'tmux_copy_mode', 'pagedown', 'left', 'down', 'right']);
+    assert.deepEqual(
+        valid.layouts[0],
+        toResolvedLayout(['pageup', 'tmux_copy_mode', 'pagedown', 'left', 'down', 'right'])
+    );
+});
+
+test('normalizeDynamicLayouts supports optional page switch and ignores invalid page values', () => {
+    const allowed = new Set([...DYNAMIC_KEY_IDS, 'tmux_copy_mode']);
+
+    const valid = normalizeMobileKeyboardLayouts(
+        [
+            ['pageup', { key: 'tmux_copy_mode', page: 2 }, 'pagedown', 'left', 'down', 'right'],
+            ['home', 'up', 'end', 'left', 'down', 'right'],
+        ],
+        allowed
+    );
+    assert.equal(valid.valid, true);
+    assert.equal(valid.layouts[0][1].keyId, 'tmux_copy_mode');
+    assert.equal(valid.layouts[0][1].switchToLayoutIndex, 1);
+
+    const invalidPageIgnored = normalizeMobileKeyboardLayouts(
+        [['pageup', { key: 'tmux_copy_mode', page: 9 }, 'pagedown', 'left', 'down', 'right']],
+        allowed
+    );
+    assert.equal(invalidPageIgnored.valid, true);
+    assert.equal(invalidPageIgnored.layouts[0][1].switchToLayoutIndex, null);
+
+    const invalidFractionPageIgnored = normalizeMobileKeyboardLayouts(
+        [['pageup', { key: 'tmux_copy_mode', page: 1.5 }, 'pagedown', 'left', 'down', 'right']],
+        allowed
+    );
+    assert.equal(invalidFractionPageIgnored.valid, true);
+    assert.equal(invalidFractionPageIgnored.layouts[0][1].switchToLayoutIndex, null);
 });
 
 test('resolveMobileKeyboardConfig falls back when custom/layout config is invalid', () => {
     const invalidCustom = resolveMobileKeyboardConfig(undefined, { bad: true });
     assert.equal(invalidCustom.customKeys.length, 0);
-    assert.deepEqual(invalidCustom.layouts, cloneDefaultMobileKeyboardLayouts());
+    assert.deepEqual(invalidCustom.layouts, resolveDefaultLayouts());
 
     const validCustomButInvalidLayout = resolveMobileKeyboardConfig(
         [['up', 'down', 'left', 'right', 'home', 'unknown_key']],
         [{ id: 'tmux_copy_mode', label: 'C-b [', combo: ['Ctrl+b', '['] }]
     );
     assert.equal(validCustomButInvalidLayout.customKeys.length, 0);
-    assert.deepEqual(validCustomButInvalidLayout.layouts, cloneDefaultMobileKeyboardLayouts());
+    assert.deepEqual(validCustomButInvalidLayout.layouts, resolveDefaultLayouts());
 
     const validAll = resolveMobileKeyboardConfig(
         [['pageup', 'tmux_copy_mode', 'pagedown', 'left', 'down', 'right']],
         [{ id: 'tmux_copy_mode', label: 'C-b [', combo: ['Ctrl+b', '['] }]
     );
     assert.equal(validAll.customKeys.length, 1);
-    assert.deepEqual(validAll.layouts[0], ['pageup', 'tmux_copy_mode', 'pagedown', 'left', 'down', 'right']);
+    assert.deepEqual(
+        validAll.layouts[0],
+        toResolvedLayout(['pageup', 'tmux_copy_mode', 'pagedown', 'left', 'down', 'right'])
+    );
+});
+
+test('resolveMobileKeyboardConfig keeps key dispatch even when page is out of range', () => {
+    const validAll = resolveMobileKeyboardConfig(
+        [['pageup', { key: 'tmux_copy_mode', page: 9 }, 'pagedown', 'left', 'down', 'right']],
+        [{ id: 'tmux_copy_mode', label: 'C-b [', combo: ['Ctrl+b', '['] }]
+    );
+    assert.equal(validAll.customKeys.length, 1);
+    assert.equal(validAll.layouts[0][1].keyId, 'tmux_copy_mode');
+    assert.equal(validAll.layouts[0][1].switchToLayoutIndex, null);
 });

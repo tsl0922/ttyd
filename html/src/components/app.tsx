@@ -4,7 +4,7 @@ import { Terminal } from './terminal';
 
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
 import type { ClientOptions, FlowControl } from './terminal/xterm';
-import { DEFAULT_DYNAMIC_LAYOUTS } from './terminal/xterm/mobile-keyboard';
+import { DEFAULT_DYNAMIC_LAYOUTS, MobileKeyboardLayoutSpec } from './terminal/xterm/mobile-keyboard';
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const path = window.location.pathname.replace(/[/]+$/, '');
@@ -32,8 +32,15 @@ const clientOptions = {
         { id: 'tmux_list_windows', label: 'C-b w', combo: ['Ctrl+b', 'w'] },
     ],
     mobileKeyboardLayouts: [
-        ...DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout]),
-        ['space', 'tmux_copy_mode', 'tmux_detach', 'tmux_new_window', 'tmux_next_window', 'tmux_list_windows'],
+        ...DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as MobileKeyboardLayoutSpec),
+        [
+            'space',
+            { key: 'tmux_copy_mode', page: 2 },
+            'tmux_detach',
+            { key: 'tmux_new_window', page: 1 },
+            'tmux_next_window',
+            { key: 'tmux_list_windows', page: 1 },
+        ],
     ],
     mobileKeyboardHoldDelayMs: 300,
     mobileKeyboardHoldIntervalMs: 120,

@@ -76,6 +76,6 @@ test('builtin dynamic char key spec keeps behavior stable and class names determ
     assert.equal(unknownSpec, null);
 });
 
-test('default third dynamic layout matches ops-focused symbol set', () => {
-    assert.deepEqual(DEFAULT_DYNAMIC_LAYOUTS[2], ['=', '+', '\\', '|', '~', '#']);
+test('default dynamic layouts include two pages', () => {
+    assert.equal(DEFAULT_DYNAMIC_LAYOUTS.length, 2);
 });

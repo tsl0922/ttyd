@@ -12,7 +12,9 @@ import { OverlayAddon } from './addons/overlay';
 import { ZmodemAddon } from './addons/zmodem';
 import {
     ComboStep,
+    DynamicLayout,
     KeyBehavior,
+    MobileKeyboardLayoutSpec,
     MobileKeyboardCustomKeySpec,
     MobileKeyboardController,
     ModifierFlags,
@@ -64,7 +66,7 @@ export interface ClientOptions {
     mobileKeyboardEnabled?: boolean;
     mobileKeyboardOpacity?: number;
     mobileKeyboardScale?: number;
-    mobileKeyboardLayouts?: string[][];
+    mobileKeyboardLayouts?: Array<DynamicLayout | MobileKeyboardLayoutSpec>;
     mobileKeyboardCustomKeys?: MobileKeyboardCustomKeySpec[];
     mobileKeyboardHoldDelayMs?: number;
     mobileKeyboardHoldIntervalMs?: number;

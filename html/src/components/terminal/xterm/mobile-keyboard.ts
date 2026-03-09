@@ -230,6 +230,15 @@ export function isValidMobileKeyboardCustomKeyId(id: string): boolean {
 }
 
 export type DynamicLayout = [string, string, string, string, string, string];
+export type MobileKeyboardLayoutItemSpec = string | { key: string; page?: number };
+export type MobileKeyboardLayoutSpec = [
+    MobileKeyboardLayoutItemSpec,
+    MobileKeyboardLayoutItemSpec,
+    MobileKeyboardLayoutItemSpec,
+    MobileKeyboardLayoutItemSpec,
+    MobileKeyboardLayoutItemSpec,
+    MobileKeyboardLayoutItemSpec,
+];
 export interface MobileKeyboardCustomKeySpec {
     id: string;
     label: string;
@@ -240,6 +249,18 @@ export type MobileKeyboardCustomKey = {
     label: string;
     combo: ComboStep[];
 };
+type ResolvedDynamicLayoutItem = {
+    keyId: string;
+    switchToLayoutIndex: number | null;
+};
+type ResolvedDynamicLayout = [
+    ResolvedDynamicLayoutItem,
+    ResolvedDynamicLayoutItem,
+    ResolvedDynamicLayoutItem,
+    ResolvedDynamicLayoutItem,
+    ResolvedDynamicLayoutItem,
+    ResolvedDynamicLayoutItem,
+];
 
 type ModifierKey = keyof ModifierFlags;
 
@@ -247,7 +268,7 @@ interface MobileKeyboardControllerOptions {
     mountElement: HTMLElement;
     opacity: number;
     scale: number;
-    dynamicLayouts: DynamicLayout[];
+    dynamicLayouts: ResolvedDynamicLayout[];
     customKeys: MobileKeyboardCustomKey[];
     onDispatchAction: (action: KeyBehavior, modifiers: ModifierFlags) => void;
     holdDelayMs: number;
@@ -271,11 +292,47 @@ const TAP_MOVE_THRESHOLD_PX = 8;
 export const DEFAULT_DYNAMIC_LAYOUTS: DynamicLayout[] = [
     ['home', 'up', 'end', 'left', 'down', 'right'],
     ['pageup', 'up', 'pagedown', 'left', 'down', 'right'],
-    ['=', '+', '\\', '|', '~', '#'],
 ];
 
 export function cloneDefaultMobileKeyboardLayouts(): DynamicLayout[] {
     return DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as DynamicLayout);
+}
+
+function mapDynamicLayoutKeyId(layout: DynamicLayout): ResolvedDynamicLayout {
+    return layout.map(keyId => ({ keyId, switchToLayoutIndex: null })) as ResolvedDynamicLayout;
+}
+
+function cloneResolvedDynamicLayouts(dynamicLayouts: ResolvedDynamicLayout[]): ResolvedDynamicLayout[] {
+    return dynamicLayouts.map(layout => {
+        return layout.map(item => ({
+            keyId: item.keyId,
+            switchToLayoutIndex: item.switchToLayoutIndex,
+        })) as ResolvedDynamicLayout;
+    });
+}
+
+function resolveDynamicLayoutItem(
+    item: unknown,
+    allowedLayoutKeyIds: Set<string>
+): { valid: boolean; keyId: string; switchToPage: number | null } {
+    if (typeof item === 'string') {
+        const keyId = item.trim();
+        if (keyId === '' || !allowedLayoutKeyIds.has(keyId)) return { valid: false, keyId: '', switchToPage: null };
+        return { valid: true, keyId, switchToPage: null };
+    }
+    if (typeof item !== 'object' || item === null) return { valid: false, keyId: '', switchToPage: null };
+    const layoutItem = item as { key?: unknown; page?: unknown };
+    const keyId = typeof layoutItem.key === 'string' ? layoutItem.key.trim() : '';
+    if (keyId === '' || !allowedLayoutKeyIds.has(keyId)) return { valid: false, keyId: '', switchToPage: null };
+    const rawPage = layoutItem.page;
+    if (typeof rawPage !== 'number' || !Number.isFinite(rawPage)) {
+        return { valid: true, keyId, switchToPage: null };
+    }
+    const roundedPage = Math.trunc(rawPage);
+    if (roundedPage !== rawPage || roundedPage < 1) {
+        return { valid: true, keyId, switchToPage: null };
+    }
+    return { valid: true, keyId, switchToPage: roundedPage };
 }
 
 function sanitizeClassName(id: string) {
@@ -430,23 +487,41 @@ export function normalizeMobileKeyboardLayouts(
     allowedLayoutKeyIds: Set<string>
 ): {
     valid: boolean;
-    layouts: DynamicLayout[];
+    layouts: ResolvedDynamicLayout[];
 } {
     if (!Array.isArray(value) || value.length === 0) {
-        return { valid: true, layouts: cloneDefaultMobileKeyboardLayouts() };
+        return {
+            valid: true,
+            layouts: cloneDefaultMobileKeyboardLayouts().map(layout => mapDynamicLayoutKeyId(layout)),
+        };
     }
-    const layouts: DynamicLayout[] = [];
+    const layouts: ResolvedDynamicLayout[] = [];
     for (const layout of value) {
         if (!Array.isArray(layout) || layout.length !== 6) return { valid: false, layouts: [] };
-        const normalized = layout.map(item => (typeof item === 'string' ? item.trim() : ''));
-        if (normalized.some(item => item === '' || !allowedLayoutKeyIds.has(item))) {
-            return { valid: false, layouts: [] };
-        }
-        layouts.push(normalized as DynamicLayout);
+        const normalized = layout.map(item => resolveDynamicLayoutItem(item, allowedLayoutKeyIds));
+        if (normalized.some(item => !item.valid)) return { valid: false, layouts: [] };
+        layouts.push(
+            normalized.map(item => ({
+                keyId: item.keyId,
+                switchToLayoutIndex: item.switchToPage,
+            })) as ResolvedDynamicLayout
+        );
     }
     if (layouts.length === 0) {
         return { valid: false, layouts: [] };
     }
+    const total = layouts.length;
+    layouts.forEach(layout => {
+        layout.forEach(item => {
+            const targetPage = item.switchToLayoutIndex;
+            if (targetPage === null) return;
+            if (targetPage < 1 || targetPage > total) {
+                item.switchToLayoutIndex = null;
+                return;
+            }
+            item.switchToLayoutIndex = targetPage - 1;
+        });
+    });
     return { valid: true, layouts };
 }
 
@@ -454,20 +529,26 @@ export function resolveMobileKeyboardConfig(
     layoutValue: unknown,
     customKeyValue: unknown
 ): {
-    layouts: DynamicLayout[];
+    layouts: ResolvedDynamicLayout[];
     customKeys: MobileKeyboardCustomKey[];
 } {
     const normalizedCustomKeys = normalizeMobileKeyboardCustomKeys(customKeyValue);
     if (!normalizedCustomKeys.valid) {
         console.warn('[ttyd] invalid mobileKeyboardCustomKeys, fallback to default mobile keyboard');
-        return { layouts: cloneDefaultMobileKeyboardLayouts(), customKeys: [] };
+        return {
+            layouts: cloneDefaultMobileKeyboardLayouts().map(layout => mapDynamicLayoutKeyId(layout)),
+            customKeys: [],
+        };
     }
 
     const allowedLayoutKeyIds = new Set<string>([...DYNAMIC_KEY_IDS, ...normalizedCustomKeys.keys.map(key => key.id)]);
     const normalizedLayouts = normalizeMobileKeyboardLayouts(layoutValue, allowedLayoutKeyIds);
     if (!normalizedLayouts.valid) {
         console.warn('[ttyd] invalid mobileKeyboardLayouts, fallback to default mobile keyboard');
-        return { layouts: cloneDefaultMobileKeyboardLayouts(), customKeys: [] };
+        return {
+            layouts: cloneDefaultMobileKeyboardLayouts().map(layout => mapDynamicLayoutKeyId(layout)),
+            customKeys: [],
+        };
     }
 
     return {
@@ -487,7 +568,7 @@ export class MobileKeyboardController {
     private clipboardButtonMode: 'copy' | 'paste' = 'paste';
     private usesPointerPanelGuard = 'PointerEvent' in window;
     private keyRegistry: Record<string, KeySpec>;
-    private dynamicLayouts: DynamicLayout[];
+    private dynamicLayouts: ResolvedDynamicLayout[];
     private currentLayoutIndex = 0;
     private dragging = false;
     private dragPointerId = -1;
@@ -578,7 +659,7 @@ export class MobileKeyboardController {
         this.stopHoldTimers();
     }
 
-    updateDynamicConfig(dynamicLayouts: DynamicLayout[], customKeys: MobileKeyboardCustomKey[]) {
+    updateDynamicConfig(dynamicLayouts: ResolvedDynamicLayout[], customKeys: MobileKeyboardCustomKey[]) {
         this.keyRegistry = this.buildRuntimeKeyRegistry(customKeys);
         this.dynamicLayouts = this.cloneLayouts(dynamicLayouts);
         this.currentLayoutIndex = 0;
@@ -622,8 +703,8 @@ export class MobileKeyboardController {
         return this.modifiers.ctrl || this.modifiers.alt || this.modifiers.shift;
     }
 
-    private cloneLayouts(dynamicLayouts: DynamicLayout[]): DynamicLayout[] {
-        return dynamicLayouts.map(layout => [...layout] as DynamicLayout);
+    private cloneLayouts(dynamicLayouts: ResolvedDynamicLayout[]): ResolvedDynamicLayout[] {
+        return cloneResolvedDynamicLayouts(dynamicLayouts);
     }
 
     private buildRuntimeKeyRegistry(customKeys: MobileKeyboardCustomKey[]): Record<string, KeySpec> {
@@ -643,16 +724,20 @@ export class MobileKeyboardController {
         return registry;
     }
 
-    private getCurrentLayout(): DynamicLayout {
+    private getCurrentLayout(): ResolvedDynamicLayout {
         if (this.dynamicLayouts.length === 0) {
-            return [...DEFAULT_DYNAMIC_LAYOUTS[0]];
+            return mapDynamicLayoutKeyId(DEFAULT_DYNAMIC_LAYOUTS[0]);
         }
         return this.dynamicLayouts[this.currentLayoutIndex % this.dynamicLayouts.length];
     }
 
-    private getDynamicKeyBySlot(slot: number): string {
+    private getDynamicLayoutItemBySlot(slot: number): ResolvedDynamicLayoutItem {
         const layout = this.getCurrentLayout();
         return layout[slot] ?? layout[0];
+    }
+
+    private getDynamicKeyBySlot(slot: number): string {
+        return this.getDynamicLayoutItemBySlot(slot).keyId;
     }
 
     private getKeySpecById(keyId: string): KeySpec {
@@ -673,6 +758,22 @@ export class MobileKeyboardController {
         this.currentLayoutIndex = (this.currentLayoutIndex + 1) % total;
         this.syncDynamicButtons();
         this.stopHoldTimers();
+    }
+
+    private switchToLayout(targetLayoutIndex: number) {
+        const total = this.dynamicLayouts.length;
+        if (total <= 0) return;
+        if (!Number.isInteger(targetLayoutIndex) || targetLayoutIndex < 0 || targetLayoutIndex >= total) return;
+        if (this.currentLayoutIndex === targetLayoutIndex) return;
+        this.currentLayoutIndex = targetLayoutIndex;
+        this.syncDynamicButtons();
+        this.stopHoldTimers();
+    }
+
+    private switchLayoutForDynamicSlot(slot: number) {
+        const targetLayoutIndex = this.getDynamicLayoutItemBySlot(slot).switchToLayoutIndex;
+        if (targetLayoutIndex === null) return;
+        this.switchToLayout(targetLayoutIndex);
     }
 
     private syncDynamicButtons() {
@@ -736,15 +837,20 @@ export class MobileKeyboardController {
         this.holdTriggered = false;
     }
 
-    private bindPressEvents(button: HTMLButtonElement, resolveSpec: () => KeySpec) {
+    private bindPressEvents(
+        button: HTMLButtonElement,
+        resolveSpec: () => KeySpec,
+        onSinglePressDispatched?: () => void
+    ) {
         const pressState: PressState = {
             pressArmed: false,
             holdSpec: resolveSpec(),
             holdModifiers: emptyModifiers(),
         };
 
-        const startPress = (event: Event) => this.startButtonPress(event, resolveSpec, pressState);
-        const stopPress = (event?: Event) => this.stopButtonPress(event, pressState);
+        const startPress = (event: Event) =>
+            this.startButtonPress(event, resolveSpec, pressState, onSinglePressDispatched);
+        const stopPress = (event?: Event) => this.stopButtonPress(event, pressState, onSinglePressDispatched);
 
         if ('PointerEvent' in window) {
             button.addEventListener('pointerdown', startPress);
@@ -762,13 +868,19 @@ export class MobileKeyboardController {
         button.addEventListener('click', event => event.preventDefault());
     }
 
-    private startButtonPress(event: Event, resolveSpec: () => KeySpec, state: PressState) {
+    private startButtonPress(
+        event: Event,
+        resolveSpec: () => KeySpec,
+        state: PressState,
+        onSinglePressDispatched?: () => void
+    ) {
         event.preventDefault();
         event.stopPropagation();
 
         state.holdSpec = resolveSpec();
         if (state.holdSpec.repeat.kind === 'none') {
             this.dispatchSinglePress(state.holdSpec);
+            onSinglePressDispatched?.();
             return;
         }
 
@@ -788,7 +900,7 @@ export class MobileKeyboardController {
         }, delayMs);
     }
 
-    private stopButtonPress(event: Event | undefined, state: PressState) {
+    private stopButtonPress(event: Event | undefined, state: PressState, onSinglePressDispatched?: () => void) {
         event?.preventDefault();
         event?.stopPropagation();
         if (!state.pressArmed) return;
@@ -797,6 +909,7 @@ export class MobileKeyboardController {
         this.stopHoldTimers();
         if (!triggered) {
             this.dispatchSinglePress(state.holdSpec);
+            onSinglePressDispatched?.();
         }
     }
 
@@ -876,7 +989,11 @@ export class MobileKeyboardController {
     private createDynamicButton(slot: number): HTMLButtonElement {
         const keySpec = this.getDynamicKeySpecBySlot(slot);
         const button = this.createBaseButton(keySpec.label, `key-dynamic-${slot}`);
-        this.bindPressEvents(button, () => this.getDynamicKeySpecBySlot(slot));
+        this.bindPressEvents(
+            button,
+            () => this.getDynamicKeySpecBySlot(slot),
+            () => this.switchLayoutForDynamicSlot(slot)
+        );
         this.dynamicButtons.set(slot, button);
         return button;
     }
