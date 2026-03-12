@@ -101,6 +101,7 @@ export class Xterm {
     private reconnect = true;
     private doReconnect = true;
     private closeOnDisconnect = false;
+    private parent?: HTMLElement;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -153,6 +154,7 @@ export class Xterm {
 
     @bind
     public open(parent: HTMLElement) {
+        this.parent = parent;
         this.terminal = new Terminal(this.options.termOptions);
         const { terminal, fitAddon, overlayAddon, clipboardAddon, webLinksAddon } = this;
         window.term = terminal as TtydTerminal;
@@ -166,7 +168,31 @@ export class Xterm {
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
+        this.syncPageBackground();
+        this.syncViewport();
         fitAddon.fit();
+    }
+
+    @bind
+    private syncPageBackground() {
+        const themeBackground = this.terminal?.options.theme?.background;
+        const color = typeof themeBackground === 'string' && themeBackground !== '' ? themeBackground : '#2b2b2b';
+        document.documentElement.style.backgroundColor = color;
+        document.body.style.backgroundColor = color;
+    }
+
+    @bind
+    private syncViewport() {
+        if (!this.parent) return;
+        const viewport = window.visualViewport;
+        if (viewport) {
+            const offsetTop = Math.max(0, Math.round(viewport.offsetTop));
+            this.parent.style.height = `${Math.round(viewport.height)}px`;
+            this.parent.style.top = `${offsetTop}px`;
+        } else {
+            this.parent.style.height = '';
+            this.parent.style.top = '';
+        }
     }
 
     @bind
@@ -199,7 +225,25 @@ export class Xterm {
                 this.overlayAddon?.showOverlay('\u2702', 200);
             })
         );
-        register(addEventListener(window, 'resize', () => fitAddon.fit()));
+        register(
+            addEventListener(window, 'resize', () => {
+                this.syncViewport();
+                fitAddon.fit();
+            })
+        );
+        if (window.visualViewport) {
+            register(
+                addEventListener(window.visualViewport, 'resize', () => {
+                    this.syncViewport();
+                    fitAddon.fit();
+                })
+            );
+            register(
+                addEventListener(window.visualViewport, 'scroll', () => {
+                    this.syncViewport();
+                })
+            );
+        }
         register(addEventListener(window, 'beforeunload', this.onWindowUnload));
     }
 
@@ -320,6 +364,11 @@ export class Xterm {
                     prefs[k] = queryVal === 'true' || queryVal === '1';
                     break;
                 case 'number':
+                    {
+                        const parsed = Number.parseFloat(queryVal);
+                        prefs[k] = Number.isNaN(parsed) ? queryVal : parsed;
+                    }
+                    break;
                 case 'bigint':
                     prefs[k] = Number.parseInt(queryVal, 10);
                     break;
@@ -370,6 +419,7 @@ export class Xterm {
     @bind
     private applyPreferences(prefs: Preferences) {
         const { terminal, fitAddon, register } = this;
+        let needsFit = false;
         if (prefs.enableZmodem || prefs.enableTrzsz) {
             this.zmodemAddon = new ZmodemAddon({
                 zmodem: prefs.enableZmodem,
@@ -462,10 +512,15 @@ export class Xterm {
                     } else {
                         terminal.options[key] = value;
                     }
-                    if (key.indexOf('font') === 0) fitAddon.fit();
+                    if (key.indexOf('font') === 0 || key === 'lineHeight' || key === 'letterSpacing') {
+                        needsFit = true;
+                    }
                     break;
             }
         }
+
+        this.syncPageBackground();
+        if (needsFit) fitAddon.fit();
     }
 
     @bind
