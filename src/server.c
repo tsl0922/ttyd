@@ -55,6 +55,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"interface", required_argument, NULL, 'i'},
                                         {"socket-owner", required_argument, NULL, 'U'},
                                         {"credential", required_argument, NULL, 'c'},
+                                        {"totp", required_argument, NULL, '1'},
                                         {"auth-header", required_argument, NULL, 'H'},
                                         {"uid", required_argument, NULL, 'u'},
                                         {"gid", required_argument, NULL, 'g'},
@@ -84,7 +85,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:1:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -98,6 +99,7 @@ static void print_help() {
           "    -i, --interface         Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)\n"
           "    -U, --socket-owner      User owner of the UNIX domain socket file, when enabled (eg: user:group)\n"
           "    -c, --credential        Credential for basic authentication (format: username:password)\n"
+          "    -1, --totp              Time-based one-time password secret (format: [DIGEST:]SECRET[:DIGITS[:INTERVAL[:OFFSET]]])\n"
           "    -H, --auth-header       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication\n"
           "    -u, --uid               User id to run with\n"
           "    -g, --gid               Group id to run with\n"
@@ -139,6 +141,7 @@ static void print_help() {
 static void print_config() {
   lwsl_notice("tty configuration:\n");
   if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
+  if (server->totp != NULL) lwsl_notice("  totp secret: %s\n", server->totp);
   lwsl_notice("  start command: %s\n", server->command);
   lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
   lwsl_notice("  terminal type: %s\n", server->terminal_type);
@@ -206,6 +209,8 @@ static struct server *server_new(int argc, char **argv, int start) {
 static void server_free(struct server *ts) {
   if (ts == NULL) return;
   if (ts->credential != NULL) free(ts->credential);
+  if (ts->credential_dec != NULL) free(ts->credential_dec);
+  if (ts->totp != NULL) free(ts->totp);
   if (ts->auth_header != NULL) free(ts->auth_header);
   if (ts->index != NULL) free(ts->index);
   if (ts->cwd != NULL) free(ts->cwd);
@@ -344,6 +349,8 @@ int main(int argc, char **argv) {
   json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
 #endif
 
+  server->last_totp_code[0] = '\0';
+
   // parse command line options
   int c;
   while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
@@ -401,6 +408,10 @@ int main(int argc, char **argv) {
         char b64_text[256];
         lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
         server->credential = strdup(b64_text);
+        server->credential_dec = strdup(optarg);
+        break;
+      case '1':
+        server->totp = strdup(optarg);
         break;
       case 'H':
         server->auth_header = strdup(optarg);
