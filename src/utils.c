@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "compat.h"
 
 #if defined(__linux__) && !defined(__ANDROID__)
 const char *sys_signame[NSIG] = {

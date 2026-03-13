@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #ifndef _WIN32
 #include <sys/ioctl.h>
@@ -25,6 +27,8 @@
 extern char **environ;
 #endif
 #endif
+
+#include <libwebsockets.h>
 
 #include "pty.h"
 #include "utils.h"
@@ -229,6 +233,7 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   bool ret = false;
 
   sa.nLength = sizeof(sa);
+
   snprintf(buf, sizeof(buf), "\\\\.\\pipe\\ttyd-term-in-%d-%d", pid, count);
   *in_name = strdup(buf);
   snprintf(buf, sizeof(buf), "\\\\.\\pipe\\ttyd-term-out-%d-%d", pid, count);
@@ -280,7 +285,12 @@ done:
   return ret;
 }
 
-static void connect_cb(uv_connect_t *req, int status) { free(req); }
+static void connect_cb(uv_connect_t *req, int status) {
+  if (status != 0) {
+    lwsl_err("connect_cb: pipe connect failed: %s\n", uv_strerror(status));
+  }
+  free(req);
+}
 
 static void CALLBACK conpty_exit(void *context, BOOLEAN unused) {
   pty_process *process = (pty_process *) context;
@@ -323,7 +333,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_pipe_connect(out_req, process->out, out_name, connect_cb);
 
   PROCESS_INFORMATION pi = {0};
-  WCHAR *cmdline, *cwd;
+  WCHAR *cmdline = NULL, *cwd = NULL;
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
   if (process->envp != NULL) {
