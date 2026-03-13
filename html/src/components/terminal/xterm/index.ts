@@ -51,6 +51,7 @@ export interface ClientOptions {
     trzszDragInitTimeout: number;
     unicodeVersion: string;
     closeOnDisconnect: boolean;
+    postMessageOrigin?: string;
 }
 
 export interface FlowControl {
@@ -101,6 +102,7 @@ export class Xterm {
     private reconnect = true;
     private doReconnect = true;
     private closeOnDisconnect = false;
+    private postMessageOrigin?: string;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -281,6 +283,10 @@ export class Xterm {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
+        if (this.postMessageOrigin) {
+            parent.postMessage('close_ttyd', this.postMessageOrigin!);
+        }
+
         const { refreshToken, connect, doReconnect, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed');
         this.dispose();
@@ -454,6 +460,11 @@ export class Xterm {
                             terminal.unicode.activeVersion = '11';
                             break;
                     }
+                    break;
+                case 'postMessageOrigin':
+                    if (!value || value === '') return;
+                    console.log(`[ttyd] setting postMessage origin: ${value}`);
+                    this.postMessageOrigin = value;
                     break;
                 default:
                     console.log(`[ttyd] option: ${key}=${JSON.stringify(value)}`);
