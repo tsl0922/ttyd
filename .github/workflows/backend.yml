@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32, win64]
     steps:
       - uses: actions/checkout@v4
       - name: Install packages
@@ -37,3 +37,29 @@ jobs:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd*
 
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-13
+          - arch: arm64
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew install cmake json-c libwebsockets libuv openssl
+      - name: Build macOS binary (${{ matrix.arch }})
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+                ..
+          make -j$(sysctl -n hw.ncpu)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ttyd.macos.${{ matrix.arch }}
+          path: build/ttyd
