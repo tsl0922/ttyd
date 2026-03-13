@@ -29,11 +29,18 @@ extern struct lws_context *context;
 extern struct server *server;
 extern struct endpoints endpoints;
 
+// POST body storage functions
+void store_post_body(struct lws *wsi, const char *body, size_t len);
+char *retrieve_post_body(struct lws *wsi);
+void cleanup_post_body(struct lws *wsi);
+
 struct pss_http {
   char path[128];
   char *buffer;
   char *ptr;
   size_t len;
+  char *post_body;
+  size_t post_body_len;
 };
 
 struct pss_tty {
