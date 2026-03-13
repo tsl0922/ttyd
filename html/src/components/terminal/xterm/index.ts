@@ -101,6 +101,7 @@ export class Xterm {
     private reconnect = true;
     private doReconnect = true;
     private closeOnDisconnect = false;
+    private preferencesApplied = false;
 
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
@@ -166,7 +167,6 @@ export class Xterm {
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
-        fitAddon.fit();
     }
 
     @bind
@@ -465,6 +465,14 @@ export class Xterm {
                     if (key.indexOf('font') === 0) fitAddon.fit();
                     break;
             }
+        }
+
+        if (!this.preferencesApplied) {
+            this.preferencesApplied = true;
+
+            requestAnimationFrame(() => {
+                fitAddon.fit();
+            });
         }
     }
 
