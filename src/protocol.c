@@ -209,8 +209,6 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
-      if (!check_auth(wsi, pss)) return 1;
-
       n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_GET_URI);
 #if defined(LWS_ROLE_H2)
       if (n <= 0) n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_HTTP_COLON_PATH);
@@ -218,6 +216,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (strncmp(pss->path, endpoints.ws, n) != 0) {
         lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", pss->path);
         return 1;
+      }
+
+      // Skip Basic Auth check for WebSocket path when credentials are configured
+      // Safari doesn't support Basic Auth headers with WebSocket, rely on AuthToken instead
+      if (server->credential == NULL || server->auth_header != NULL) {
+        if (!check_auth(wsi, pss)) return 1;
       }
 
       if (server->check_origin && !check_host_origin(wsi)) {
