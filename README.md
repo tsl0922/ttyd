@@ -92,9 +92,31 @@ OPTIONS:
     -K, --ssl-key           SSL key file path
     -A, --ssl-ca            SSL CA file path for client certificate verification
     -d, --debug             Set log level (default: 7)
+    -F, --config            Path to config file
     -v, --version           Print the version and exit
     -h, --help              Print this text and exit
 ```
+
+## Config File
+
+ttyd also supports loading options from a JSON config file using the `--config` option:
+
+```json
+{
+  "port": 8080,
+  "credential": "username:password",
+  "ssl": true,
+  "ssl-cert": "/path/to/cert.pem",
+  "ssl-key": "/path/to/key.pem",
+  "client-options": {
+    "fontSize": 18,
+    "rendererType": "canvas"
+  },
+  "command": ["bash", "-l"]
+}
+```
+
+All command-line options can be specified in the config file using their long option names as JSON keys.
 
 Read the example usage on the [wiki](https://github.com/tsl0922/ttyd/wiki/Example-Usage).
 
