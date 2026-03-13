@@ -9,6 +9,7 @@
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
+#include "compat.h"
 
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
