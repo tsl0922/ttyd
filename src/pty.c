@@ -172,11 +172,9 @@ bool pty_kill(pty_process *process, int sig) {
 bool conpty_init() {
   uv_lib_t kernel;
   if (uv_dlopen("kernel32.dll", &kernel)) {
-    fprintf(stderr, "[conpty] Failed to load kernel32.dll: %s\n", uv_dlerror(&kernel));
     uv_dlclose(&kernel);
     return false;
   }
-  fprintf(stderr, "[conpty] kernel32.dll loaded OK\n");
   static struct {
     char *name;
     FARPROC *ptr;
@@ -186,14 +184,10 @@ bool conpty_init() {
                       {NULL, NULL}};
   for (int i = 0; conpty_entry[i].name != NULL && conpty_entry[i].ptr != NULL; i++) {
     if (uv_dlsym(&kernel, conpty_entry[i].name, (void **) conpty_entry[i].ptr)) {
-      fprintf(stderr, "[conpty] Failed to resolve %s: %s\n",
-              conpty_entry[i].name, uv_dlerror(&kernel));
       uv_dlclose(&kernel);
       return false;
     }
-    fprintf(stderr, "[conpty] %s @ %p\n", conpty_entry[i].name, (void *)*conpty_entry[i].ptr);
   }
-  fprintf(stderr, "[conpty] ConPTY init OK\n");
   return true;
 }
 
@@ -238,35 +232,21 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   DWORD pid = GetCurrentProcessId();
   bool ret = false;
 
-  lwsl_notice("conpty_setup: size=%dx%d, pid=%lu, count=%d\n",
-              (int)size.X, (int)size.Y, pid, count);
-
   sa.nLength = sizeof(sa);
-  lwsl_notice("conpty_setup: sa.nLength=%lu\n", (unsigned long)sa.nLength);
 
   snprintf(buf, sizeof(buf), "\\\\.\\pipe\\ttyd-term-in-%d-%d", pid, count);
   *in_name = strdup(buf);
   snprintf(buf, sizeof(buf), "\\\\.\\pipe\\ttyd-term-out-%d-%d", pid, count);
   *out_name = strdup(buf);
-  lwsl_notice("conpty_setup: creating pipe %s\n", *in_name);
   in_pipe = CreateNamedPipeA(*in_name, open_mode, pipe_mode, 1, 0, 0, 30000, &sa);
-  lwsl_notice("conpty_setup: in_pipe=%p (err=%lu)\n", in_pipe, GetLastError());
-  lwsl_notice("conpty_setup: creating pipe %s\n", *out_name);
   out_pipe = CreateNamedPipeA(*out_name, open_mode, pipe_mode, 1, 0, 0, 30000, &sa);
-  lwsl_notice("conpty_setup: out_pipe=%p (err=%lu)\n", out_pipe, GetLastError());
   if (in_pipe == INVALID_HANDLE_VALUE || out_pipe == INVALID_HANDLE_VALUE) {
     print_error("CreateNamedPipeA");
     goto failed;
   }
 
-  lwsl_notice("conpty_setup: calling CreatePseudoConsole(size={%d,%d}, in=%p, out=%p)\n",
-              (int)size.X, (int)size.Y, in_pipe, out_pipe);
   HRESULT hr = pCreatePseudoConsole(size, in_pipe, out_pipe, 0, &pty);
-  lwsl_notice("conpty_setup: CreatePseudoConsole returned hr=0x%08lX, pty=%p\n",
-              (unsigned long)hr, pty);
   if (FAILED(hr)) {
-    lwsl_err("conpty_setup: CreatePseudoConsole FAILED with HRESULT 0x%08lX\n",
-             (unsigned long)hr);
     print_error("CreatePseudoConsole");
     goto failed;
   }
@@ -278,20 +258,16 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   si_ex->StartupInfo.hStdOutput = NULL;
   size_t bytes_required;
   InitializeProcThreadAttributeList(NULL, 1, 0, &bytes_required);
-  lwsl_notice("conpty_setup: attribute list needs %llu bytes\n",
-              (unsigned long long)bytes_required);
   si_ex->lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST) xmalloc(bytes_required);
   if (!InitializeProcThreadAttributeList(si_ex->lpAttributeList, 1, 0, &bytes_required)) {
     print_error("InitializeProcThreadAttributeList");
     goto failed;
   }
-  lwsl_notice("conpty_setup: attribute list initialized\n");
   if (!UpdateProcThreadAttribute(si_ex->lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pty, sizeof(HPCON),
                                  NULL, NULL)) {
     print_error("UpdateProcThreadAttribute");
     goto failed;
   }
-  lwsl_notice("conpty_setup: pseudo console attribute set OK\n");
   count++;
   *hnd = pty;
   ret = true;
@@ -306,15 +282,12 @@ failed:
 done:
   if (in_pipe != INVALID_HANDLE_VALUE) CloseHandle(in_pipe);
   if (out_pipe != INVALID_HANDLE_VALUE) CloseHandle(out_pipe);
-  lwsl_notice("conpty_setup: returning %s\n", ret ? "true" : "false");
   return ret;
 }
 
 static void connect_cb(uv_connect_t *req, int status) {
   if (status != 0) {
-    lwsl_err("connect_cb: pipe connect FAILED: %s (status=%d)\n", uv_strerror(status), status);
-  } else {
-    lwsl_notice("connect_cb: pipe connected OK\n");
+    lwsl_err("connect_cb: pipe connect failed: %s\n", uv_strerror(status));
   }
   free(req);
 }
@@ -344,13 +317,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   DWORD flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
   COORD size = {(int16_t) process->columns, (int16_t) process->rows};
 
-  lwsl_notice("pty_spawn: columns=%d, rows=%d\n", process->columns, process->rows);
-
-  if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name)) {
-    lwsl_err("pty_spawn: conpty_setup FAILED\n");
-    return 1;
-  }
-  lwsl_notice("pty_spawn: conpty_setup OK, in=%s, out=%s\n", in_name, out_name);
+  if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name)) return 1;
 
   SetConsoleCtrlHandler(NULL, FALSE);
 
@@ -362,19 +329,13 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
 
   uv_connect_t *in_req = xmalloc(sizeof(uv_connect_t));
   uv_connect_t *out_req = xmalloc(sizeof(uv_connect_t));
-  lwsl_notice("pty_spawn: connecting uv_pipe to %s\n", in_name);
   uv_pipe_connect(in_req, process->in, in_name, connect_cb);
-  lwsl_notice("pty_spawn: connecting uv_pipe to %s\n", out_name);
   uv_pipe_connect(out_req, process->out, out_name, connect_cb);
 
   PROCESS_INFORMATION pi = {0};
   WCHAR *cmdline = NULL, *cwd = NULL;
   cmdline = join_args(process->argv);
-  if (cmdline == NULL) {
-    lwsl_err("pty_spawn: join_args returned NULL\n");
-    goto cleanup;
-  }
-  lwsl_notice("pty_spawn: cmdline ready\n");
+  if (cmdline == NULL) goto cleanup;
   if (process->envp != NULL) {
     char **p = process->envp;
     for (; *p; p++) {
@@ -387,18 +348,14 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   if (process->cwd != NULL) {
     cwd = to_utf16(process->cwd);
     if (cwd == NULL) goto cleanup;
-    lwsl_notice("pty_spawn: cwd set\n");
   }
 
-  lwsl_notice("pty_spawn: calling CreateProcessW (flags=0x%08lX)\n", flags);
   if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, flags, NULL, cwd, &process->si.StartupInfo, &pi)) {
-    lwsl_err("pty_spawn: CreateProcessW FAILED (err=%lu)\n", GetLastError());
     print_error("CreateProcessW");
     DWORD exitCode = 0;
     if (GetExitCodeProcess(pi.hProcess, &exitCode)) printf("== exit code: %d\n", exitCode);
     goto cleanup;
   }
-  lwsl_notice("pty_spawn: process created, PID=%lu\n", pi.dwProcessId);
 
   process->pid = pi.dwProcessId;
   process->handle = pi.hProcess;
