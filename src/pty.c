@@ -392,9 +392,15 @@ static void wait_cb(void *arg) {
 
   pid_t pid;
   int stat;
-  do
+  
+  // Use blocking wait for process exit
+  do {
     pid = waitpid(process->pid, &stat, 0);
-  while (pid != process->pid && errno == EINTR);
+  } while (pid != process->pid && errno == EINTR);
+  
+  if (pid < 0) {
+    return;
+  }
 
   if (WIFEXITED(stat)) {
     process->exit_code = WEXITSTATUS(stat);
