@@ -130,7 +130,44 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 - `-t titleFixed=hello`: set a fixed title for the browser window
 - `-t fontSize=20`: change the font size of the terminal
 - `-t unicodeVersion=11`: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
-- `-t trzszDragInitTimeout=3000`: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000) 
+- `-t trzszDragInitTimeout=3000`: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+
+### Mobile Support
+
+Mobile touch devices are automatically detected and supported:
+
+- `-t mobileKeyboardEnabled=false`: disable the mobile virtual keyboard panel (default: true, auto-detect touch)
+- `-t mobileKeyboardOpacity=0.8`: set the keyboard panel opacity (default: 0.72, range: 0.0-1.0)
+- `-t mobileKeyboardScale=1.2`: set the keyboard panel scale (default: 1.0)
+- `-t 'mobileKeyboardCustomKeys=[{"id":"tmux_copy_mode","label":"C-b [","combo":["Ctrl+b","["]}]'`: define custom dynamic keys (array of `{id,label,combo}`; `combo` is a sequence like `Ctrl+b`, `[`). `id` must match `^[a-z][a-z0-9_]{0,31}$`, and `__proto__`, `prototype`, `constructor`, `toString`, `valueOf` are forbidden. The default web UI predefines six tmux keys: `tmux_copy_mode` (`C-b [`), `tmux_detach` (`C-b d`), `tmux_new_window` (`C-b c`), `tmux_prev_window` (`C-b p`), `tmux_next_window` (`C-b n`), `tmux_list_windows` (`C-b w`)
+- `-t 'mobileKeyboardLayouts=[["home","up","end","left","down","right"]]'`: set dynamic layouts for the top section (6 keys per layout). In the default web UI, 3 pages are active by default: page 1 `["home","up","end","left","down","right"]`, page 2 `["enter","up","batch_input","left","down","right"]`, page 3 `["enter","up","tmux_new_window","tmux_next_window","down","tmux_list_windows"]`
+- Per-key auto layout switch: each `mobileKeyboardLayouts` item can also be an object `{"key":"xxx","page":n}`. When `page` is set, pressing that key sends its action first, then switches to the target layout page (`page` is 1-based). Invalid, non-integer, or out-of-range `page` values are ignored for switching while key dispatch still works.
+- `-t mobileKeyboardHoldDelayMs=300`: set hold trigger delay in milliseconds for mobile virtual keys (default: 300)
+- `-t mobileKeyboardHoldIntervalMs=120`: set hold repeat interval in milliseconds for non-wheel keys (default: 120)
+- `-t mobileKeyboardHoldWheelIntervalMs=120`: set hold repeat interval in milliseconds for wheel keys (default: 120)
+
+## Mobile Gestures
+
+On touch devices, ttyd supports the following interactions:
+
+**Virtual Keyboard Panel:**
+
+- A draggable on-screen keyboard appears automatically on touch devices
+- Uses a dynamic top section (2 rows, 6 keys) and a fixed bottom section
+- Built-in dynamic keys: action keys `enter/space/batch_input`, navigation keys `up/down/left/right/home/end/pageup/pagedown/wheel_up/wheel_down`, common symbols `! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ { | } ~` plus backtick, and lowercase letters `a-z`
+- Custom key IDs from `mobileKeyboardCustomKeys` can also be used in `mobileKeyboardLayouts`
+- Fixed section provides `Esc`, `Tab`, `Shift`, `Alt`, `Ctrl`, and `Copy/Paste`
+- Drag the header bar to reposition the panel anywhere on screen
+- Tap (or click) the header bar to cycle dynamic layouts in configured order
+- Tap modifier keys to toggle their state (highlighted when active)
+- Copy/Paste button switches between copy and paste based on text selection
+
+**Hold Repeat:**
+
+- Hold starts after `mobileKeyboardHoldDelayMs` (default: `300` ms)
+- Non-wheel keys repeat at `mobileKeyboardHoldIntervalMs` (default: `120` ms)
+- Wheel keys repeat at `mobileKeyboardHoldWheelIntervalMs` (default: `120` ms)
+- Modifiers apply to key repeat; wheel repeat ignores modifiers
 
 ## Advanced usage
 

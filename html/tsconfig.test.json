@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".tmp-test",
+    "rootDir": ".",
+    "declaration": false,
+    "noEmit": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/components/terminal/xterm/mobile-keyboard.ts",
+    "src/components/terminal/xterm/index.ts"
+  ]
+}
