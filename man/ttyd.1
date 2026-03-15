@@ -211,7 +211,7 @@ Mobile touch devices are automatically detected and supported:
 
 .RS
 .IP \(bu 2
-\fB\fC\-t mobileKeyboardEnabled=false\fR: disable the mobile virtual keyboard panel (default: true, auto\-detect touch)
+\fB\fC\-t mobileKeyboardEnabled=false\fR: disable the mobile virtual keyboard panel (default: true, auto\-detect touch). On touch devices this also controls selection\-copy behavior: when enabled, tap selection is on and automatic copy\-on\-selection is off; when disabled, tap selection is off and automatic copy\-on\-selection is on
 .IP \(bu 2
 \fB\fC\-t mobileKeyboardOpacity=0.8\fR: set the keyboard panel opacity (default: 0.72, range: 0.0\-1.0)
 .IP \(bu 2
@@ -257,6 +257,21 @@ Tap (or click) the header bar to cycle dynamic layouts in configured order
 Tap modifier keys to toggle their state (highlighted when active)
 .IP \(bu 2
 Copy/Paste button switches between copy and paste based on text selection
+
+.RE
+
+.PP
+\fBTap Selection:\fP
+
+.RS
+.IP \(bu 2
+Double\-tap: Select the word under the cursor
+.IP \(bu 2
+Triple\-tap: Select the entire line
+.IP \(bu 2
+Shift + Triple\-tap: Select all visible lines in the current viewport
+.IP \(bu 2
+Alt + Triple\-tap: Select all text in the terminal buffer
 
 .RE
 

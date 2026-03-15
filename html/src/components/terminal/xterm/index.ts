@@ -128,6 +128,11 @@ export class Xterm {
     private closeOnDisconnect = false;
     private reconnectKeyDisposable?: IDisposable;
     private parent?: HTMLElement;
+    private touchTapCount = 0;
+    private lastTouchTapTime = 0;
+    private lastTouchTapX = 0;
+    private lastTouchTapY = 0;
+
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
     constructor(
@@ -140,6 +145,8 @@ export class Xterm {
         this.reconnectKeyDisposable = undefined;
         this.mobileKeyboard?.dispose();
         this.mobileKeyboard = undefined;
+        this.touchTapCount = 0;
+        this.lastTouchTapTime = 0;
         for (const d of this.disposables) {
             d.dispose();
         }
@@ -233,7 +240,7 @@ export class Xterm {
     }
 
     @bind
-    private shouldEnableMobileKeyboard() {
+    private isMobileKeyboardActive() {
         const enabled = this.options.clientOptions.mobileKeyboardEnabled;
         if (enabled === false) return false;
         if (typeof window.PointerEvent === 'undefined') return false;
@@ -242,7 +249,7 @@ export class Xterm {
 
     @bind
     private syncMobileKeyboard() {
-        if (!this.shouldEnableMobileKeyboard()) {
+        if (!this.isMobileKeyboardActive()) {
             this.mobileKeyboard?.dispose();
             this.mobileKeyboard = undefined;
             return;
@@ -306,6 +313,88 @@ export class Xterm {
     }
 
     @bind
+    private registerTouchSelection() {
+        if (!this.isTouchDevice()) return;
+        const element = this.terminal?.element;
+        if (!element) return;
+        this.register(addEventListener(element, 'touchend', this.onTouchSelectionEnd as EventListener));
+    }
+
+    @bind
+    private onTouchSelectionEnd(event: TouchEvent) {
+        if (!this.isMobileKeyboardActive()) return;
+        const touch = event.changedTouches.item(0);
+        if (!touch) return;
+
+        const now = Date.now();
+        const withinTapWindow = now - this.lastTouchTapTime <= 300;
+        const closeEnough =
+            Math.abs(touch.clientX - this.lastTouchTapX) <= 24 && Math.abs(touch.clientY - this.lastTouchTapY) <= 24;
+
+        if (withinTapWindow && closeEnough) {
+            this.touchTapCount += 1;
+        } else {
+            this.touchTapCount = 1;
+        }
+
+        this.lastTouchTapTime = now;
+        this.lastTouchTapX = touch.clientX;
+        this.lastTouchTapY = touch.clientY;
+
+        if (this.touchTapCount === 2) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.dispatchTouchMultiClick(2, touch.clientX, touch.clientY);
+        } else if (this.touchTapCount === 3) {
+            event.preventDefault();
+            event.stopPropagation();
+            const shouldSelectVisible = this.mobileKeyboard?.consumeModifierForTapSelection('shift') ?? false;
+            const shouldSelectAll = this.mobileKeyboard?.consumeModifierForTapSelection('alt') ?? false;
+            if (shouldSelectVisible) {
+                this.selectVisibleViewportLines();
+            } else if (shouldSelectAll) {
+                this.terminal?.selectAll();
+            } else {
+                this.dispatchTouchMultiClick(3, touch.clientX, touch.clientY);
+            }
+            this.touchTapCount = 0;
+        } else if (this.touchTapCount > 3) {
+            this.touchTapCount = 1;
+        }
+    }
+
+    @bind
+    private selectVisibleViewportLines() {
+        const terminal = this.terminal;
+        if (!terminal) return;
+        const start = Math.max(0, terminal.buffer.active.viewportY);
+        const end = Math.min(terminal.buffer.active.length - 1, start + Math.max(1, terminal.rows) - 1);
+        if (end < start) return;
+        terminal.selectLines(start, end);
+    }
+
+    @bind
+    private dispatchTouchMultiClick(detail: number, clientX: number, clientY: number) {
+        const element = this.terminal?.element;
+        if (!element) return;
+        const ownerDocument = element.ownerDocument ?? document;
+        const eventInit = {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            detail,
+            clientX,
+            clientY,
+            screenX: clientX,
+            screenY: clientY,
+            view: ownerDocument.defaultView ?? window,
+        };
+        element.dispatchEvent(new MouseEvent('mousedown', eventInit));
+        element.dispatchEvent(new MouseEvent('mouseup', eventInit));
+    }
+
+    @bind
     private syncClipboardButtonMode() {
         const selection = this.terminal?.getSelection() ?? '';
         this.mobileKeyboard?.setClipboardButtonMode(selection === '' ? 'paste' : 'copy');
@@ -314,6 +403,7 @@ export class Xterm {
     @bind
     private onSelectionChange() {
         this.syncClipboardButtonMode();
+        if (this.isMobileKeyboardActive()) return;
 
         const selection = this.terminal?.getSelection() ?? '';
         if (selection === '') return;
@@ -422,6 +512,7 @@ export class Xterm {
             );
         }
         register(addEventListener(window, 'beforeunload', this.onWindowUnload));
+        this.registerTouchSelection();
     }
 
     @bind

@@ -259,17 +259,138 @@ test('sendVirtualKey emits modified CSI sequences', () => {
     assert.deepEqual(host.calls.sendData, ['\x1b[1;5A', '\x1b[Z', '\x1b[1;6I', '\x1b[5;3~']);
 });
 
-test('shouldEnableMobileKeyboard rejects when PointerEvent is unavailable', () => {
+test('isMobileKeyboardActive rejects when PointerEvent is unavailable', () => {
     const originalWindow = global.window;
     global.window = { PointerEvent: undefined };
     try {
         const host = {
             options: { clientOptions: { mobileKeyboardEnabled: true } },
             isTouchDevice: () => true,
-            shouldEnableMobileKeyboard: proto.shouldEnableMobileKeyboard,
+            isMobileKeyboardActive: proto.isMobileKeyboardActive,
         };
-        assert.equal(host.shouldEnableMobileKeyboard(), false);
+        assert.equal(host.isMobileKeyboardActive(), false);
     } finally {
         global.window = originalWindow;
     }
+});
+
+test('onSelectionChange skips auto copy when mobile keyboard is active', () => {
+    let execCalls = 0;
+    const originalDocument = global.document;
+    global.document = {
+        execCommand: () => {
+            execCalls += 1;
+            return true;
+        },
+    };
+    try {
+        const calls = [];
+        const host = {
+            terminal: {
+                getSelection: () => 'selected',
+            },
+            overlayAddon: {
+                showOverlay: (text, timeout) => {
+                    calls.push({ text, timeout });
+                },
+            },
+            syncClipboardButtonMode: () => undefined,
+            isMobileKeyboardActive: () => true,
+            onSelectionChange: proto.onSelectionChange,
+        };
+        host.onSelectionChange();
+        assert.equal(execCalls, 0);
+        assert.deepEqual(calls, []);
+    } finally {
+        global.document = originalDocument;
+    }
+});
+
+test('onSelectionChange auto copies when mobile keyboard is inactive', () => {
+    let execCalls = 0;
+    const originalDocument = global.document;
+    global.document = {
+        execCommand: command => {
+            execCalls += 1;
+            assert.equal(command, 'copy');
+            return true;
+        },
+    };
+    try {
+        const calls = [];
+        const host = {
+            terminal: {
+                getSelection: () => 'selected',
+            },
+            overlayAddon: {
+                showOverlay: (text, timeout) => {
+                    calls.push({ text, timeout });
+                },
+            },
+            syncClipboardButtonMode: () => undefined,
+            isMobileKeyboardActive: () => false,
+            onSelectionChange: proto.onSelectionChange,
+        };
+        host.onSelectionChange();
+        assert.equal(execCalls, 1);
+        assert.deepEqual(calls, [{ text: '✂', timeout: 300 }]);
+    } finally {
+        global.document = originalDocument;
+    }
+});
+
+test('onTouchSelectionEnd returns early when mobile keyboard is inactive', () => {
+    const calls = { dispatches: 0, preventDefault: 0, stopPropagation: 0 };
+    const host = {
+        isMobileKeyboardActive: () => false,
+        dispatchTouchMultiClick: () => {
+            calls.dispatches += 1;
+        },
+        onTouchSelectionEnd: proto.onTouchSelectionEnd,
+    };
+    const event = {
+        changedTouches: {
+            item: () => ({ clientX: 10, clientY: 20 }),
+        },
+        preventDefault: () => {
+            calls.preventDefault += 1;
+        },
+        stopPropagation: () => {
+            calls.stopPropagation += 1;
+        },
+    };
+    host.onTouchSelectionEnd(event);
+    assert.deepEqual(calls, { dispatches: 0, preventDefault: 0, stopPropagation: 0 });
+});
+
+test('onTouchSelectionEnd dispatches double tap selection when mobile keyboard is active', () => {
+    const calls = { dispatches: [], preventDefault: 0, stopPropagation: 0 };
+    const now = Date.now();
+    const host = {
+        touchTapCount: 1,
+        lastTouchTapTime: now,
+        lastTouchTapX: 16,
+        lastTouchTapY: 24,
+        isMobileKeyboardActive: () => true,
+        dispatchTouchMultiClick: (detail, x, y) => {
+            calls.dispatches.push({ detail, x, y });
+        },
+        mobileKeyboard: undefined,
+        onTouchSelectionEnd: proto.onTouchSelectionEnd,
+    };
+    const event = {
+        changedTouches: {
+            item: () => ({ clientX: 18, clientY: 22 }),
+        },
+        preventDefault: () => {
+            calls.preventDefault += 1;
+        },
+        stopPropagation: () => {
+            calls.stopPropagation += 1;
+        },
+    };
+    host.onTouchSelectionEnd(event);
+    assert.deepEqual(calls.dispatches, [{ detail: 2, x: 18, y: 22 }]);
+    assert.equal(calls.preventDefault, 1);
+    assert.equal(calls.stopPropagation, 1);
 });

@@ -910,6 +910,13 @@ export class MobileKeyboardController {
         this.syncModifierButtons();
     }
 
+    consumeModifierForTapSelection(modifier: 'alt' | 'shift'): boolean {
+        if (!this.modifiers[modifier]) return false;
+        this.modifiers[modifier] = false;
+        this.syncModifierButtons();
+        return true;
+    }
+
     // Key registry and layout resolution
     private hasModifierOn(): boolean {
         return this.modifiers.ctrl || this.modifiers.alt || this.modifiers.shift;

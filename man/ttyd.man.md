@@ -136,7 +136,7 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 
 Mobile touch devices are automatically detected and supported:
 
-- `-t mobileKeyboardEnabled=false`: disable the mobile virtual keyboard panel (default: true, auto-detect touch)
+- `-t mobileKeyboardEnabled=false`: disable the mobile virtual keyboard panel (default: true, auto-detect touch). On touch devices this also controls selection-copy behavior: when enabled, tap selection is on and automatic copy-on-selection is off; when disabled, tap selection is off and automatic copy-on-selection is on
 - `-t mobileKeyboardOpacity=0.8`: set the keyboard panel opacity (default: 0.72, range: 0.0-1.0)
 - `-t mobileKeyboardScale=1.2`: set the keyboard panel scale (default: 1.0)
 - `-t 'mobileKeyboardCustomKeys=[{"id":"tmux_copy_mode","label":"C-b [","combo":["Ctrl+b","["]}]'`: define custom dynamic keys (array of `{id,label,combo}`; `combo` is a sequence like `Ctrl+b`, `[`). `id` must match `^[a-z][a-z0-9_]{0,31}$`, and `__proto__`, `prototype`, `constructor`, `toString`, `valueOf` are forbidden. The default web UI predefines six tmux keys: `tmux_copy_mode` (`C-b [`), `tmux_detach` (`C-b d`), `tmux_new_window` (`C-b c`), `tmux_prev_window` (`C-b p`), `tmux_next_window` (`C-b n`), `tmux_list_windows` (`C-b w`)
@@ -161,6 +161,13 @@ On touch devices, ttyd supports the following interactions:
 - Tap (or click) the header bar to cycle dynamic layouts in configured order
 - Tap modifier keys to toggle their state (highlighted when active)
 - Copy/Paste button switches between copy and paste based on text selection
+
+**Tap Selection:**
+
+- Double-tap: Select the word under the cursor
+- Triple-tap: Select the entire line
+- Shift + Triple-tap: Select all visible lines in the current viewport
+- Alt + Triple-tap: Select all text in the terminal buffer
 
 **Hold Repeat:**
 
