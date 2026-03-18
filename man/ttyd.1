@@ -211,11 +211,11 @@ Mobile touch devices are automatically detected and supported:
 
 .RS
 .IP \(bu 2
-\fB\fC\-t mobileKeyboardEnabled=false\fR: disable the mobile virtual keyboard panel (default: true, auto\-detect touch). On touch devices this also controls selection\-copy behavior: when enabled, tap selection is on and automatic copy\-on\-selection is off; when disabled, tap selection is off and automatic copy\-on\-selection is on
+\fB\fC\-t enableMobileKeyboard=true\fR: enable the mobile virtual keyboard panel (default: false). On touch devices this also controls selection\-copy behavior: when enabled, tap selection is on and automatic copy\-on\-selection is off; when disabled, tap selection is off and automatic copy\-on\-selection is on
 .IP \(bu 2
 \fB\fC\-t mobileKeyboardOpacity=0.8\fR: set the keyboard panel opacity (default: 0.72, range: 0.0\-1.0)
 .IP \(bu 2
-\fB\fC\-t mobileKeyboardScale=1.2\fR: set the keyboard panel scale (default: 1.0)
+\fB\fC\-t mobileKeyboardScale=1.2\fR: set the keyboard panel scale (default: 1.0, range: 0.85\-1.2)
 .IP \(bu 2
 \fB\fC\-t 'mobileKeyboardCustomKeys=[{"id":"tmux\_copy\_mode","label":"C\-b [","combo":["Ctrl+b","["]}]'\fR: define custom dynamic keys (array of \fB\fC{id,label,combo}\fR; \fB\fCcombo\fR is a sequence like \fB\fCCtrl+b\fR, \fB\fC[\fR). \fB\fCid\fR must match \fB\fC^[a\-z][a\-z0\-9\_]{0,31}$\fR, and \fB\fC\_\_proto\_\_\fR, \fB\fCprototype\fR, \fB\fCconstructor\fR, \fB\fCtoString\fR, \fB\fCvalueOf\fR are forbidden. The default web UI predefines six tmux keys: \fB\fCtmux\_copy\_mode\fR (\fB\fCC\-b [\fR), \fB\fCtmux\_detach\fR (\fB\fCC\-b d\fR), \fB\fCtmux\_new\_window\fR (\fB\fCC\-b c\fR), \fB\fCtmux\_prev\_window\fR (\fB\fCC\-b p\fR), \fB\fCtmux\_next\_window\fR (\fB\fCC\-b n\fR), \fB\fCtmux\_list\_windows\fR (\fB\fCC\-b w\fR)
 .IP \(bu 2

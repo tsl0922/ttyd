@@ -20,7 +20,7 @@ const clientOptions = {
     closeOnDisconnect: false,
     isWindows: false,
     unicodeVersion: '11',
-    mobileKeyboardEnabled: true,
+    enableMobileKeyboard: false,
     mobileKeyboardOpacity: 0.72,
     mobileKeyboardScale: 1,
     mobileKeyboardCustomKeys: [

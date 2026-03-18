@@ -62,7 +62,7 @@ export interface ClientOptions {
     trzszDragInitTimeout: number;
     unicodeVersion: string;
     closeOnDisconnect: boolean;
-    mobileKeyboardEnabled?: boolean;
+    enableMobileKeyboard?: boolean;
     mobileKeyboardOpacity?: number;
     mobileKeyboardScale?: number;
     mobileKeyboardLayouts?: Array<DynamicLayout | MobileKeyboardLayoutSpec>;
@@ -241,7 +241,7 @@ export class Xterm {
 
     @bind
     private isMobileKeyboardActive() {
-        const enabled = this.options.clientOptions.mobileKeyboardEnabled;
+        const enabled = this.options.clientOptions.enableMobileKeyboard;
         if (enabled === false) return false;
         if (typeof window.PointerEvent === 'undefined') return false;
         return this.isTouchDevice();
@@ -992,8 +992,8 @@ export class Xterm {
                         this.doReconnect = false;
                     }
                     break;
-                case 'mobileKeyboardEnabled':
-                    this.options.clientOptions.mobileKeyboardEnabled = value;
+                case 'enableMobileKeyboard':
+                    this.options.clientOptions.enableMobileKeyboard = value;
                     break;
                 case 'mobileKeyboardOpacity':
                     this.options.clientOptions.mobileKeyboardOpacity = value;

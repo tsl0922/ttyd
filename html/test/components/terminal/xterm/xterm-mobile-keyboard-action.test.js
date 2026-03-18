@@ -264,7 +264,7 @@ test('isMobileKeyboardActive rejects when PointerEvent is unavailable', () => {
     global.window = { PointerEvent: undefined };
     try {
         const host = {
-            options: { clientOptions: { mobileKeyboardEnabled: true } },
+            options: { clientOptions: { enableMobileKeyboard: true } },
             isTouchDevice: () => true,
             isMobileKeyboardActive: proto.isMobileKeyboardActive,
         };
