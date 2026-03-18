@@ -106,6 +106,9 @@ static void process_exit_cb(pty_process *process) {
 
 done:
   pty_ctx_free(ctx);
+
+  // if we are going to exit, do it now.
+  if (force_exit) exit(0);
 }
 
 static char **build_args(struct pss_tty *pss) {
@@ -381,9 +384,16 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       if ((server->once || server->exit_no_conn) && server->client_count == 0) {
         lwsl_notice("exiting due to the --once/--exit-no-conn option.\n");
-        force_exit = true;
+
+        // stop accepting new ws connections
         lws_cancel_service(context);
-        exit(0);
+
+        if (process_running(pss->process)) {
+          force_exit = true;
+          lwsl_notice("send ^C to force exit.\n");
+        } else {
+          exit(0);
+        }
       }
       break;
 
