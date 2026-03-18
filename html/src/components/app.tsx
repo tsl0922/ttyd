@@ -33,7 +33,7 @@ const clientOptions = {
     ],
     mobileKeyboardLayouts: [
         ...DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as MobileKeyboardLayoutSpec),
-        ['enter', 'up', 'tmux_new_window', 'tmux_next_window', 'down', 'tmux_list_windows'],
+        ['enter', 'up', 'space', 'tmux_next_window', 'down', 'tmux_list_windows'],
     ],
     mobileKeyboardHoldDelayMs: 300,
     mobileKeyboardHoldIntervalMs: 120,
