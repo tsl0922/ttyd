@@ -1,11 +1,7 @@
 #include "server.h"
 
 #include <errno.h>
-#ifdef _MSC_VER
-#include <getopt.h>  /* from getopt-win32 vcpkg package */
-#else
 #include <getopt.h>
-#endif
 #include <json.h>
 #include <libwebsockets.h>
 #include <signal.h>
