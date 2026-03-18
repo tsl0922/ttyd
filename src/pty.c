@@ -28,8 +28,6 @@ extern char **environ;
 #endif
 #endif
 
-#include <libwebsockets.h>
-
 #include "pty.h"
 #include "utils.h"
 
@@ -287,7 +285,7 @@ done:
 
 static void connect_cb(uv_connect_t *req, int status) {
   if (status != 0) {
-    lwsl_err("connect_cb: pipe connect failed: %s\n", uv_strerror(status));
+    fprintf(stderr, "connect_cb: pipe connect failed: %s\n", uv_strerror(status));
   }
   free(req);
 }

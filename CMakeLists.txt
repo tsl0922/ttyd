@@ -60,10 +60,9 @@ find_package(Libwebsockets 3.2.0 REQUIRED)
 
 set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
 if(TARGET websockets_shared)
-    # vcpkg provides cmake targets - use them for proper lib path resolution
+    # vcpkg's LIBWEBSOCKETS_LIBRARIES includes a non-existent 'websockets' entry
+    # alongside 'websockets_shared', so use the target directly to avoid link errors
     set(LINK_LIBS ${ZLIB_LIBRARIES} websockets_shared ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
-elseif(TARGET websockets)
-    set(LINK_LIBS ${ZLIB_LIBRARIES} websockets ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
 else()
     set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
 endif()
