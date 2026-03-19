@@ -17,13 +17,13 @@ on:
 
 jobs:
   cross:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install packages
         run: |
           sudo apt-get update
@@ -32,7 +32,7 @@ jobs:
         env:
           BUILD_TARGET: ${{ matrix.target }}
         run: ./scripts/cross-build.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd*
