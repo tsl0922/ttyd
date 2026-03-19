@@ -45,7 +45,17 @@ ttyd is a simple command-line tool for sharing terminal over the web.
     cmake ..
     make && sudo make install
     ```
-    You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
+- Build from source (Fedora):
+
+```bash
+
+sudo dnf install -y gcc gcc-c++ make cmake libuv-devel libwebsockets-devel json-c-devel openssl-devel zlib-devel libev-devel
+git clone https://github.com/tsl0922/ttyd.git
+    cd ttyd && mkdir build && cd build
+    cmake ..
+    make && sudo make install
+```
+You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
 - Install on OpenWrt: `opkg install ttyd`
 - Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
 
