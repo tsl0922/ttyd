@@ -24,9 +24,9 @@ jobs:
       VCPKG_TRIPLET: x64-windows-static
       TOOLCHAIN_FILE: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Checkout vcpkg
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: microsoft/vcpkg
           path: vcpkg
@@ -44,7 +44,7 @@ jobs:
           $env:VCPKG_ROOT = "${{ env.VCPKG_ROOT }}"
           cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }}
           cmake --build build --config Release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ttyd.msvc
           path: build/Release/ttyd.exe
@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, ppc64, ppc64le, s390x, win32]
     steps:
       - uses: actions/checkout@v6
       - name: Install packages
