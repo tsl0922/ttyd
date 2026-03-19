@@ -43,7 +43,7 @@
     "style-loader": "^3.3.4",
     "terser-webpack-plugin": "^5.3.10",
     "through2": "^4.0.2",
-    "ts-loader": "^9.5.1",
+    "ts-loader": "^9.5.4",
     "typescript": "^5.3.3",
     "util": "^0.12.5",
     "webpack": "^5.90.3",

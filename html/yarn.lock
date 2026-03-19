@@ -10439,9 +10439,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-loader@npm:^9.5.1":
-  version: 9.5.1
-  resolution: "ts-loader@npm:9.5.1"
+"ts-loader@npm:^9.5.4":
+  version: 9.5.4
+  resolution: "ts-loader@npm:9.5.4"
   dependencies:
     chalk: ^4.1.0
     enhanced-resolve: ^5.0.0
@@ -10451,7 +10451,7 @@ __metadata:
   peerDependencies:
     typescript: "*"
     webpack: ^5.0.0
-  checksum: 7cf396e656d905388ea2a9b5e82f16d3c955fda8d3df2fbf219f4bee16ff50a3c995c44ae3e584634e9443f056cec70bb3151add3917ffb4588ecd7394bac0ec
+  checksum: ee8a6883d0f8c0db0ea254fe4e9247ab0f6747cbbbee987af80e69822b840bdc2b67cee267ed3a93af803aeed47790d64dbaf07c001322b9091671f51cbf12b2
   languageName: node
   linkType: hard
 
@@ -10525,7 +10525,7 @@ __metadata:
     terser-webpack-plugin: ^5.3.10
     through2: ^4.0.2
     trzsz: ^1.1.5
-    ts-loader: ^9.5.1
+    ts-loader: ^9.5.4
     typescript: ^5.3.3
     util: ^0.12.5
     webpack: ^5.90.3
