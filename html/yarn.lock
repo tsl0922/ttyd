@@ -1314,12 +1314,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xterm/addon-webgl@npm:^0.18.0":
-  version: 0.18.0
-  resolution: "@xterm/addon-webgl@npm:0.18.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: 942ecaa4e08423563a795a1a63fa79637e60d4e3aba1b5fa2f426e1d7b19c553e8c8f1cfad1258461f22e05362e791f642dc6aab7e8766e26d4d3876617d8320
+"@xterm/addon-webgl@npm:^0.19.0":
+  version: 0.19.0
+  resolution: "@xterm/addon-webgl@npm:0.19.0"
+  checksum: ed8d94831e05f6bc4a1d368a8b7c24b01de827840c693022f1a4a0ca40ded716c72b9b59beee4c2b19c4ea5af9db3f7d1c5e0d381c7cc3a752713b5efd2bff07
   languageName: node
   linkType: hard
 
@@ -10498,7 +10496,7 @@ __metadata:
     "@xterm/addon-image": ^0.8.0
     "@xterm/addon-unicode11": ^0.8.0
     "@xterm/addon-web-links": ^0.11.0
-    "@xterm/addon-webgl": ^0.18.0
+    "@xterm/addon-webgl": ^0.19.0
     "@xterm/xterm": ^5.5.0
     copy-webpack-plugin: ^12.0.2
     css-loader: ^6.10.0
