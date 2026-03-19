@@ -86,7 +86,8 @@ if(LWS_OPENSSL_ENABLED AND NOT LWS_MBEDTLS_ENABLED)
 endif()
 
 if(WIN32)
-    list(APPEND LINK_LIBS shell32 ws2_32)
+    # libuv static requires dbghelp for MiniDumpWriteDump/Sym* APIs
+    list(APPEND LINK_LIBS shell32 ws2_32 dbghelp)
     if(MSVC)
         find_package(getopt CONFIG)
         if(getopt_FOUND)
@@ -96,8 +97,6 @@ if(WIN32)
                 list(APPEND LINK_LIBS getopt::getopt_static)
             endif()
         endif()
-        # libuv static requires dbghelp for MiniDumpWriteDump/Sym* APIs
-        list(APPEND LINK_LIBS dbghelp)
     endif()
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in ${CMAKE_CURRENT_BINARY_DIR}/app.rc @ONLY)
     list(APPEND SOURCE_FILES ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
