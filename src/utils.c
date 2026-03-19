@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "compat.h"
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 #include <sys/types.h>
