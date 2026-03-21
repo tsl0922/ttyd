@@ -11,8 +11,47 @@ body {
   height: 100%;
   margin: 0 auto;
   padding: 0;
-  .terminal {
-    padding: 5px;
-    height: calc(100% - 10px);
+  display: flex;
+  flex-direction: row;
+
+  .terminal-main {
+    flex: 1;
+    min-width: 0;
+    .terminal {
+      padding: 5px;
+      height: calc(100% - 10px);
+    }
+  }
+
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    background: #1e1e1e;
+    align-items: center;
+  }
+
+  .toolbar-btn {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #2d2d2d;
+    color: #ccc;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover {
+      background: #3d3d3d;
+    }
+
+    &.active {
+      background: #0078d4;
+      border-color: #0078d4;
+      color: #fff;
+    }
   }
 }
