@@ -14,6 +14,106 @@
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
+// Storage for POST body data during WebSocket upgrade
+// Using pthread mutex to protect concurrent access
+#include <pthread.h>
+
+struct post_body_storage {
+  struct lws *wsi;
+  char *body;
+  size_t len;
+  struct post_body_storage *next;
+};
+
+static struct post_body_storage *post_body_list = NULL;
+static pthread_mutex_t post_body_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void store_post_body(struct lws *wsi, const char *body, size_t len) {
+  struct post_body_storage *storage = malloc(sizeof(struct post_body_storage));
+  if (storage) {
+    storage->body = malloc(len + 1);
+    if (storage->body) {
+      memcpy(storage->body, body, len);
+      storage->body[len] = '\0';
+      storage->len = len;
+      storage->wsi = wsi;
+
+      pthread_mutex_lock(&post_body_mutex);
+      storage->next = post_body_list;
+      post_body_list = storage;
+      pthread_mutex_unlock(&post_body_mutex);
+    } else {
+      free(storage);
+    }
+  }
+}
+
+char *retrieve_post_body(struct lws *wsi) {
+  char *body = NULL;
+
+  pthread_mutex_lock(&post_body_mutex);
+  struct post_body_storage **prev = &post_body_list;
+  struct post_body_storage *curr = post_body_list;
+
+  while (curr) {
+    if (curr->wsi == wsi) {
+      body = curr->body;
+      *prev = curr->next;
+      free(curr);
+      break;
+    }
+    prev = &curr->next;
+    curr = curr->next;
+  }
+  pthread_mutex_unlock(&post_body_mutex);
+
+  return body;
+}
+
+// Cleanup function to remove stale entries for a specific wsi
+void cleanup_post_body(struct lws *wsi) {
+  pthread_mutex_lock(&post_body_mutex);
+  struct post_body_storage **prev = &post_body_list;
+  struct post_body_storage *curr = post_body_list;
+
+  while (curr) {
+    if (curr->wsi == wsi) {
+      struct post_body_storage *to_free = curr;
+      *prev = curr->next;
+      curr = curr->next;
+      free(to_free->body);
+      free(to_free);
+    } else {
+      prev = &curr->next;
+      curr = curr->next;
+    }
+  }
+  pthread_mutex_unlock(&post_body_mutex);
+}
+
+static int hex_to_int(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return 0;
+}
+
+static void url_decode(char *dst, const char *src) {
+  char a, b;
+  while (*src) {
+    if (*src == '%' && (a = src[1]) && a != '\0' && (b = src[2]) && b != '\0') {
+      *dst++ = hex_to_int(a) * 16 + hex_to_int(b);
+      src += 3;
+    } else if (*src == '+') {
+      *dst++ = ' ';
+      src++;
+    } else {
+      *dst++ = *src++;
+    }
+  }
+  *dst = '\0';
+}
+
 static int send_initial_message(struct lws *wsi, int index) {
   unsigned char message[LWS_PRE + 1 + 4096];
   unsigned char *p = &message[LWS_PRE];
@@ -200,7 +300,7 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
 
 int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_tty *pss = (struct pss_tty *)user;
-  char buf[256];
+  char buf[8192];
   size_t n = 0;
 
   switch (reason) {
@@ -237,14 +337,45 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       pss->authenticated = false;
       pss->wsi = wsi;
       pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
+      pss->args = NULL;
+      pss->argc = 0;
 
       if (server->url_arg) {
+        // Parse URL query parameters
         while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
           if (strncmp(buf, "arg=", 4) == 0) {
+            char decoded[sizeof(buf)];
+            url_decode(decoded, &buf[4]);
             pss->args = xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
-            pss->args[pss->argc] = strdup(&buf[4]);
+            pss->args[pss->argc] = strdup(decoded);
             pss->argc++;
           }
+        }
+
+        // Parse POST body parameters
+        char *post_body = retrieve_post_body(wsi);
+        if (post_body && strlen(post_body) > 0) {
+          char *body_copy = strdup(post_body);
+          if (body_copy) {
+            char *ptr = body_copy;
+            char *token;
+
+            // Parse URL-encoded POST body (arg=value1&arg=value2)
+            while ((token = strsep(&ptr, "&")) != NULL) {
+              if (strlen(token) > 4 && strncmp(token, "arg=", 4) == 0) {
+                char *decoded = malloc(strlen(token + 4) + 1);
+                if (decoded) {
+                  url_decode(decoded, token + 4);
+                  pss->args = xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
+                  pss->args[pss->argc] = decoded;
+                  pss->argc++;
+                }
+              }
+            }
+
+            free(body_copy);
+          }
+          free(post_body);
         }
       }
 
