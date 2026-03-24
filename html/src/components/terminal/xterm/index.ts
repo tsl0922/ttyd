@@ -167,6 +167,7 @@ export class Xterm {
 
         terminal.open(parent);
         fitAddon.fit();
+        this.initPostMessageAPI();
     }
 
     @bind
@@ -466,6 +467,15 @@ export class Xterm {
                     break;
             }
         }
+    }
+
+    @bind
+    private initPostMessageAPI() {
+        window.addEventListener('message', event => {
+            if (event.data?.type !== 'terminal' || !event.data?.send) return;
+
+            this.sendData(event.data.send);
+        });
     }
 
     @bind
