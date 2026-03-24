@@ -131,6 +131,7 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 - `-t fontSize=20`: change the font size of the terminal
 - `-t unicodeVersion=11`: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
 - `-t trzszDragInitTimeout=3000`: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000) 
+- `-t postMessageOrigin=http://url`: set origin for postMessage to parent window on socket close
 
 ## Advanced usage
 
