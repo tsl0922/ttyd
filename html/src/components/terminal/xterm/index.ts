@@ -2,7 +2,7 @@ import { bind } from 'decko';
 import type { IDisposable, ITerminalOptions } from '@xterm/xterm';
 import { Terminal } from '@xterm/xterm';
 import { CanvasAddon } from '@xterm/addon-canvas';
-import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { ClipboardAddon, type IClipboardProvider, type ClipboardSelectionType } from '@xterm/addon-clipboard';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -76,6 +76,38 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
     return toDisposable(() => target.removeEventListener(type, listener));
 }
 
+// Custom clipboard provider that accepts all OSC 52 selection types.
+// The default BrowserClipboardProvider in @xterm/addon-clipboard silently
+// drops writes for any selection type other than 'c' (clipboard).
+// Applications like tmux send OSC 52 with selection type 'p' (primary)
+// by default, causing clipboard sync to silently fail.  Since browsers
+// have a single clipboard with no primary/secondary distinction, we
+// accept all selection types and map them to the system clipboard.
+class TtydClipboardProvider implements IClipboardProvider {
+    constructor(private _overlayAddon: OverlayAddon) {}
+
+    async readText(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _selection: ClipboardSelectionType
+    ): Promise<string> {
+        if (!navigator.clipboard) return '';
+        try {
+            return await navigator.clipboard.readText();
+        } catch {
+            return '';
+        }
+    }
+
+    async writeText(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _selection: ClipboardSelectionType,
+        text: string
+    ): Promise<void> {
+        await navigator.clipboard.writeText(text);
+        this._overlayAddon.showOverlay('\u2702', 200);
+    }
+}
+
 export class Xterm {
     private disposables: IDisposable[] = [];
     private textEncoder = new TextEncoder();
@@ -86,7 +118,8 @@ export class Xterm {
     private terminal: Terminal;
     private fitAddon = new FitAddon();
     private overlayAddon = new OverlayAddon();
-    private clipboardAddon = new ClipboardAddon();
+    // @ts-expect-error: addon .d.ts declares (provider?) but runtime constructor is (base64, provider)
+    private clipboardAddon = new ClipboardAddon(undefined, new TtydClipboardProvider(this.overlayAddon));
     private webLinksAddon = new WebLinksAddon();
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
@@ -154,7 +187,7 @@ export class Xterm {
     @bind
     public open(parent: HTMLElement) {
         this.terminal = new Terminal(this.options.termOptions);
-        const { terminal, fitAddon, overlayAddon, clipboardAddon, webLinksAddon } = this;
+        const { terminal, fitAddon, overlayAddon, webLinksAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
@@ -162,7 +195,7 @@ export class Xterm {
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
-        terminal.loadAddon(clipboardAddon);
+        terminal.loadAddon(this.clipboardAddon);
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
