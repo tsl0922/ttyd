@@ -102,6 +102,10 @@ export class Xterm {
     private doReconnect = true;
     private closeOnDisconnect = false;
 
+    // Last right-click time; used to filter SGR mouse reports that would
+    // dismiss tmux menus on quick trackpad taps.
+    private rightClickTime = 0;
+
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
     constructor(
@@ -167,6 +171,54 @@ export class Xterm {
 
         terminal.open(parent);
         fitAddon.fit();
+
+        // Suppress browser context menu during mouse tracking (e.g. tmux).
+        // Shift+right-click bypasses to show the browser's native menu.
+        terminal.element?.addEventListener(
+            'contextmenu',
+            e => {
+                if (e.shiftKey) {
+                    e.stopImmediatePropagation();
+                    return;
+                }
+                if (terminal.modes.mouseTrackingMode !== 'none') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                }
+            },
+            { capture: true }
+        );
+
+        // Record right-click timing for the onData SGR filter below.
+        // Shift+right-click is stopped from reaching xterm.js since on
+        // Mac, Shift doesn't bypass mouse tracking (only Alt does).
+        terminal.element?.addEventListener(
+            'mousedown',
+            e => {
+                if (e.button !== 2) return;
+                if (e.shiftKey) {
+                    e.stopImmediatePropagation();
+                    return;
+                }
+                if (terminal.modes.mouseTrackingMode !== 'none') {
+                    this.rightClickTime = Date.now();
+                }
+            },
+            { capture: true }
+        );
+
+        // Block right-button mouseup in capture phase before xterm.js
+        // can generate a release report on document.
+        document.addEventListener(
+            'mouseup',
+            e => {
+                if (e.button !== 2 || this.rightClickTime === 0) return;
+                if (Date.now() - this.rightClickTime < 200) {
+                    e.stopPropagation();
+                }
+            },
+            { capture: true }
+        );
     }
 
     @bind
@@ -179,7 +231,53 @@ export class Xterm {
                 }
             })
         );
-        register(terminal.onData(data => sendData(data)));
+        register(
+            terminal.onData(data => {
+                // Filter SGR mouse reports (\x1b[<code;col;rowM/m) after a
+                // right-click to prevent tmux menus from being dismissed
+                // by the release or no-button motion events.
+                // No-op when mouse tracking is off.
+                // eslint-disable-next-line no-control-regex
+                const sgrMouse = data.match(/^\x1b\[<(\d+);\d+;\d+([Mm])$/);
+                if (sgrMouse) {
+                    const code = parseInt(sgrMouse[1], 10);
+                    const suffix = sgrMouse[2];
+                    const isRightButton = (code & 3) === 2;
+                    const isMotion = (code & 32) !== 0;
+                    const isButtonNone = (code & 3) === 3;
+
+                    // Detect right-click press in data stream as fallback.
+                    if (suffix === 'M' && isRightButton && !isMotion && this.rightClickTime === 0) {
+                        this.rightClickTime = Date.now();
+                    }
+
+                    if (this.rightClickTime > 0) {
+                        const elapsed = Date.now() - this.rightClickTime;
+
+                        // Drop no-button motion (dismisses tmux menu); 5s safety reset.
+                        if (isMotion && isButtonNone) {
+                            if (elapsed > 5000) {
+                                this.rightClickTime = 0;
+                            }
+                            return;
+                        }
+                        // Drop right-button release from trackpad tap.
+                        if (suffix === 'm' && isRightButton && elapsed < 200) {
+                            return;
+                        }
+                        // Non-right press = menu item click; stop filtering.
+                        if (!isMotion && suffix === 'M' && !isRightButton) {
+                            this.rightClickTime = 0;
+                        }
+                        // 2s safety timeout.
+                        else if (elapsed > 2000) {
+                            this.rightClickTime = 0;
+                        }
+                    }
+                }
+                sendData(data);
+            })
+        );
         register(terminal.onBinary(data => sendData(Uint8Array.from(data, v => v.charCodeAt(0)))));
         register(
             terminal.onResize(({ cols, rows }) => {
