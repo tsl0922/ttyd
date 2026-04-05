@@ -120,6 +120,35 @@ add_test(NAME outbound-websocket
     COMMAND node ${CMAKE_SOURCE_DIR}/test/test-outbound.js $<TARGET_FILE:${PROJECT_NAME}>
 )
 
+if(NOT MSVC)
+    # Sanitized build: separate executable with ASan + UBSan
+    add_executable(${PROJECT_NAME}-sanitized ${SOURCE_FILES})
+    target_include_directories(${PROJECT_NAME}-sanitized PUBLIC ${INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME}-sanitized ${LINK_LIBS})
+    target_compile_definitions(${PROJECT_NAME}-sanitized PUBLIC
+        TTYD_VERSION="${TTYD_VERSION}"
+    )
+    target_compile_options(${PROJECT_NAME}-sanitized PRIVATE
+        -fsanitize=address,undefined -fno-omit-frame-pointer -g
+    )
+    target_link_options(${PROJECT_NAME}-sanitized PRIVATE
+        -fsanitize=address,undefined
+    )
+    set_target_properties(${PROJECT_NAME}-sanitized PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+    add_test(NAME outbound-websocket-sanitized
+        COMMAND node ${CMAKE_SOURCE_DIR}/test/test-outbound.js $<TARGET_FILE:${PROJECT_NAME}-sanitized>
+    )
+
+    # make test-sanitized: build + run tests under ASan/UBSan
+    add_custom_target(test-sanitized
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${PROJECT_NAME}-sanitized
+        COMMAND ${CMAKE_CTEST_COMMAND} -R sanitized --output-on-failure
+        DEPENDS ${PROJECT_NAME}-sanitized
+        COMMENT "Running tests with AddressSanitizer + UndefinedBehaviorSanitizer"
+    )
+endif()
+
 include(GNUInstallDirs)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT prog)
