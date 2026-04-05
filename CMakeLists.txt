@@ -115,6 +115,11 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
 
+enable_testing()
+add_test(NAME outbound-websocket
+    COMMAND node ${CMAKE_SOURCE_DIR}/test/test-outbound.js $<TARGET_FILE:${PROJECT_NAME}>
+)
+
 include(GNUInstallDirs)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT prog)
