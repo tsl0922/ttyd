@@ -404,3 +404,133 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
   return 0;
 }
+
+int callback_tty_client(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
+  struct pss_tty *pss = (struct pss_tty *)user;
+
+  switch (reason) {
+    case LWS_CALLBACK_CLIENT_ESTABLISHED:
+      lwsl_notice("WS client connected to %s\n", server->connect_url);
+      pss->authenticated = true;
+      pss->wsi = wsi;
+      pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
+
+      if (!spawn_process(pss, 80, 24)) return -1;
+      break;
+
+    case LWS_CALLBACK_CLIENT_WRITEABLE:
+      if (!pss->initialized) {
+        if (pss->initial_cmd_index == sizeof(initial_cmds)) {
+          pss->initialized = true;
+          pty_resume(pss->process);
+          break;
+        }
+        if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
+          lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
+          lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
+          return -1;
+        }
+        pss->initial_cmd_index++;
+        lws_callback_on_writable(wsi);
+        break;
+      }
+
+      if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
+        lws_close_reason(wsi, pss->lws_close_status, NULL, 0);
+        return 1;
+      }
+
+      if (pss->pty_buf != NULL) {
+        wsi_output(wsi, pss->pty_buf);
+        pty_buf_free(pss->pty_buf);
+        pss->pty_buf = NULL;
+        pty_resume(pss->process);
+      }
+      break;
+
+    case LWS_CALLBACK_CLIENT_RECEIVE:
+      if (pss->buffer == NULL) {
+        pss->buffer = xmalloc(len);
+        pss->len = len;
+        memcpy(pss->buffer, in, len);
+      } else {
+        pss->buffer = xrealloc(pss->buffer, pss->len + len);
+        memcpy(pss->buffer + pss->len, in, len);
+        pss->len += len;
+      }
+
+      if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
+        return 0;
+      }
+
+      {
+        const char command = pss->buffer[0];
+        switch (command) {
+          case INPUT:
+            if (!server->writable) break;
+            if (pss->process == NULL) break;
+            {
+              int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
+              if (err) {
+                lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
+                return -1;
+              }
+            }
+            break;
+          case RESIZE_TERMINAL:
+            if (pss->process == NULL) break;
+            json_object_put(
+                parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
+            pty_resize(pss->process);
+            break;
+          case PAUSE:
+            if (pss->process != NULL) pty_pause(pss->process);
+            break;
+          case RESUME:
+            if (pss->process != NULL) pty_resume(pss->process);
+            break;
+          default:
+            lwsl_warn("ignored unknown message type: %c\n", command);
+            break;
+        }
+      }
+
+      if (pss->buffer != NULL) {
+        free(pss->buffer);
+        pss->buffer = NULL;
+      }
+      break;
+
+    case LWS_CALLBACK_CLOSED:
+      lwsl_notice("WS client connection closed\n");
+
+      if (pss->buffer != NULL) free(pss->buffer);
+      if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
+
+      if (pss->process != NULL) {
+        ((pty_ctx_t *)pss->process->ctx)->ws_closed = true;
+        if (process_running(pss->process)) {
+          pty_pause(pss->process);
+          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+          pty_kill(pss->process, server->sig_code);
+        }
+      }
+
+      force_exit = true;
+      lws_cancel_service(context);
+      uv_stop(server->loop);
+      break;
+
+    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
+      lwsl_err("WS client connection error: %s\n", in ? (char *)in : "(null)");
+      force_exit = true;
+      lws_cancel_service(context);
+      uv_stop(server->loop);
+      break;
+
+    default:
+      break;
+  }
+
+  return 0;
+}

@@ -81,6 +81,7 @@ struct server {
   bool exit_no_conn;       // whether exit on all clients disconnection
   char socket_path[255];   // UNIX domain socket path
   char terminal_type[30];  // terminal type to report
+  char *connect_url;       // outbound websocket URL (client mode)
 
   uv_loop_t *loop;         // the libuv event loop
 };
