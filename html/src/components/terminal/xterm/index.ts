@@ -16,9 +16,11 @@ import {
     KeyBehavior,
     MobileKeyboardLayoutSpec,
     MobileKeyboardCustomKeySpec,
+    MobileKeyboardThemeSpec,
     MobileKeyboardController,
     ModifierFlags,
     VirtualKey,
+    normalizeMobileKeyboardTheme,
     resolveMobileKeyboardConfig,
 } from './mobile-keyboard';
 
@@ -67,6 +69,7 @@ export interface ClientOptions {
     mobileKeyboardScale?: number;
     mobileKeyboardLayouts?: Array<DynamicLayout | MobileKeyboardLayoutSpec>;
     mobileKeyboardCustomKeys?: MobileKeyboardCustomKeySpec[];
+    mobileKeyboardTheme?: MobileKeyboardThemeSpec;
     mobileKeyboardHoldDelayMs?: number;
     mobileKeyboardHoldIntervalMs?: number;
     mobileKeyboardHoldWheelIntervalMs?: number;
@@ -257,6 +260,10 @@ export class Xterm {
 
         const opacity = this.options.clientOptions.mobileKeyboardOpacity ?? 0.72;
         const scale = this.options.clientOptions.mobileKeyboardScale ?? 1;
+        const normalizedTheme = normalizeMobileKeyboardTheme(this.options.clientOptions.mobileKeyboardTheme);
+        if (!normalizedTheme.valid) {
+            console.warn('[ttyd] invalid mobileKeyboardTheme fields, fallback to default values for invalid fields');
+        }
         const mobileKeyboardConfig = resolveMobileKeyboardConfig(
             this.options.clientOptions.mobileKeyboardLayouts,
             this.options.clientOptions.mobileKeyboardCustomKeys
@@ -275,6 +282,7 @@ export class Xterm {
                 mountElement,
                 opacity,
                 scale,
+                theme: normalizedTheme.theme,
                 dynamicLayouts: mobileKeyboardConfig.layouts,
                 customKeys: mobileKeyboardConfig.customKeys,
                 onDispatchAction: this.onMobileKeyboardAction,
@@ -287,7 +295,7 @@ export class Xterm {
             this.syncClipboardButtonMode();
             return;
         }
-        this.mobileKeyboard.updateAppearance(opacity, scale);
+        this.mobileKeyboard.updateAppearance(opacity, scale, normalizedTheme.theme);
         this.mobileKeyboard.updateDynamicConfig(mobileKeyboardConfig.layouts, mobileKeyboardConfig.customKeys);
         this.mobileKeyboard.updateHoldBehavior(holdDelayMs, holdIntervalMs, holdWheelIntervalMs);
         this.syncClipboardButtonMode();
@@ -1006,6 +1014,9 @@ export class Xterm {
                     break;
                 case 'mobileKeyboardCustomKeys':
                     this.options.clientOptions.mobileKeyboardCustomKeys = value;
+                    break;
+                case 'mobileKeyboardTheme':
+                    this.options.clientOptions.mobileKeyboardTheme = value;
                     break;
                 case 'mobileKeyboardHoldDelayMs':
                     this.options.clientOptions.mobileKeyboardHoldDelayMs = value;

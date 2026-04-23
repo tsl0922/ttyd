@@ -6,8 +6,10 @@ const outDir = process.env.UNIT_TEST_OUT_DIR || path.resolve(__dirname, '../../.
 const {
     DYNAMIC_KEY_IDS,
     cloneDefaultMobileKeyboardLayouts,
+    cloneDefaultMobileKeyboardTheme,
     isValidMobileKeyboardCustomKeyId,
     normalizeMobileKeyboardCustomKeys,
+    normalizeMobileKeyboardTheme,
     normalizeMobileKeyboardLayouts,
     parseMobileKeyComboStep,
     resolveMobileKeyboardConfig,
@@ -242,4 +244,35 @@ test('resolveMobileKeyboardConfig keeps key dispatch even when page is out of ra
     assert.equal(validAll.customKeys.length, 1);
     assert.equal(validAll.layouts[0][1].keyId, 'tmux_copy_mode');
     assert.equal(validAll.layouts[0][1].switchToLayoutIndex, null);
+});
+
+test('normalizeMobileKeyboardTheme falls back to defaults and supports partial overrides', () => {
+    const fallback = normalizeMobileKeyboardTheme(undefined);
+    assert.equal(fallback.valid, true);
+    assert.deepEqual(fallback.theme, cloneDefaultMobileKeyboardTheme());
+
+    const partial = normalizeMobileKeyboardTheme({
+        panelBackground: 'rgba(10,10,10,0.7)',
+        buttonBackground: '#333',
+    });
+    assert.equal(partial.valid, true);
+    assert.equal(partial.theme.panelBackground, 'rgba(10,10,10,0.7)');
+    assert.equal(partial.theme.buttonBackground, '#333');
+    assert.equal(partial.theme.buttonActiveBackground, cloneDefaultMobileKeyboardTheme().buttonActiveBackground);
+});
+
+test('normalizeMobileKeyboardTheme keeps valid fields and falls back invalid fields', () => {
+    const mixed = normalizeMobileKeyboardTheme({
+        panelBackground: 'rgba(1,2,3,0.4)',
+        buttonBackground: '',
+        batchTextareaColor: 123,
+    });
+    assert.equal(mixed.valid, false);
+    assert.equal(mixed.theme.panelBackground, 'rgba(1,2,3,0.4)');
+    assert.equal(mixed.theme.buttonBackground, cloneDefaultMobileKeyboardTheme().buttonBackground);
+    assert.equal(mixed.theme.batchTextareaColor, cloneDefaultMobileKeyboardTheme().batchTextareaColor);
+
+    const invalidType = normalizeMobileKeyboardTheme('bad');
+    assert.equal(invalidType.valid, false);
+    assert.deepEqual(invalidType.theme, cloneDefaultMobileKeyboardTheme());
 });

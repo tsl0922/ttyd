@@ -55,7 +55,7 @@ body {
   gap: var(--mobile-key-gap);
   padding: 12px;
   border-radius: 12px;
-  background: rgba(20, 20, 20, 0.65);
+  background: var(--mobile-kb-panel-bg, rgba(20, 20, 20, 0.65));
   backdrop-filter: blur(4px);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
   opacity: var(--mobile-keyboard-opacity);
@@ -83,8 +83,8 @@ body {
   font-size: 11px;
   line-height: 1.2;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--mobile-kb-dragbar-color, rgba(255, 255, 255, 0.8));
+  border: 1px solid var(--mobile-kb-dragbar-border, rgba(255, 255, 255, 0.2));
   border-radius: 8px;
   padding: 0 10px;
   cursor: grab;
@@ -107,8 +107,8 @@ body {
   padding: 0 10px;
   border: 0;
   border-radius: 10px;
-  color: #f1f1f1;
-  background: rgba(57, 57, 57, 0.86);
+  color: var(--mobile-kb-btn-color, #f1f1f1);
+  background: var(--mobile-kb-btn-bg, rgba(57, 57, 57, 0.86));
   font-size: 21px;
   line-height: 1;
   white-space: nowrap;
@@ -123,11 +123,11 @@ body {
 }
 
 .mobile-keyboard-btn:active {
-  background: rgba(99, 99, 99, 0.96);
+  background: var(--mobile-kb-btn-pressed-bg, rgba(99, 99, 99, 0.96));
 }
 
 .mobile-keyboard-btn.is-active {
-  background: rgba(22, 132, 219, 0.92);
+  background: var(--mobile-kb-btn-active-bg, rgba(22, 132, 219, 0.92));
 }
 
 .mobile-batch-input-panel {
@@ -139,8 +139,8 @@ body {
   box-sizing: border-box;
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(24, 24, 24, 0.9);
+  border: 1px solid var(--mobile-kb-batch-panel-border, rgba(255, 255, 255, 0.25));
+  background: var(--mobile-kb-batch-panel-bg, rgba(24, 24, 24, 0.9));
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -158,7 +158,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #d8d8d8;
+  color: var(--mobile-kb-batch-header-color, #d8d8d8);
   font-size: 12px;
   letter-spacing: 0.03em;
 }
@@ -167,8 +167,8 @@ body {
   border: 0;
   border-radius: 8px;
   padding: 6px 10px;
-  color: #f5f5f5;
-  background: rgba(70, 70, 70, 0.95);
+  color: var(--mobile-kb-batch-close-color, #f5f5f5);
+  background: var(--mobile-kb-batch-close-bg, rgba(70, 70, 70, 0.95));
   font-size: 12px;
 }
 
@@ -181,14 +181,14 @@ body {
   border-radius: 8px;
   resize: none;
   padding: 10px;
-  color: #f0f0f0;
-  background: rgba(9, 9, 9, 0.86);
+  color: var(--mobile-kb-batch-textarea-color, #f0f0f0);
+  background: var(--mobile-kb-batch-textarea-bg, rgba(9, 9, 9, 0.86));
   font-size: 22px;
   line-height: 1.4;
 }
 
 .mobile-batch-input-textarea:focus {
-  outline: 1px solid rgba(120, 180, 235, 0.95);
+  outline: 1px solid var(--mobile-kb-batch-textarea-focus-outline, rgba(120, 180, 235, 0.95));
 }
 
 @media (hover: none) and (pointer: coarse) {

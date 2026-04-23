@@ -217,6 +217,8 @@ Mobile touch devices are automatically detected and supported:
 .IP \(bu 2
 \fB\fC\-t mobileKeyboardScale=1.2\fR: set the keyboard panel scale (default: 1.0, range: 0.85\-1.2)
 .IP \(bu 2
+\fB\fC\-t 'mobileKeyboardTheme={"panelBackground":"rgba(20,20,20,0.65)","buttonBackground":"rgba(57,57,57,0.86)","buttonActiveBackground":"rgba(22,132,219,0.92)"}'\fR: set mobile keyboard colors. Supports partial fields and falls back to built\-in defaults per missing/invalid field. This option does not follow \fB\fCtheme\fR by default.
+.IP \(bu 2
 \fB\fC\-t 'mobileKeyboardCustomKeys=[{"id":"tmux\_copy\_mode","label":"C\-b [","combo":["Ctrl+b","["]}]'\fR: define custom dynamic keys (array of \fB\fC{id,label,combo}\fR; \fB\fCcombo\fR is a sequence like \fB\fCCtrl+b\fR, \fB\fC[\fR). \fB\fCid\fR must match \fB\fC^[a\-z][a\-z0\-9\_]{0,31}$\fR, and \fB\fC\_\_proto\_\_\fR, \fB\fCprototype\fR, \fB\fCconstructor\fR, \fB\fCtoString\fR, \fB\fCvalueOf\fR are forbidden. The default web UI predefines six tmux keys: \fB\fCtmux\_copy\_mode\fR (\fB\fCC\-b [\fR), \fB\fCtmux\_detach\fR (\fB\fCC\-b d\fR), \fB\fCtmux\_new\_window\fR (\fB\fCC\-b c\fR), \fB\fCtmux\_prev\_window\fR (\fB\fCC\-b p\fR), \fB\fCtmux\_next\_window\fR (\fB\fCC\-b n\fR), \fB\fCtmux\_list\_windows\fR (\fB\fCC\-b w\fR)
 .IP \(bu 2
 \fB\fC\-t 'mobileKeyboardLayouts=[["home","up","end","left","down","right"]]'\fR: set dynamic layouts for the top section (6 keys per layout). In the default web UI, 3 pages are active by default: page 1 \fB\fC["home","up","end","left","down","right"]\fR, page 2 \fB\fC["enter","up","batch\_input","left","down","right"]\fR, page 3 \fB\fC["enter","up","space","tmux\_next\_window","down","tmux\_list\_windows"]\fR

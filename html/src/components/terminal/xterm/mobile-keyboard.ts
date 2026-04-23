@@ -249,6 +249,24 @@ export interface MobileKeyboardCustomKeySpec {
     label: string;
     combo: string[];
 }
+export interface MobileKeyboardTheme {
+    panelBackground: string;
+    dragbarColor: string;
+    dragbarBorderColor: string;
+    buttonColor: string;
+    buttonBackground: string;
+    buttonPressedBackground: string;
+    buttonActiveBackground: string;
+    batchPanelBackground: string;
+    batchPanelBorderColor: string;
+    batchHeaderColor: string;
+    batchCloseButtonColor: string;
+    batchCloseButtonBackground: string;
+    batchTextareaColor: string;
+    batchTextareaBackground: string;
+    batchTextareaFocusOutline: string;
+}
+export type MobileKeyboardThemeSpec = Partial<Record<keyof MobileKeyboardTheme, string>>;
 export type MobileKeyboardCustomKey = {
     id: string;
     label: string;
@@ -273,6 +291,7 @@ interface MobileKeyboardControllerOptions {
     mountElement: HTMLElement;
     opacity: number;
     scale: number;
+    theme: MobileKeyboardTheme;
     dynamicLayouts: ResolvedDynamicLayout[];
     customKeys: MobileKeyboardCustomKey[];
     onDispatchAction: (action: KeyBehavior, modifiers: ModifierFlags) => void;
@@ -299,14 +318,69 @@ const BATCH_INPUT_MIN_WIDTH_PX = 180;
 const BATCH_INPUT_MAX_WIDTH_PX = 320;
 const BATCH_INPUT_MIN_HEIGHT_PX = 120;
 const BATCH_INPUT_VIEWPORT_MARGIN_PX = 8;
+const MOBILE_KEYBOARD_THEME_KEYS: Array<keyof MobileKeyboardTheme> = [
+    'panelBackground',
+    'dragbarColor',
+    'dragbarBorderColor',
+    'buttonColor',
+    'buttonBackground',
+    'buttonPressedBackground',
+    'buttonActiveBackground',
+    'batchPanelBackground',
+    'batchPanelBorderColor',
+    'batchHeaderColor',
+    'batchCloseButtonColor',
+    'batchCloseButtonBackground',
+    'batchTextareaColor',
+    'batchTextareaBackground',
+    'batchTextareaFocusOutline',
+];
+const MOBILE_KEYBOARD_THEME_CSS_VARIABLES: Record<keyof MobileKeyboardTheme, string> = {
+    panelBackground: '--mobile-kb-panel-bg',
+    dragbarColor: '--mobile-kb-dragbar-color',
+    dragbarBorderColor: '--mobile-kb-dragbar-border',
+    buttonColor: '--mobile-kb-btn-color',
+    buttonBackground: '--mobile-kb-btn-bg',
+    buttonPressedBackground: '--mobile-kb-btn-pressed-bg',
+    buttonActiveBackground: '--mobile-kb-btn-active-bg',
+    batchPanelBackground: '--mobile-kb-batch-panel-bg',
+    batchPanelBorderColor: '--mobile-kb-batch-panel-border',
+    batchHeaderColor: '--mobile-kb-batch-header-color',
+    batchCloseButtonColor: '--mobile-kb-batch-close-color',
+    batchCloseButtonBackground: '--mobile-kb-batch-close-bg',
+    batchTextareaColor: '--mobile-kb-batch-textarea-color',
+    batchTextareaBackground: '--mobile-kb-batch-textarea-bg',
+    batchTextareaFocusOutline: '--mobile-kb-batch-textarea-focus-outline',
+};
 
 export const DEFAULT_DYNAMIC_LAYOUTS: DynamicLayout[] = [
     ['home', 'up', 'end', 'left', 'down', 'right'],
     ['enter', 'up', 'batch_input', 'left', 'down', 'right'],
 ];
+export const DEFAULT_MOBILE_KEYBOARD_THEME: MobileKeyboardTheme = {
+    panelBackground: 'rgba(20, 20, 20, 0.65)',
+    dragbarColor: 'rgba(255, 255, 255, 0.8)',
+    dragbarBorderColor: 'rgba(255, 255, 255, 0.2)',
+    buttonColor: '#f1f1f1',
+    buttonBackground: 'rgba(57, 57, 57, 0.86)',
+    buttonPressedBackground: 'rgba(99, 99, 99, 0.96)',
+    buttonActiveBackground: 'rgba(22, 132, 219, 0.92)',
+    batchPanelBackground: 'rgba(24, 24, 24, 0.9)',
+    batchPanelBorderColor: 'rgba(255, 255, 255, 0.25)',
+    batchHeaderColor: '#d8d8d8',
+    batchCloseButtonColor: '#f5f5f5',
+    batchCloseButtonBackground: 'rgba(70, 70, 70, 0.95)',
+    batchTextareaColor: '#f0f0f0',
+    batchTextareaBackground: 'rgba(9, 9, 9, 0.86)',
+    batchTextareaFocusOutline: 'rgba(120, 180, 235, 0.95)',
+};
 
 export function cloneDefaultMobileKeyboardLayouts(): DynamicLayout[] {
     return DEFAULT_DYNAMIC_LAYOUTS.map(layout => [...layout] as DynamicLayout);
+}
+
+export function cloneDefaultMobileKeyboardTheme(): MobileKeyboardTheme {
+    return { ...DEFAULT_MOBILE_KEYBOARD_THEME };
 }
 
 function mapDynamicLayoutKeyId(layout: DynamicLayout): ResolvedDynamicLayout {
@@ -490,6 +564,37 @@ export function normalizeMobileKeyboardCustomKeys(value: unknown): {
         keys.push({ id, label, combo });
     }
     return { valid: true, keys };
+}
+
+export function normalizeMobileKeyboardTheme(value: unknown): {
+    valid: boolean;
+    theme: MobileKeyboardTheme;
+} {
+    if (value === undefined) {
+        return { valid: true, theme: cloneDefaultMobileKeyboardTheme() };
+    }
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        return { valid: false, theme: cloneDefaultMobileKeyboardTheme() };
+    }
+
+    const theme = cloneDefaultMobileKeyboardTheme();
+    let valid = true;
+    const spec = value as Record<string, unknown>;
+    MOBILE_KEYBOARD_THEME_KEYS.forEach(key => {
+        const rawValue = spec[key];
+        if (rawValue === undefined) return;
+        if (typeof rawValue !== 'string') {
+            valid = false;
+            return;
+        }
+        const trimmedValue = rawValue.trim();
+        if (trimmedValue === '') {
+            valid = false;
+            return;
+        }
+        theme[key] = trimmedValue;
+    });
+    return { valid, theme };
 }
 
 export function normalizeMobileKeyboardLayouts(
@@ -850,11 +955,13 @@ export class MobileKeyboardController {
         this.clipboardButton = undefined;
         this.dragBar = undefined;
         this.root.remove();
+        this.clearThemeVariables();
     }
 
-    updateAppearance(opacity: number, scale: number) {
+    updateAppearance(opacity: number, scale: number, theme: MobileKeyboardTheme) {
         this.options.opacity = opacity;
         this.options.scale = scale;
+        this.options.theme = theme;
         this.applyAppearance();
         this.requestEnsureInBounds();
     }
@@ -1274,6 +1381,18 @@ export class MobileKeyboardController {
         const clampedScale = Math.max(0.85, Math.min(1.2, scale));
         this.panel.style.setProperty('--mobile-keyboard-opacity', String(clampedOpacity));
         this.panel.style.setProperty('--mobile-keyboard-scale', String(clampedScale));
+        MOBILE_KEYBOARD_THEME_KEYS.forEach(key => {
+            this.options.mountElement.style.setProperty(
+                MOBILE_KEYBOARD_THEME_CSS_VARIABLES[key],
+                this.options.theme[key]
+            );
+        });
+    }
+
+    private clearThemeVariables() {
+        MOBILE_KEYBOARD_THEME_KEYS.forEach(key => {
+            this.options.mountElement.style.removeProperty(MOBILE_KEYBOARD_THEME_CSS_VARIABLES[key]);
+        });
     }
 
     private initPosition() {
