@@ -12,3 +12,7 @@ Install [Yarn](https://yarnpkg.com/getting-started/install), and run: `yarn inst
 ## Publish
 
 Run `yarn run build`, this will compile the inlined html to `../src/html.h`.
+
+## Test
+
+Run unit tests: `yarn test:unit`.
