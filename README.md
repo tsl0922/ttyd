@@ -22,8 +22,6 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 - Basic authentication support and many other custom options
 - Cross platform: macOS, Linux, FreeBSD/OpenBSD, [OpenWrt](https://openwrt.org), Windows
 
-> ❤ Special thanks to [JetBrains](https://www.jetbrains.com/?from=ttyd) for sponsoring the opensource license to this project.
-
 # Installation
 
 ## Install on macOS
@@ -33,21 +31,12 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 
 ## Install on Linux
 
-- Binary version (recommended): download from the [releases](https://github.com/tsl0922/ttyd/releases) page
-- Install with [Homebrew](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
+- Install on Debian/Ubuntu: `sudo apt install ttyd`
 - Install the snap: `sudo snap install ttyd --classic`
-- Build from source (debian/ubuntu):
-    ```bash
-    sudo apt-get update
-    sudo apt-get install -y build-essential cmake git libjson-c-dev libwebsockets-dev
-    git clone https://github.com/tsl0922/ttyd.git
-    cd ttyd && mkdir build && cd build
-    cmake ..
-    make && sudo make install
-    ```
-    You may also need to compile/install [libwebsockets](https://libwebsockets.org) from source if the `libwebsockets-dev` package is outdated.
 - Install on OpenWrt: `opkg install ttyd`
 - Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
+- Install with [Homebrew](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
+- Precompiled static binaries: download from the [releases](https://github.com/tsl0922/ttyd/releases) page
 
 ## Install on Windows
 

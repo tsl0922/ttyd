@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 
 #include "utils.h"
+#include "compat.h"
 
 #ifndef TTYD_VERSION
 #define TTYD_VERSION "unknown"
@@ -190,7 +191,7 @@ static struct server *server_new(int argc, char **argv, int start) {
   char *ptr = ts->command;
   for (int i = 0; i < cmd_argc; i++) {
     size_t len = strlen(ts->argv[i]);
-    ptr = memcpy(ptr, ts->argv[i], len + 1) + len;
+    ptr = (char *)memcpy(ptr, ts->argv[i], len + 1) + len;
     if (i != cmd_argc - 1) {
       *ptr++ = ' ';
     }

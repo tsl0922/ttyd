@@ -16,14 +16,46 @@ on:
   workflow_call:
 
 jobs:
+  msvc:
+    runs-on: windows-latest
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg.exe
+      VCPKG_TRIPLET: x64-windows-static
+      TOOLCHAIN_FILE: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+    steps:
+      - uses: actions/checkout@v6
+      - name: Checkout vcpkg
+        uses: actions/checkout@v6
+        with:
+          repository: microsoft/vcpkg
+          path: vcpkg
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.bat
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          $env:VCPKG_ROOT = "${{ env.VCPKG_ROOT }}"
+          ${{ env.VCPKG_EXE }} install --triplet ${{ env.VCPKG_TRIPLET }} libwebsockets libuv json-c zlib openssl getopt-win32
+      - name: Build with MSVC
+        shell: pwsh
+        run: |
+          $env:VCPKG_ROOT = "${{ env.VCPKG_ROOT }}"
+          cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }}
+          cmake --build build --config Release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ttyd.msvc
+          path: build/Release/ttyd.exe
   cross:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, s390x, win32]
+        target: [i686, x86_64, arm, armhf, aarch64, mips, mipsel, mips64, mips64el, ppc64, ppc64le, s390x, win32]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install packages
         run: |
           sudo apt-get update
@@ -32,7 +64,7 @@ jobs:
         env:
           BUILD_TARGET: ${{ matrix.target }}
         run: ./scripts/cross-build.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd*
