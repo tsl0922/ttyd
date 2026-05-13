@@ -102,6 +102,17 @@ export class Xterm {
     private doReconnect = true;
     private closeOnDisconnect = false;
 
+    // Autoreconnect state: exponential backoff + visibilitychange handler.
+    // The stock onSocketClose only reconnects immediately on non-1000 close
+    // codes and bails entirely on socket errors. With these fields we
+    // schedule a backoff reconnect for every close while `reconnect` is on,
+    // and a visibilitychange listener forces an immediate retry when the
+    // tab becomes visible again (laptop wake, brief network drop, etc.).
+    private reconnectDelay = 1000;
+    private readonly reconnectMaxDelay = 30000;
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    private visibilityHandlerInstalled = false;
+
     private writeFunc = (data: ArrayBuffer) => this.writeData(new Uint8Array(data));
 
     constructor(
@@ -114,6 +125,11 @@ export class Xterm {
             d.dispose();
         }
         this.disposables.length = 0;
+        if (this.reconnectTimer !== null) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        this.visibilityHandlerInstalled = false;
     }
 
     @bind
@@ -253,7 +269,35 @@ export class Xterm {
         register(addEventListener(socket, 'open', this.onSocketOpen));
         register(addEventListener(socket, 'message', this.onSocketData as EventListener));
         register(addEventListener(socket, 'close', this.onSocketClose as EventListener));
-        register(addEventListener(socket, 'error', () => (this.doReconnect = false)));
+        // Do NOT disable reconnect on error. The browser always fires
+        // `close` after `error`, so onSocketClose will schedule the
+        // backoff retry; killing doReconnect here would mean a single
+        // network blip (laptop wake, VPN flap) sticks the terminal.
+        register(addEventListener(socket, 'error', () => console.log('[ttyd] websocket error (will retry on close)')));
+        this.installVisibilityHandler();
+    }
+
+    @bind
+    private installVisibilityHandler() {
+        if (this.visibilityHandlerInstalled) return;
+        this.visibilityHandlerInstalled = true;
+        const { register } = this;
+        register(
+            addEventListener(document, 'visibilitychange', () => {
+                if (document.visibilityState !== 'visible') return;
+                const state = this.socket?.readyState;
+                const socketDown = state === undefined || state === WebSocket.CLOSED || state === WebSocket.CLOSING;
+                if (!socketDown) return;
+                if (!this.reconnect) return;
+                console.log('[ttyd] tab visible + socket down -> immediate reconnect');
+                if (this.reconnectTimer !== null) {
+                    clearTimeout(this.reconnectTimer);
+                    this.reconnectTimer = null;
+                }
+                this.reconnectDelay = 1000;
+                this.refreshToken().then(this.connect);
+            })
+        );
     }
 
     @bind
@@ -273,6 +317,12 @@ export class Xterm {
         }
 
         this.doReconnect = this.reconnect;
+        // Successful (re)open -> reset backoff.
+        this.reconnectDelay = 1000;
+        if (this.reconnectTimer !== null) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
         this.initListeners();
         terminal.focus();
     }
@@ -281,28 +331,50 @@ export class Xterm {
     private onSocketClose(event: CloseEvent) {
         console.log(`[ttyd] websocket connection closed with code: ${event.code}`);
 
-        const { refreshToken, connect, doReconnect, overlayAddon } = this;
+        const { overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed');
         this.dispose();
 
-        // 1000: CLOSE_NORMAL
-        if (event.code !== 1000 && doReconnect) {
-            overlayAddon.showOverlay('Reconnecting...');
-            refreshToken().then(connect);
-        } else if (this.closeOnDisconnect) {
+        // Schedule a backoff reconnect for every close while `reconnect`
+        // is enabled (NOT just non-1000 codes). The visibilitychange
+        // handler cancels this timer and reconnects immediately when the
+        // tab becomes visible again. closeOnDisconnect / explicit
+        // reconnect-disabled clients still get the original close-the-
+        // window or press-ENTER behaviour.
+        if (this.closeOnDisconnect) {
             window.close();
-        } else {
-            const { terminal } = this;
+            return;
+        }
+        if (!this.reconnect) {
+            const { terminal, refreshToken, connect } = this;
             const keyDispose = terminal.onKey(e => {
-                const event = e.domEvent;
-                if (event.key === 'Enter') {
+                const ev = e.domEvent;
+                if (ev.key === 'Enter') {
                     keyDispose.dispose();
                     overlayAddon.showOverlay('Reconnecting...');
                     refreshToken().then(connect);
                 }
             });
             overlayAddon.showOverlay('Press ⏎ to Reconnect');
+            return;
         }
+
+        this.scheduleReconnect();
+    }
+
+    @bind
+    private scheduleReconnect() {
+        if (this.reconnectTimer !== null) return;
+        const delay = this.reconnectDelay;
+        const seconds = Math.round(delay / 100) / 10;
+        this.overlayAddon.showOverlay(`Reconnecting in ${seconds}s...`, Math.min(delay, 2000));
+        console.log(`[ttyd] scheduling reconnect in ${delay}ms`);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.reconnectMaxDelay);
+            this.overlayAddon.showOverlay('Reconnecting...');
+            this.refreshToken().then(this.connect);
+        }, delay);
     }
 
     @bind
