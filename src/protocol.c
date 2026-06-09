@@ -39,12 +39,14 @@ static int send_initial_message(struct lws *wsi, int index) {
 static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
   json_tokener *tok = json_tokener_new();
   json_object *obj = json_tokener_parse_ex(tok, buf, len);
-  struct json_object *o = NULL;
+  json_tokener_free(tok);
 
+  if (obj == NULL) return NULL;
+
+  struct json_object *o = NULL;
   if (json_object_object_get_ex(obj, "columns", &o)) *cols = (uint16_t)json_object_get_int(o);
   if (json_object_object_get_ex(obj, "rows", &o)) *rows = (uint16_t)json_object_get_int(o);
 
-  json_tokener_free(tok);
   return obj;
 }
 
@@ -334,6 +336,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           uint16_t columns = 0;
           uint16_t rows = 0;
           json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+          if (obj == NULL) break;
           if (server->credential != NULL) {
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
