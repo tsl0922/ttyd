@@ -11,6 +11,9 @@
 #include "utils.h"
 #include "compat.h"
 
+// maximum allowed size for a single WebSocket message (bytes)
+#define MAX_MESSAGE_SIZE (10 * 1024 * 1024)
+
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
@@ -286,10 +289,21 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
     case LWS_CALLBACK_RECEIVE:
       if (pss->buffer == NULL) {
+        if (len > MAX_MESSAGE_SIZE) {
+          lwsl_warn("WS message too large: %zu bytes (max %d)\n", len, MAX_MESSAGE_SIZE);
+          return -1;
+        }
         pss->buffer = xmalloc(len);
         pss->len = len;
         memcpy(pss->buffer, in, len);
       } else {
+        if (pss->len + len > MAX_MESSAGE_SIZE) {
+          lwsl_warn("WS message too large: %zu bytes (max %d)\n", pss->len + len, MAX_MESSAGE_SIZE);
+          free(pss->buffer);
+          pss->buffer = NULL;
+          pss->len = 0;
+          return -1;
+        }
         pss->buffer = xrealloc(pss->buffer, pss->len + len);
         memcpy(pss->buffer + pss->len, in, len);
         pss->len += len;
