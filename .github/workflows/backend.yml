@@ -68,4 +68,33 @@ jobs:
         with:
           name: ttyd.${{ matrix.target }}
           path: build/ttyd*
-
+  macos:
+    name: macos (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14   # Apple Silicon
+            arch: arm64
+            asset: aarch64-apple-darwin
+          - runner: macos-13   # Intel
+            arch: x86_64
+            asset: x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install CMake
+        # CMake is a build-time tool only -- never linked into the binary. It
+        # comes from the runner's preinstalled Homebrew. (pkg-config isn't
+        # needed; ttyd finds its deps via CMake find_package/find_library.)
+        run: brew install cmake
+      - name: Native build (${{ matrix.arch }})
+        env:
+          BUILD_TARGET: ${{ matrix.arch }}
+        run: ./scripts/macos-build.sh
+      # Same upload shape as the `cross` job: artifact name carries the per-arch
+      # target, and release.yml's publish step derives the asset name from it.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ttyd.${{ matrix.asset }}
+          path: build/ttyd*
