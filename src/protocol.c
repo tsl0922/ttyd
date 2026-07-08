@@ -36,13 +36,16 @@ static int send_initial_message(struct lws *wsi, int index) {
   return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
 }
 
-static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
+static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows,
+                                       uint16_t *xpixel, uint16_t *ypixel) {
   json_tokener *tok = json_tokener_new();
   json_object *obj = json_tokener_parse_ex(tok, buf, len);
   struct json_object *o = NULL;
 
   if (json_object_object_get_ex(obj, "columns", &o)) *cols = (uint16_t)json_object_get_int(o);
   if (json_object_object_get_ex(obj, "rows", &o)) *rows = (uint16_t)json_object_get_int(o);
+  if (json_object_object_get_ex(obj, "xpixel", &o)) *xpixel = (uint16_t)json_object_get_int(o);
+  if (json_object_object_get_ex(obj, "ypixel", &o)) *ypixel = (uint16_t)json_object_get_int(o);
 
   json_tokener_free(tok);
   return obj;
@@ -151,11 +154,14 @@ static char **build_env(struct pss_tty *pss) {
   return envp;
 }
 
-static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
+static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows,
+                          uint16_t xpixel, uint16_t ypixel) {
   pty_process *process = process_init((void *)pty_ctx_init(pss), server->loop, build_args(pss), build_env(pss));
   if (server->cwd != NULL) process->cwd = strdup(server->cwd);
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
+  if (xpixel > 0) process->xpixel = xpixel;
+  if (ypixel > 0) process->ypixel = ypixel;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
     lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
     process_free(process);
@@ -320,7 +326,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         case RESIZE_TERMINAL:
           if (pss->process == NULL) break;
           json_object_put(
-              parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
+              parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows,
+                                &pss->process->xpixel, &pss->process->ypixel));
           pty_resize(pss->process);
           break;
         case PAUSE:
@@ -333,7 +340,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           if (pss->process != NULL) break;
           uint16_t columns = 0;
           uint16_t rows = 0;
-          json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+          uint16_t xpixel = 0;
+          uint16_t ypixel = 0;
+          json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows, &xpixel, &ypixel);
           if (server->credential != NULL) {
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
@@ -350,7 +359,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
             }
           }
           json_object_put(obj);
-          if (!spawn_process(pss, columns, rows)) return 1;
+          if (!spawn_process(pss, columns, rows, xpixel, ypixel)) return 1;
           break;
         default:
           lwsl_warn("ignored unknown message type: %c\n", command);

@@ -152,7 +152,7 @@ bool pty_resize(pty_process *process) {
   COORD size = {(int16_t) process->columns, (int16_t) process->rows};
   return pResizePseudoConsole(process->pty, size) == S_OK;
 #else
-  struct winsize size = {process->rows, process->columns, 0, 0};
+  struct winsize size = {process->rows, process->columns, process->xpixel, process->ypixel};
   return ioctl(process->pty, TIOCSWINSZ, &size) == 0;
 #endif
 }
@@ -430,7 +430,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   uv_disable_stdio_inheritance();
 
   int master, pid;
-  struct winsize size = {process->rows, process->columns, 0, 0};
+  struct winsize size = {process->rows, process->columns, process->xpixel, process->ypixel};
   pid = forkpty(&master, NULL, NULL, &size);
   if (pid < 0) {
     status = -errno;
