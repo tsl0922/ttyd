@@ -462,10 +462,14 @@ export class Xterm {
                     } else {
                         terminal.options[key] = value;
                     }
-                    if (key.indexOf('font') === 0) fitAddon.fit();
                     break;
             }
         }
+
+        // ponytail: renderer switches (e.g. the default dom -> webgl) change measured cell
+        // size without ever re-fitting, leaving the terminal undersized until a real window
+        // resize forces a refit. One fit after prefs settle covers font/renderer changes.
+        fitAddon.fit();
     }
 
     @bind
