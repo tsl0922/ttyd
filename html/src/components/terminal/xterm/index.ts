@@ -163,6 +163,28 @@ export class Xterm {
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
         terminal.loadAddon(clipboardAddon);
+
+        // Workaround: navigator.clipboard.writeText() requires user activation,
+        // but OSC 52 sequences arrive asynchronously via PTY, outside the gesture
+        // window. Use execCommand('copy') as a fallback that doesn't require activation.
+        terminal.parser.registerOscHandler(52, (data: string) => {
+            const args = data.split(';');
+            if (args.length < 2 || args[1] === '?' || !args[1]) return false;
+            try {
+                const text = atob(args[1]);
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        });
+
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
