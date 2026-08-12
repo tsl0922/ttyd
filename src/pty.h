@@ -38,6 +38,11 @@ struct pty_process_ {
   pid_t pty;
   uv_thread_t tid;
 #endif
+  uv_timer_t *reconnect_timer;
+  uv_timer_t *startup_timer;
+  int reconnect_attempts;
+  int startup_reconnect_attempts;
+  bool output_seen;
   char **argv;
   char **envp;
   char *cwd;

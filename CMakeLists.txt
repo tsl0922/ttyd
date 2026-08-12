@@ -15,6 +15,7 @@ endif()
 if(NOT "${GIT_COMMIT}" STREQUAL "")
     set(TTYD_VERSION "${TTYD_VERSION}-${GIT_COMMIT}")
 endif()
+set(TTYD_VERSION "${TTYD_VERSION}-codex-pty1")
 
 if(NOT MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
