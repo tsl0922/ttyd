@@ -1,3 +1,4 @@
+#include "notify.h"
 #include "server.h"
 
 #include <errno.h>
@@ -81,11 +82,12 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"once", no_argument, NULL, 'o'},
                                         {"exit-no-conn", no_argument, NULL, 'q'},
                                         {"browser", no_argument, NULL, 'B'},
+                                        {"monitor-notifications", no_argument, NULL, 'N'},
                                         {"debug", required_argument, NULL, 'd'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vhN";
 
 static void print_help() {
   // clang-format off
@@ -113,6 +115,7 @@ static void print_help() {
           "    -o, --once              Accept only one client and exit on disconnection\n"
           "    -q, --exit-no-conn      Exit on all clients disconnection\n"
           "    -B, --browser           Open terminal with the default system browser\n"
+          "    -N, --monitor-notifications  Monitor desktop notifications via D-Bus and forward to browser\n"
           "    -I, --index             Custom index.html path\n"
           "    -b, --base-path         Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)\n"
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
@@ -379,6 +382,9 @@ int main(int argc, char **argv) {
       case 'B':
         browser = true;
         break;
+      case 'N':
+        server->monitor_notifications = true;
+        break;
       case 'p':
         info.port = parse_int("port", optarg);
         if (info.port < 0) {
@@ -612,6 +618,10 @@ int main(int argc, char **argv) {
     open_uri(url);
   }
 
+  if (server->monitor_notifications) {
+    notify_start(server->loop);
+  }
+
 #define sig_count 2
   int sig_nums[] = {SIGINT, SIGTERM};
   uv_signal_t signals[sig_count];
@@ -630,6 +640,7 @@ int main(int argc, char **argv) {
   lws_context_destroy(context);
 
   // cleanup
+  notify_stop();
   server_free(server);
 
   return 0;

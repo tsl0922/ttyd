@@ -28,6 +28,7 @@ enum Command {
     OUTPUT = '0',
     SET_WINDOW_TITLE = '1',
     SET_PREFERENCES = '2',
+    NOTIFICATION = '3',
 
     // client side
     INPUT = '0',
@@ -192,7 +193,7 @@ export class Xterm {
             terminal.onSelectionChange(() => {
                 if (this.terminal.getSelection() === '') return;
                 try {
-                    document.execCommand('copy');
+                    navigator.clipboard.writeText(this.terminal.getSelection()).catch(() => {});
                 } catch (e) {
                     return;
                 }
@@ -201,6 +202,8 @@ export class Xterm {
         );
         register(addEventListener(window, 'resize', () => fitAddon.fit()));
         register(addEventListener(window, 'beforeunload', this.onWindowUnload));
+        register(addEventListener(window, 'focus', () => this.sendData('\x1b[I')));
+        register(addEventListener(window, 'blur', () => this.sendData('\x1b[O')));
     }
 
     @bind
@@ -263,6 +266,9 @@ export class Xterm {
         const { textEncoder, terminal, overlayAddon } = this;
         const msg = JSON.stringify({ AuthToken: this.token, columns: terminal.cols, rows: terminal.rows });
         this.socket?.send(textEncoder.encode(msg));
+
+        // Enable focus reporting so DECRPM ?1004$p returns "supported" (Crush notifications)
+        terminal.write('\x1b[?1004h');
 
         if (this.opened) {
             terminal.reset();
@@ -361,9 +367,27 @@ export class Xterm {
                     ...this.parseOptsFromUrlQuery(window.location.search),
                 } as Preferences);
                 break;
+            case Command.NOTIFICATION:
+                this.showNotification(textDecoder.decode(data));
+                break;
             default:
                 console.warn(`[ttyd] unknown command: ${cmd}`);
                 break;
+        }
+    }
+
+    @bind
+    private showNotification(jsonStr: string) {
+        if (Notification.permission === 'denied') return;
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+            return;
+        }
+        try {
+            const { app, summary, body } = JSON.parse(jsonStr);
+            new Notification(`[${app}] ${summary}`, { body: body });
+        } catch (e) {
+            console.warn('[ttyd] failed to parse notification:', e);
         }
     }
 

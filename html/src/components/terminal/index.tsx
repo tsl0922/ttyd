@@ -34,7 +34,12 @@ export class Terminal extends Component<Props, State> {
 
     render({ id }: Props, { modal }: State) {
         return (
-            <div id={id} ref={c => (this.container = c as HTMLElement)}>
+            <div
+                id={id}
+                ref={c => {
+                    this.container = c as HTMLElement;
+                }}
+            >
                 <Modal show={modal}>
                     <label class="file-label">
                         <input onChange={this.sendFile} class="file-input" type="file" multiple />

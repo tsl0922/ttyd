@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "notify.h"
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
@@ -252,6 +253,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address, sizeof(pss->address));
       lwsl_notice("WS   %s - %s, clients: %d\n", pss->path, pss->address, server->client_count);
+      if (server->monitor_notifications) notify_add_client(wsi);
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -281,6 +283,17 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         pty_buf_free(pss->pty_buf);
         pss->pty_buf = NULL;
         pty_resume(pss->process);
+      }
+
+      if (pss->notify_pending != NULL) {
+        unsigned char *message = xmalloc(LWS_PRE + strlen(pss->notify_pending));
+        unsigned char *ptr = message + LWS_PRE;
+        size_t n = strlen(pss->notify_pending);
+        memcpy(ptr, pss->notify_pending, n);
+        lws_write(wsi, ptr, n, LWS_WRITE_BINARY);
+        free(message);
+        free(pss->notify_pending);
+        pss->notify_pending = NULL;
       }
       break;
 
@@ -367,9 +380,11 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (pss->wsi == NULL) break;
 
       server->client_count--;
+      if (server->monitor_notifications) notify_remove_client(wsi);
       lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
       if (pss->buffer != NULL) free(pss->buffer);
       if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
+      if (pss->notify_pending != NULL) free(pss->notify_pending);
       for (int i = 0; i < pss->argc; i++) {
         free(pss->args[i]);
       }

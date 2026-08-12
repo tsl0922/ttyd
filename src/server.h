@@ -15,6 +15,7 @@
 #define OUTPUT '0'
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
+#define NOTIFICATION '3'
 
 // url paths
 struct endpoints {
@@ -53,7 +54,14 @@ struct pss_tty {
   pty_process *process;
   pty_buf_t *pty_buf;
 
+  char *notify_pending;  // pending notification JSON for this client
+
   int lws_close_status;
+};
+
+struct client_node {
+  struct lws *wsi;
+  struct client_node *next;
 };
 
 typedef struct {
@@ -81,6 +89,12 @@ struct server {
   bool exit_no_conn;       // whether exit on all clients disconnection
   char socket_path[255];   // UNIX domain socket path
   char terminal_type[30];  // terminal type to report
+  bool monitor_notifications;  // monitor desktop notifications via D-Bus
+
+  struct client_node *clients;  // linked list of connected websocket clients
+  uv_process_t notify_proc;     // dbus-monitor child process
+  uv_pipe_t notify_pipe;        // pipe for dbus-monitor stdout
+  bool notify_active;           // whether notification monitor is running
 
   uv_loop_t *loop;         // the libuv event loop
 };

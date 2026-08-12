@@ -33,7 +33,7 @@ else()
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS _GNU_SOURCE)
 endif()
 
-set(SOURCE_FILES src/utils.c src/pty.c src/protocol.c src/http.c src/server.c)
+set(SOURCE_FILES src/utils.c src/pty.c src/protocol.c src/http.c src/server.c src/notify.c)
 
 include(FindPackageHandleStandardArgs)
 
@@ -57,8 +57,10 @@ endif()
 
 find_package(ZLIB REQUIRED)
 find_package(Libwebsockets 3.2.0 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBSYSTEMD IMPORTED_TARGET libsystemd)
 
-set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
+set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS} ${LIBSYSTEMD_INCLUDE_DIRS})
 if(MSVC)
     # vcpkg's LIBWEBSOCKETS_LIBRARIES lists both 'websockets' and 'websockets_shared'
     # but only one target exists per triplet, so resolve the correct one.
@@ -68,7 +70,7 @@ if(MSVC)
         set(LINK_LIBS ${ZLIB_LIBRARIES} websockets ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
     endif()
 else()
-    set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
+    set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES} ${LIBSYSTEMD_LIBRARIES})
 endif()
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
