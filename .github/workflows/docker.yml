@@ -56,6 +56,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/s390x
           push: true
+          provenance: mode=max
+          sbom: true
           tags: |
             ${{ env.DOCKER_TAG }}
             ghcr.io/${{ env.DOCKER_TAG }}
@@ -66,6 +68,8 @@ jobs:
           file: ./Dockerfile.alpine
           platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/s390x
           push: true
+          provenance: mode=max
+          sbom: true
           tags: |
             ${{ env.ALPINE_TAG }}
             ghcr.io/${{ env.ALPINE_TAG }}
