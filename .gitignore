@@ -50,5 +50,8 @@ build
 # VSCode files
 .vscode/
 
+# Node modules
+node_modules/
+
 # Project files
 !init.d

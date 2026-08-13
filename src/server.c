@@ -25,11 +25,16 @@ struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
+extern int callback_tty_client(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
 // websocket protocols
 static const struct lws_protocols protocols[] = {{"http-only", callback_http, sizeof(struct pss_http), 0},
                                                  {"tty", callback_tty, sizeof(struct pss_tty), 0},
                                                  {NULL, NULL, 0, 0}};
+
+// websocket protocols for client (outbound) mode
+static const struct lws_protocols client_protocols[] = {{"tty", callback_tty_client, sizeof(struct pss_tty), 0},
+                                                        {NULL, NULL, 0, 0}};
 
 #ifndef LWS_WITHOUT_EXTENSIONS
 // websocket extensions
@@ -81,6 +86,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"once", no_argument, NULL, 'o'},
                                         {"exit-no-conn", no_argument, NULL, 'q'},
                                         {"browser", no_argument, NULL, 'B'},
+                                        {"connect", required_argument, NULL, 256},
                                         {"debug", required_argument, NULL, 'd'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
@@ -128,6 +134,8 @@ static void print_help() {
           "    -K, --ssl-key           SSL key file path\n"
           "    -A, --ssl-ca            SSL CA file path for client certificate verification\n"
 #endif
+          "        --connect            Connect to a remote WebSocket URL instead of listening (client mode,\n"
+          "                               eg: ws://host:port/path or wss://host:port/path)\n"
           "    -d, --debug             Set log level (default: 7)\n"
           "    -v, --version           Print the version and exit\n"
           "    -h, --help              Print this text and exit\n\n"
@@ -150,6 +158,7 @@ static void print_config() {
     lwsl_notice("  token    : %s\n", endpoints.token);
     lwsl_notice("  websocket: %s\n", endpoints.ws);
   }
+  if (server->connect_url != NULL) lwsl_notice("  connect URL: %s\n", server->connect_url);
   if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
   if (server->check_origin) lwsl_notice("  check origin: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
@@ -210,6 +219,7 @@ static void server_free(struct server *ts) {
   if (ts->auth_header != NULL) free(ts->auth_header);
   if (ts->index != NULL) free(ts->index);
   if (ts->cwd != NULL) free(ts->cwd);
+  if (ts->connect_url != NULL) free(ts->connect_url);
   free(ts->command);
   free(ts->prefs_json);
 
@@ -499,6 +509,9 @@ int main(int argc, char **argv) {
         strncpy(server->terminal_type, optarg, sizeof(server->terminal_type) - 1);
         server->terminal_type[sizeof(server->terminal_type) - 1] = '\0';
         break;
+      case 256:
+        server->connect_url = strdup(optarg);
+        break;
       case '?':
         break;
       case 't':
@@ -590,7 +603,14 @@ int main(int argc, char **argv) {
   void *foreign_loops[1];
   foreign_loops[0] = server->loop;
   info.foreign_loops = foreign_loops;
-  info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
+
+  if (server->connect_url != NULL) {
+    // Client mode: no listening, use client protocols
+    info.port = CONTEXT_PORT_NO_LISTEN;
+    info.protocols = client_protocols;
+  } else {
+    info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
+  }
 
   context = lws_create_context(&info);
   if (context == NULL) {
@@ -598,18 +618,58 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  struct lws_vhost *vhost = lws_create_vhost(context, &info);
-  if (vhost == NULL) {
-    lwsl_err("libwebsockets vhost creation failed\n");
-    return 1;
-  }
-  int port = lws_get_vhost_listen_port(vhost);
-  lwsl_notice(" Listening on port: %d\n", port);
+  if (server->connect_url != NULL) {
+    // Client mode: parse URL and connect outbound
+    char *url_copy = strdup(server->connect_url);
+    const char *prot, *address, *path;
+    int port;
+    if (lws_parse_uri(url_copy, &prot, &address, &port, &path)) {
+      lwsl_err("failed to parse connect URL: %s\n", server->connect_url);
+      free(url_copy);
+      return 1;
+    }
 
-  if (browser) {
-    char url[30];
-    snprintf(url, sizeof(url), "%s://localhost:%d", ssl ? "https" : "http", port);
-    open_uri(url);
+    char full_path[256];
+    snprintf(full_path, sizeof(full_path), "/%s", path);
+
+    struct lws_client_connect_info ccinfo;
+    memset(&ccinfo, 0, sizeof(ccinfo));
+    ccinfo.context = context;
+    ccinfo.address = address;
+    ccinfo.port = port;
+    ccinfo.path = full_path;
+    ccinfo.host = address;
+    ccinfo.origin = address;
+    ccinfo.protocol = "tty";
+
+    bool use_ssl = (strcmp(prot, "wss") == 0 || strcmp(prot, "https") == 0);
+    if (use_ssl) {
+      ccinfo.ssl_connection = LCCSCF_USE_SSL;
+    }
+
+    if (lws_client_connect_via_info(&ccinfo) == NULL) {
+      lwsl_err("failed to initiate connection to %s\n", server->connect_url);
+      free(url_copy);
+      return 1;
+    }
+
+    lwsl_notice("connecting to %s\n", server->connect_url);
+    free(url_copy);
+  } else {
+    // Server mode: create listening vhost
+    struct lws_vhost *vhost = lws_create_vhost(context, &info);
+    if (vhost == NULL) {
+      lwsl_err("libwebsockets vhost creation failed\n");
+      return 1;
+    }
+    int port = lws_get_vhost_listen_port(vhost);
+    lwsl_notice(" Listening on port: %d\n", port);
+
+    if (browser) {
+      char url[30];
+      snprintf(url, sizeof(url), "%s://localhost:%d", ssl ? "https" : "http", port);
+      open_uri(url);
+    }
   }
 
 #define sig_count 2
