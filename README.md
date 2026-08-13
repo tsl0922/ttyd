@@ -28,6 +28,8 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 
 - Install with [Homebrew](http://brew.sh): `brew install ttyd`
 - Install with [MacPorts](https://www.macports.org): `sudo port install ttyd`
+- Precompiled binaries: download from the [releases](https://github.com/tsl0922/ttyd/releases) page (note: not codesigned/notarized — see [Gatekeeper and quarantine](docs/macos-build.md#gatekeeper-and-quarantine-on-downloaded-release-binaries))
+- [Build from source](docs/macos-build.md)
 
 ## Install on Linux
 
