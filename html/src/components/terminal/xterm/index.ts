@@ -320,6 +320,11 @@ export class Xterm {
                     prefs[k] = queryVal === 'true' || queryVal === '1';
                     break;
                 case 'number':
+                    {
+                        const parsed = Number.parseFloat(queryVal);
+                        prefs[k] = Number.isNaN(parsed) ? queryVal : parsed;
+                    }
+                    break;
                 case 'bigint':
                     prefs[k] = Number.parseInt(queryVal, 10);
                     break;
@@ -370,6 +375,7 @@ export class Xterm {
     @bind
     private applyPreferences(prefs: Preferences) {
         const { terminal, fitAddon, register } = this;
+        let needsFit = false;
         if (prefs.enableZmodem || prefs.enableTrzsz) {
             this.zmodemAddon = new ZmodemAddon({
                 zmodem: prefs.enableZmodem,
@@ -462,10 +468,14 @@ export class Xterm {
                     } else {
                         terminal.options[key] = value;
                     }
-                    if (key.indexOf('font') === 0) fitAddon.fit();
+                    if (key.indexOf('font') === 0 || key === 'lineHeight' || key === 'letterSpacing') {
+                        needsFit = true;
+                    }
                     break;
             }
         }
+
+        if (needsFit) fitAddon.fit();
     }
 
     @bind
