@@ -15,7 +15,8 @@
     "build": "NODE_ENV=production webpack && gulp",
     "inline": "NODE_ENV=production webpack && gulp inline",
     "check": "gts check",
-    "fix": "gts fix"
+    "fix": "gts fix",
+    "test:unit": "UNIT_TEST_OUT_DIR=$PWD/.tmp-test tsc -p tsconfig.test.json && UNIT_TEST_OUT_DIR=$PWD/.tmp-test node --test test/**/*.test.js"
   },
   "engines": {
     "node": ">=12"

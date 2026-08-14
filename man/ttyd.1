@@ -1,9 +1,8 @@
-.nh
 .TH ttyd 1 "September 2016" ttyd "User Manual"
 
 .SH NAME
 .PP
-ttyd - Share your terminal over the web
+ttyd \- Share your terminal over the web
 
 
 .SH SYNOPSIS
@@ -13,13 +12,13 @@ ttyd - Share your terminal over the web
 
 .SH DESCRIPTION
 .PP
-ttyd is a command-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
+ttyd is a command\-line tool for sharing terminal over the web that runs in *nix and windows systems, with the following features:
 
 .RS
 .IP \(bu 2
 Built on top of Libwebsockets with libuv for speed
 .IP \(bu 2
-Fully-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
+Fully\-featured terminal based on Xterm.js with CJK (Chinese, Japanese, Korean) and IME support
 .IP \(bu 2
 Graphical ZMODEM integration with lrzsz support
 .IP \(bu 2
@@ -38,135 +37,136 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
 
 .SH OPTIONS
 .PP
--p, --port 
+\-p, \-\-port <port>
       Port to listen (default: 7681, use \fB\fC0\fR for random port)
 
 .PP
--i, --interface 
+\-i, \-\-interface <interface>
       Network interface to bind (eg: eth0), or UNIX domain socket path (eg: /var/run/ttyd.sock)
 
 .PP
--U, --socket-owner
+\-U, \-\-socket\-owner
       User owner of the UNIX domain socket file, when enabled (eg: user:group)
 
 .PP
--c, --credential USER[:PASSWORD]
+\-c, \-\-credential USER[:PASSWORD]
       Credential for Basic Authentication (format: username:password)
 
 .PP
--H, --auth-header 
+\-H, \-\-auth\-header <name>
       HTTP Header name for auth proxy, this will configure ttyd to let a HTTP reverse proxy handle authentication
 
 .PP
--u, --uid 
+\-u, \-\-uid <uid>
       User id to run with
 
 .PP
--g, --gid 
+\-g, \-\-gid <gid>
       Group id to run with
 
 .PP
--s, --signal 
+\-s, \-\-signal <signal string>
       Signal to send to the command when exit it (default: 1, SIGHUP)
 
 .PP
--w, --cwd 
+\-w, \-\-cwd <path>
       Working directory to be set for the child program
 
 .PP
--a, --url-arg
-      Allow client to send command line arguments in URL (eg: http://localhost:7681?arg=foo&arg=bar)
+\-a, \-\-url\-arg
+      Allow client to send command line arguments in URL (eg: 
+\[la]http://localhost:7681?arg=foo&arg=bar\[ra])
 
 .PP
--W, --writable
+\-W, \-\-writable
       Allow clients to write to the TTY (readonly by default)
 
 .PP
--t, --client-option 
+\-t, \-\-client\-option <key=value>
       Send option to client (format: key=value), repeat to add more options, see \fBCLIENT OPTIONS\fP for details
 
 .PP
--T, --terminal-type
-      Terminal type to report, default: xterm-256color
+\-T, \-\-terminal\-type
+      Terminal type to report, default: xterm\-256color
 
 .PP
--O, --check-origin
+\-O, \-\-check\-origin
       Do not allow websocket connection from different origin
 
 .PP
--m, --max-clients
+\-m, \-\-max\-clients
       Maximum clients to support (default: 0, no limit)
 
 .PP
--o, --once
+\-o, \-\-once
       Accept only one client and exit on disconnection
 
 .PP
--q, --exit-no-conn
+\-q, \-\-exit\-no\-conn
       Exit on all clients disconnection
 
 .PP
--B, --browser
+\-B, \-\-browser
       Open terminal with the default system browser
 
 .PP
--I, --index 
+\-I, \-\-index <index file>
       Custom index.html path
 
 .PP
--b, --base-path
+\-b, \-\-base\-path
       Expected base path for requests coming from a reverse proxy (eg: /mounted/here, max length: 128)
 
 .PP
--P, --ping-interval
+\-P, \-\-ping\-interval
       Websocket ping interval(sec) (default: 5)
 
 .PP
--f, --srv-buf-size
+\-f, \-\-srv\-buf\-size
       Maximum chunk of file (in bytes) that can be sent at once, a larger value may improve throughput (default: 4096)
 
 .PP
--6, --ipv6
+\-6, \-\-ipv6
       Enable IPv6 support
 
 .PP
--S, --ssl
+\-S, \-\-ssl
       Enable SSL
 
 .PP
--C, --ssl-cert 
+\-C, \-\-ssl\-cert <cert path>
       SSL certificate file path
 
 .PP
--K, --ssl-key 
+\-K, \-\-ssl\-key <key path>
       SSL key file path
 
 .PP
--A, --ssl-ca 
+\-A, \-\-ssl\-ca <ca path>
       SSL CA file path for client certificate verification
 
 .PP
--d, --debug 
+\-d, \-\-debug <level>
       Set log level (default: 7)
 
 .PP
--v, --version
+\-v, \-\-version
       Print the version and exit
 
 .PP
--h, --help
+\-h, \-\-help
       Print this text and exit
 
 
 .SH CLIENT OPTIONS
 .PP
-ttyd has a mechanism to pass server side command-line arguments to the browser page which is called \fBclient options\fP:
+ttyd has a mechanism to pass server side command\-line arguments to the browser page which is called \fBclient options\fP:
 
 .PP
 .RS
 
 .nf
--t, --client-option     Send option to client (format: key=value), repeat to add more options
+\-t, \-\-client\-option     Send option to client (format: key=value), repeat to add more options
 
 .fi
 .RE
@@ -174,34 +174,121 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 .SH Basic usage
 .RS
 .IP \(bu 2
-\fB\fC-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
+\fB\fC\-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
 .IP \(bu 2
-\fB\fC-t disableLeaveAlert=true\fR: disable the leave page alert
+\fB\fC\-t disableLeaveAlert=true\fR: disable the leave page alert
 .IP \(bu 2
-\fB\fC-t disableResizeOverlay=true\fR: disable the terminal resize overlay
+\fB\fC\-t disableResizeOverlay=true\fR: disable the terminal resize overlay
 .IP \(bu 2
-\fB\fC-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
+\fB\fC\-t disableReconnect=true\fR: prevent the terminal from reconnecting on connection error/close
 .IP \(bu 2
-\fB\fC-t enableZmodem=true\fR: enable ZMODEM
+\fB\fC\-t enableZmodem=true\fR: enable ZMODEM
 \[la]https://en.wikipedia.org/wiki/ZMODEM\[ra] / lrzsz
 \[la]https://ohse.de/uwe/software/lrzsz.html\[ra] file transfer support
 .IP \(bu 2
-\fB\fC-t enableTrzsz=true\fR: enable trzsz
+\fB\fC\-t enableTrzsz=true\fR: enable trzsz
 \[la]https://trzsz.github.io\[ra] file transfer support
 .IP \(bu 2
-\fB\fC-t enableSixel=true\fR: enable Sixel
+\fB\fC\-t enableSixel=true\fR: enable Sixel
 \[la]https://en.wikipedia.org/wiki/Sixel\[ra] image output support (Usage
 \[la]https://saitoha.github.io/libsixel/\[ra])
 .IP \(bu 2
-\fB\fC-t closeOnDisconnect=true\fR: close the terminal on disconnection, this will disable reconnect
+\fB\fC\-t closeOnDisconnect=true\fR: close the terminal on disconnection, this will disable reconnect
 .IP \(bu 2
-\fB\fC-t titleFixed=hello\fR: set a fixed title for the browser window
+\fB\fC\-t titleFixed=hello\fR: set a fixed title for the browser window
 .IP \(bu 2
-\fB\fC-t fontSize=20\fR: change the font size of the terminal
+\fB\fC\-t fontSize=20\fR: change the font size of the terminal
 .IP \(bu 2
-\fB\fC-t unicodeVersion=11\fR: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
+\fB\fC\-t unicodeVersion=11\fR: set xterm unicode support level (default: 11, use 6 to disable unicode addon)
 .IP \(bu 2
-\fB\fC-t trzszDragInitTimeout=3000\fR: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+\fB\fC\-t trzszDragInitTimeout=3000\fR: set the timeout in milliseconds for initializing drag and drop files to upload. (default: 3000)
+
+.RE
+
+.SS Mobile Support
+.PP
+Mobile touch devices are automatically detected and supported:
+
+.RS
+.IP \(bu 2
+\fB\fC\-t enableMobileKeyboard=true\fR: enable the mobile virtual keyboard panel (default: false). On touch devices this also controls selection\-copy behavior: when enabled, tap selection is on and automatic copy\-on\-selection is off; when disabled, tap selection is off and automatic copy\-on\-selection is on
+.IP \(bu 2
+\fB\fC\-t mobileKeyboardOpacity=0.8\fR: set the keyboard panel opacity (default: 0.72, range: 0.0\-1.0)
+.IP \(bu 2
+\fB\fC\-t mobileKeyboardScale=1.2\fR: set the keyboard panel scale (default: 1.0, range: 0.85\-1.2)
+.IP \(bu 2
+\fB\fC\-t 'mobileKeyboardTheme={"panelBackground":"rgba(20,20,20,0.65)","buttonBackground":"rgba(57,57,57,0.86)","buttonActiveBackground":"rgba(22,132,219,0.92)"}'\fR: set mobile keyboard colors. Supports partial fields and falls back to built\-in defaults per missing/invalid field. This option does not follow \fB\fCtheme\fR by default.
+.IP \(bu 2
+\fB\fC\-t 'mobileKeyboardCustomKeys=[{"id":"tmux\_copy\_mode","label":"C\-b [","combo":["Ctrl+b","["]}]'\fR: define custom dynamic keys (array of \fB\fC{id,label,combo}\fR; \fB\fCcombo\fR is a sequence like \fB\fCCtrl+b\fR, \fB\fC[\fR). \fB\fCid\fR must match \fB\fC^[a\-z][a\-z0\-9\_]{0,31}$\fR, and \fB\fC\_\_proto\_\_\fR, \fB\fCprototype\fR, \fB\fCconstructor\fR, \fB\fCtoString\fR, \fB\fCvalueOf\fR are forbidden. The default web UI predefines six tmux keys: \fB\fCtmux\_copy\_mode\fR (\fB\fCC\-b [\fR), \fB\fCtmux\_detach\fR (\fB\fCC\-b d\fR), \fB\fCtmux\_new\_window\fR (\fB\fCC\-b c\fR), \fB\fCtmux\_prev\_window\fR (\fB\fCC\-b p\fR), \fB\fCtmux\_next\_window\fR (\fB\fCC\-b n\fR), \fB\fCtmux\_list\_windows\fR (\fB\fCC\-b w\fR)
+.IP \(bu 2
+\fB\fC\-t 'mobileKeyboardLayouts=[["home","up","end","left","down","right"]]'\fR: set dynamic layouts for the top section (6 keys per layout). In the default web UI, 3 pages are active by default: page 1 \fB\fC["home","up","end","left","down","right"]\fR, page 2 \fB\fC["enter","up","batch\_input","left","down","right"]\fR, page 3 \fB\fC["enter","up","space","tmux\_next\_window","down","tmux\_list\_windows"]\fR
+.IP \(bu 2
+Per\-key auto layout switch: each \fB\fCmobileKeyboardLayouts\fR item can also be an object \fB\fC{"key":"xxx","page":n}\fR\&. When \fB\fCpage\fR is set, pressing that key sends its action first, then switches to the target layout page (\fB\fCpage\fR is 1\-based). Invalid, non\-integer, or out\-of\-range \fB\fCpage\fR values are ignored for switching while key dispatch still works.
+.IP \(bu 2
+\fB\fC\-t mobileKeyboardHoldDelayMs=300\fR: set hold trigger delay in milliseconds for mobile virtual keys (default: 300)
+.IP \(bu 2
+\fB\fC\-t mobileKeyboardHoldIntervalMs=120\fR: set hold repeat interval in milliseconds for non\-wheel keys (default: 120)
+.IP \(bu 2
+\fB\fC\-t mobileKeyboardHoldWheelIntervalMs=120\fR: set hold repeat interval in milliseconds for wheel keys (default: 120)
+
+.RE
+
+.SH Mobile Gestures
+.PP
+On touch devices, ttyd supports the following interactions:
+
+.PP
+\fBVirtual Keyboard Panel:\fP
+
+.RS
+.IP \(bu 2
+A draggable on\-screen keyboard appears automatically on touch devices
+.IP \(bu 2
+Uses a dynamic top section (2 rows, 6 keys) and a fixed bottom section
+.IP \(bu 2
+Built\-in dynamic keys: action keys \fB\fCenter/space/batch\_input\fR, navigation keys \fB\fCup/down/left/right/home/end/pageup/pagedown/wheel\_up/wheel\_down\fR, common symbols \fB\fC! " # $ % \& ' ( ) * + , \- . / : ; < = > ? @ [ \\\\ ] ^ \_ { | } \~\fR plus backtick, and lowercase letters \fB\fCa\-z\fR
+.IP \(bu 2
+Custom key IDs from \fB\fCmobileKeyboardCustomKeys\fR can also be used in \fB\fCmobileKeyboardLayouts\fR
+.IP \(bu 2
+Fixed section provides \fB\fCEsc\fR, \fB\fCTab\fR, \fB\fCShift\fR, \fB\fCAlt\fR, \fB\fCCtrl\fR, and \fB\fCCopy/Paste\fR
+.IP \(bu 2
+Drag the header bar to reposition the panel anywhere on screen
+.IP \(bu 2
+Tap (or click) the header bar to cycle dynamic layouts in configured order
+.IP \(bu 2
+Tap modifier keys to toggle their state (highlighted when active)
+.IP \(bu 2
+Copy/Paste button switches between copy and paste based on text selection
+
+.RE
+
+.PP
+\fBTap Selection:\fP
+
+.RS
+.IP \(bu 2
+Double\-tap: Select the word under the cursor
+.IP \(bu 2
+Triple\-tap: Select the entire line
+.IP \(bu 2
+Shift + Triple\-tap: Select all visible lines in the current viewport
+.IP \(bu 2
+Alt + Triple\-tap: Select all text in the terminal buffer
+
+.RE
+
+.PP
+\fBHold Repeat:\fP
+
+.RS
+.IP \(bu 2
+Hold starts after \fB\fCmobileKeyboardHoldDelayMs\fR (default: \fB\fC300\fR ms)
+.IP \(bu 2
+Non\-wheel keys repeat at \fB\fCmobileKeyboardHoldIntervalMs\fR (default: \fB\fC120\fR ms)
+.IP \(bu 2
+Wheel keys repeat at \fB\fCmobileKeyboardHoldWheelIntervalMs\fR (default: \fB\fC120\fR ms)
+.IP \(bu 2
+Modifiers apply to key repeat; wheel repeat ignores modifiers
 
 .RE
 
@@ -212,11 +299,11 @@ You can use the client option to change all the settings of xterm defined in ITe
 
 .RS
 .IP \(bu 2
-\fB\fC-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
+\fB\fC\-t cursorStyle=bar\fR: set cursor style to \fB\fCbar\fR
 .IP \(bu 2
-\fB\fC-t lineHeight=1.5\fR: set line-height to \fB\fC1.5\fR
+\fB\fC\-t lineHeight=1.5\fR: set line\-height to \fB\fC1.5\fR
 .IP \(bu 2
-\fB\fC-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
+\fB\fC\-t 'theme={"background": "green"}'\fR: set background color to \fB\fCgreen\fR
 
 .RE
 
@@ -227,7 +314,7 @@ to try the example options above, run:
 .RS
 
 .nf
-ttyd -t cursorStyle=bar -t lineHeight=1.5 -t 'theme={"background": "green"}' bash
+ttyd \-t cursorStyle=bar \-t lineHeight=1.5 \-t 'theme={"background": "green"}' bash
 
 .fi
 .RE
@@ -235,32 +322,33 @@ ttyd -t cursorStyle=bar -t lineHeight=1.5 -t 'theme={"background": "green"}' bas
 
 .SH EXAMPLES
 .PP
-ttyd starts web server at port 7681 by default, you can use the -p option to change it, the command will be started with arguments as options. For example, run:
+ttyd starts web server at port 7681 by default, you can use the \-p option to change it, the command will be started with arguments as options. For example, run:
 
 .PP
 .RS
 
 .nf
-ttyd -p 8080 bash -x
+ttyd \-p 8080 bash \-x
 
 .fi
 .RE
 
 .PP
-Then open http://localhost:8080 with a browser, you will get a bash shell with debug mode enabled. More examples:
+Then open 
+\[la]http://localhost:8080\[ra] with a browser, you will get a bash shell with debug mode enabled. More examples:
 
 .RS
 .IP \(bu 2
 If you want to login with your system accounts on the web browser, run \fB\fCttyd login\fR\&.
 .IP \(bu 2
-You can even run a non-shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
+You can even run a non\-shell command like vim, try: \fB\fCttyd vim\fR, the web browser will show you a vim editor.
 .IP \(bu 2
-Sharing single process with multiple clients: \fB\fCttyd tmux new -A -s ttyd vim\fR, run \fB\fCtmux new -A -s ttyd\fR to connect to the tmux session from terminal.
+Sharing single process with multiple clients: \fB\fCttyd tmux new \-A \-s ttyd vim\fR, run \fB\fCtmux new \-A \-s ttyd\fR to connect to the tmux session from terminal.
 
 .RE
 
 
-.SH SSL how-to
+.SH SSL how\-to
 .PP
 Generate SSL CA and self signed server/client certificates:
 
@@ -269,18 +357,18 @@ Generate SSL CA and self signed server/client certificates:
 
 .nf
 # CA certificate (FQDN must be different from server/client)
-openssl genrsa -out ca.key 2048
-openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out ca.crt
+openssl genrsa \-out ca.key 2048
+openssl req \-new \-x509 \-days 365 \-key ca.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" \-out ca.crt
 
 # server certificate (for multiple domains, change subjectAltName to: DNS:example.com,DNS:www.example.com)
-openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out server.csr
-openssl x509 -sha256 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+openssl req \-newkey rsa:2048 \-nodes \-keyout server.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" \-out server.csr
+openssl x509 \-sha256 \-req \-extfile <(printf "subjectAltName=DNS:localhost") \-days 365 \-in server.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out server.crt
 
 # client certificate (the p12/pem format may be useful for some clients)
-openssl req -newkey rsa:2048 -nodes -keyout client.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" -out client.csr
-openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt
-openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
-openssl pkcs12 -in client.p12 -out client.pem -clcerts
+openssl req \-newkey rsa:2048 \-nodes \-keyout client.key \-subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=client" \-out client.csr
+openssl x509 \-req \-days 365 \-in client.csr \-CA ca.crt \-CAkey ca.key \-CAcreateserial \-out client.crt
+openssl pkcs12 \-export \-clcerts \-in client.crt \-inkey client.key \-out client.p12
+openssl pkcs12 \-in client.p12 \-out client.pem \-clcerts
 
 .fi
 .RE
@@ -292,7 +380,7 @@ Then start ttyd:
 .RS
 
 .nf
-ttyd --ssl --ssl-cert server.crt --ssl-key server.key --ssl-ca ca.crt bash
+ttyd \-\-ssl \-\-ssl\-cert server.crt \-\-ssl\-key server.key \-\-ssl\-ca ca.crt bash
 
 .fi
 .RE
@@ -304,13 +392,13 @@ You may want to test the client certificate verification with \fIcurl\fP(1):
 .RS
 
 .nf
-curl --insecure --cert client.p12[:password] -v https://localhost:7681
+curl \-\-insecure \-\-cert client.p12[:password] \-v https://localhost:7681
 
 .fi
 .RE
 
 .PP
-If you don't want to enable client certificate verification, remove the \fB\fC--ssl-ca\fR option.
+If you don't want to enable client certificate verification, remove the \fB\fC\-\-ssl\-ca\fR option.
 
 
 .SH Docker and ttyd
@@ -319,9 +407,9 @@ Docker containers are jailed environments which are more secure, this is useful 
 
 .RS
 .IP \(bu 2
-Sharing single docker container with multiple clients: docker run -it --rm -p 7681:7681 tsl0922/ttyd.
+Sharing single docker container with multiple clients: docker run \-it \-\-rm \-p 7681:7681 tsl0922/ttyd.
 .IP \(bu 2
-Creating new docker container for each client: ttyd docker run -it --rm ubuntu.
+Creating new docker container for each client: ttyd docker run \-it \-\-rm ubuntu.
 
 .RE
 
@@ -334,14 +422,14 @@ Sample config to proxy ttyd under the \fB\fC/ttyd\fR path:
 .RS
 
 .nf
-location ~ ^/ttyd(.*)$ {
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_pass http://127.0.0.1:7681/$1;
+location \~ ^/ttyd(.*)$ {
+    proxy\_http\_version 1.1;
+    proxy\_set\_header Host $host;
+    proxy\_set\_header X\-Forwarded\-Proto $scheme;
+    proxy\_set\_header X\-Forwarded\-For $proxy\_add\_x\_forwarded\_for;
+    proxy\_set\_header Upgrade $http\_upgrade;
+    proxy\_set\_header Connection "upgrade";
+    proxy\_pass http://127.0.0.1:7681/$1;
 }
 
 .fi
@@ -350,4 +438,5 @@ location ~ ^/ttyd(.*)$ {
 
 .SH AUTHOR
 .PP
-Shuanglei Tao <tsl0922@gmail.com> Visit https://github.com/tsl0922/ttyd to get more information and report bugs.
+Shuanglei Tao <tsl0922@gmail.com> Visit 
+\[la]https://github.com/tsl0922/ttyd\[ra] to get more information and report bugs.

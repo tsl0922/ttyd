@@ -1,5 +1,6 @@
 node_modules
 dist
+.tmp-test
 *.log
 
 .yarn/cache
