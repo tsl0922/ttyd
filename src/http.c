@@ -97,7 +97,38 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
   bool done = false;
 
   switch (reason) {
+    case LWS_CALLBACK_HTTP_BODY:
+      // Accumulate POST body data
+      if (pss->post_body == NULL) {
+        pss->post_body = malloc(len + 1);
+        if (pss->post_body) {
+          memcpy(pss->post_body, in, len);
+          pss->post_body[len] = '\0';
+          pss->post_body_len = len;
+        }
+      } else {
+        char *new_body = realloc(pss->post_body, pss->post_body_len + len + 1);
+        if (new_body) {
+          pss->post_body = new_body;
+          memcpy(pss->post_body + pss->post_body_len, in, len);
+          pss->post_body_len += len;
+          pss->post_body[pss->post_body_len] = '\0';
+        }
+      }
+      break;
+
+    case LWS_CALLBACK_HTTP_BODY_COMPLETION:
+      // Store POST body for WebSocket upgrade
+      if (pss->post_body && pss->post_body_len > 0) {
+        store_post_body(wsi, pss->post_body, pss->post_body_len);
+      }
+      break;
+
     case LWS_CALLBACK_HTTP:
+      // Initialize POST body fields
+      pss->post_body = NULL;
+      pss->post_body_len = 0;
+
       access_log(wsi, (const char *)in);
       snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
       switch (check_auth(wsi, pss)) {
@@ -215,6 +246,15 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
     case LWS_CALLBACK_HTTP_FILE_COMPLETION:
       goto try_to_reuse;
+    case LWS_CALLBACK_CLOSED_HTTP:
+      // Clean up any stale entries in the post body list for this wsi
+      cleanup_post_body(wsi);
+      if (pss->post_body) {
+        free(pss->post_body);
+        pss->post_body = NULL;
+        pss->post_body_len = 0;
+      }
+      break;
 #if (defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)) && !defined(LWS_WITH_MBEDTLS)
     case LWS_CALLBACK_OPENSSL_PERFORM_CLIENT_CERT_VERIFICATION:
       if (!len || (SSL_get_verify_result((SSL *)in) != X509_V_OK)) {
