@@ -34,9 +34,15 @@ ttyd is a simple command-line tool for sharing terminal over the web.
 - Install on Debian/Ubuntu: `sudo apt install ttyd`
 - Install the snap: `sudo snap install ttyd --classic`
 - Install on OpenWrt: `opkg install ttyd`
-- Install on Gentoo: clone the [repo](https://bitbucket.org/mgpagano/ttyd/src/master) and follow the directions [here](https://wiki.gentoo.org/wiki/Custom_repository#Creating_a_local_repository).
+- Install on Gentoo: `emerge -a www-apps/ttyd`
 - Install with [Homebrew](https://docs.brew.sh/Homebrew-on-Linux) : `brew install ttyd`
 - Precompiled static binaries: download from the [releases](https://github.com/tsl0922/ttyd/releases) page
+- Install on Arch: `sudo pacman -Sy ttyd`
+- Install on Void: `sudo xbps-install ttyd`
+- Install on FreeBSD: `sudo pkg install ttyd`
+- Install on OpenBSD: `doas pkg_add ttyd`
+- Install on Fedora: `sudo dnf install ttyd`
+- Install on Alpine: `doas apk add ttyd`
 
 ## Install on Windows
 
