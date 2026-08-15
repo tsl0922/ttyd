@@ -563,6 +563,7 @@ int main(int argc, char **argv) {
 
 #if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
   if (ssl) {
+    server->ssl = true;
     info.ssl_cert_filepath = cert_path;
     info.ssl_private_key_filepath = key_path;
 #ifndef LWS_WITH_MBEDTLS

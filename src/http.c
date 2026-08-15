@@ -97,6 +97,13 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
   bool done = false;
 
   switch (reason) {
+    case LWS_CALLBACK_HTTP_CONFIRM_UPGRADE:
+      if (server->ssl && !lws_is_ssl(wsi)) {
+        lwsl_warn("refuse HTTP upgrade over non-SSL connection while SSL is enabled.\n");
+        return -1;
+      }
+      break;
+
     case LWS_CALLBACK_HTTP:
       access_log(wsi, (const char *)in);
       snprintf(pss->path, sizeof(pss->path), "%s", (const char *)in);
