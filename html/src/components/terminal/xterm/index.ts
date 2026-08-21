@@ -2,7 +2,6 @@ import { bind } from 'decko';
 import type { IDisposable, ITerminalOptions } from '@xterm/xterm';
 import { Terminal } from '@xterm/xterm';
 import { CanvasAddon } from '@xterm/addon-canvas';
-import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -86,7 +85,6 @@ export class Xterm {
     private terminal: Terminal;
     private fitAddon = new FitAddon();
     private overlayAddon = new OverlayAddon();
-    private clipboardAddon = new ClipboardAddon();
     private webLinksAddon = new WebLinksAddon();
     private webglAddon?: WebglAddon;
     private canvasAddon?: CanvasAddon;
@@ -154,7 +152,7 @@ export class Xterm {
     @bind
     public open(parent: HTMLElement) {
         this.terminal = new Terminal(this.options.termOptions);
-        const { terminal, fitAddon, overlayAddon, clipboardAddon, webLinksAddon } = this;
+        const { terminal, fitAddon, overlayAddon, webLinksAddon } = this;
         window.term = terminal as TtydTerminal;
         window.term.fit = () => {
             this.fitAddon.fit();
@@ -162,11 +160,61 @@ export class Xterm {
 
         terminal.loadAddon(fitAddon);
         terminal.loadAddon(overlayAddon);
-        terminal.loadAddon(clipboardAddon);
         terminal.loadAddon(webLinksAddon);
 
         terminal.open(parent);
         fitAddon.fit();
+
+        this.setupOsc52();
+    }
+
+    @bind
+    private setupOsc52() {
+        const { terminal } = this;
+        const fallbackCopy = (text: string) => {
+            const sel = document.getSelection();
+            const ranges: Range[] = [];
+            if (sel) for (let i = 0; i < sel.rangeCount; i++) ranges.push(sel.getRangeAt(i));
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-9999px';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                // ignore
+            }
+            document.body.removeChild(ta);
+            if (sel) {
+                sel.removeAllRanges();
+                for (const r of ranges) sel.addRange(r);
+            }
+            terminal.focus();
+        };
+        terminal.parser.registerOscHandler(52, (data: string) => {
+            const semi = data.indexOf(';');
+            const b64 = semi >= 0 ? data.slice(semi + 1) : data;
+            if (b64.length === 0) return true;
+            if (b64.charAt(b64.length - 1) === '?') return true;
+            try {
+                const bin = atob(b64);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const text = new TextDecoder().decode(bytes);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+                } else {
+                    fallbackCopy(text);
+                }
+            } catch (e) {
+                // ignore
+            }
+            return true;
+        });
     }
 
     @bind
