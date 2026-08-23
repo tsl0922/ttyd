@@ -95,3 +95,4 @@ Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#brows
 
 * [Wetty](https://github.com/krishnasrinivas/wetty): [Node](https://nodejs.org) based web terminal (SSH/login)
 * [GoTTY](https://github.com/yudai/gotty): [Go](https://golang.org) based web terminal
+* [Build Remote Agent](docs/gbr.md): phone spectator via `gbr-agent` (no inbound port; not a ttyd replacement)
