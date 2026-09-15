@@ -66,7 +66,15 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
   uv_read_stop(stream);
   pty_process *process = (pty_process *) stream->data;
   if (n <= 0) {
-    if (n == UV_ENOBUFS || n == 0) return;
+    if (n == UV_ENOBUFS || n == 0) {
+      // n == 0 is libuv's EAGAIN: the fd polled readable but read() had nothing
+      // (a spurious wakeup on the pty master). Reading was stopped above, so we
+      // MUST restart it here — returning would leave this pty unread for the
+      // life of the connection while the websocket stays open on pings, i.e.
+      // a permanently blank terminal that only a ttyd restart clears.
+      uv_read_start(stream, alloc_cb, read_cb);
+      goto done;
+    }
     process->read_cb(process, NULL, true);
     goto done;
   }
