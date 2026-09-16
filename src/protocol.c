@@ -285,6 +285,11 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       break;
 
     case LWS_CALLBACK_RECEIVE:
+      // empty message: xmalloc(0) is NULL; do not read command byte (#1546)
+      if (len == 0 && pss->buffer == NULL) {
+        lwsl_warn("ignored empty WS message\n");
+        return 0;
+      }
       if (pss->buffer == NULL) {
         pss->buffer = xmalloc(len);
         pss->len = len;
