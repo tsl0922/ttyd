@@ -267,10 +267,12 @@ static int parse_int(char *name, char *str) {
 static int calc_command_start(int argc, char **argv) {
   // make a copy of argc and argv
   int argc_copy = argc;
-  char **argv_copy = xmalloc(sizeof(char *) * argc);
+  // keep the NULL terminator: getopt may read or permute argv[argc]
+  char **argv_copy = xmalloc(sizeof(char *) * (argc + 1));
   for (int i = 0; i < argc; i++) {
     argv_copy[i] = strdup(argv[i]);
   }
+  argv_copy[argc] = NULL;
 
   // do not print error message for invalid option
   opterr = 0;
@@ -289,7 +291,7 @@ static int calc_command_start(int argc, char **argv) {
   }
 
   // free argv copy
-  for (int i = 0; i < argc; i++) {
+  for (int i = 0; i <= argc; i++) {
     free(argv_copy[i]);
   }
   free(argv_copy);
