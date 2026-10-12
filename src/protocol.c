@@ -192,7 +192,10 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   if (server->credential != NULL) {
     char buf[256];
     size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
+    // 检查Authorization头是否大于等于7个字符
+    // 如果小于7个字符, 则返回true, 使用websocket发送AuthToken认证
     if (n >= 7) {
+      // 检查Authorization头是否以"Basic "开头, 且后续字符与server->credential匹配
       return strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
     }
   }
