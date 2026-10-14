@@ -67,6 +67,8 @@ export interface XtermOptions {
     termOptions: ITerminalOptions;
 }
 
+const MAX_INPUT_CHUNK_SIZE = 16 * 1024;
+
 function toDisposable(f: () => void): IDisposable {
     return { dispose: f };
 }
@@ -292,15 +294,30 @@ export class Xterm {
         if (socket?.readyState !== WebSocket.OPEN) return;
 
         if (typeof data === 'string') {
-            const payload = new Uint8Array(data.length * 3 + 1);
-            payload[0] = Command.INPUT.charCodeAt(0);
-            const stats = textEncoder.encodeInto(data, payload.subarray(1));
-            socket.send(payload.subarray(0, (stats.written as number) + 1));
+            // Keep each frame reasonably small. Long pastes can exceed browser or
+            // proxy WebSocket message limits when sent as a single terminal input.
+            for (let offset = 0; offset < data.length; ) {
+                let end = Math.min(offset + MAX_INPUT_CHUNK_SIZE, data.length);
+                // Avoid splitting a UTF-16 surrogate pair between frames.
+                if (end < data.length && end > offset) {
+                    const code = data.charCodeAt(end - 1);
+                    if (code >= 0xd800 && code <= 0xdbff) end--;
+                }
+
+                const payload = new Uint8Array((end - offset) * 3 + 1);
+                payload[0] = Command.INPUT.charCodeAt(0);
+                const stats = textEncoder.encodeInto(data.slice(offset, end), payload.subarray(1));
+                socket.send(payload.subarray(0, (stats.written as number) + 1));
+                offset = end;
+            }
         } else {
-            const payload = new Uint8Array(data.length + 1);
-            payload[0] = Command.INPUT.charCodeAt(0);
-            payload.set(data, 1);
-            socket.send(payload);
+            for (let offset = 0; offset < data.length; offset += MAX_INPUT_CHUNK_SIZE) {
+                const chunk = data.subarray(offset, offset + MAX_INPUT_CHUNK_SIZE);
+                const payload = new Uint8Array(chunk.length + 1);
+                payload[0] = Command.INPUT.charCodeAt(0);
+                payload.set(chunk, 1);
+                socket.send(payload);
+            }
         }
     }
 
