@@ -1,7 +1,6 @@
 import { bind } from 'decko';
 import type { IDisposable, ITerminalOptions } from '@xterm/xterm';
 import { Terminal } from '@xterm/xterm';
-import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
@@ -89,7 +88,6 @@ export class Xterm {
     private clipboardAddon = new ClipboardAddon();
     private webLinksAddon = new WebLinksAddon();
     private webglAddon?: WebglAddon;
-    private canvasAddon?: CanvasAddon;
     private zmodemAddon?: ZmodemAddon;
 
     private socket?: WebSocket;
@@ -462,7 +460,15 @@ export class Xterm {
                     } else {
                         terminal.options[key] = value;
                     }
-                    if (key.indexOf('font') === 0) fitAddon.fit();
+                    if (
+                        key.indexOf('font') === 0 ||
+                        key === 'lineHeight' ||
+                        key === 'letterSpacing' ||
+                        key === 'overviewRuler' ||
+                        key === 'scrollback'
+                    ) {
+                        fitAddon.fit();
+                    }
                     break;
             }
         }
@@ -470,62 +476,43 @@ export class Xterm {
 
     @bind
     private setRendererType(value: RendererType) {
-        const { terminal } = this;
-        const disposeCanvasRenderer = () => {
-            try {
-                this.canvasAddon?.dispose();
-            } catch {
-                // ignore
-            }
-            this.canvasAddon = undefined;
-        };
+        const { terminal, fitAddon } = this;
         const disposeWebglRenderer = () => {
+            if (!this.webglAddon) return;
             try {
-                this.webglAddon?.dispose();
+                this.webglAddon.dispose();
             } catch {
                 // ignore
             }
             this.webglAddon = undefined;
-        };
-        const enableCanvasRenderer = () => {
-            if (this.canvasAddon) return;
-            this.canvasAddon = new CanvasAddon();
-            disposeWebglRenderer();
-            try {
-                this.terminal.loadAddon(this.canvasAddon);
-                console.log('[ttyd] canvas renderer loaded');
-            } catch (e) {
-                console.log('[ttyd] canvas renderer could not be loaded, falling back to dom renderer', e);
-                disposeCanvasRenderer();
-            }
-        };
-        const enableWebglRenderer = () => {
-            if (this.webglAddon) return;
-            this.webglAddon = new WebglAddon();
-            disposeCanvasRenderer();
-            try {
-                this.webglAddon.onContextLoss(() => {
-                    this.webglAddon?.dispose();
-                });
-                terminal.loadAddon(this.webglAddon);
-                console.log('[ttyd] WebGL renderer loaded');
-            } catch (e) {
-                console.log('[ttyd] WebGL renderer could not be loaded, falling back to canvas renderer', e);
-                disposeWebglRenderer();
-                enableCanvasRenderer();
-            }
+            // Renderer changes can alter cell dimensions, so keep the PTY size in sync.
+            fitAddon.fit();
         };
 
         switch (value) {
             case 'canvas':
-                enableCanvasRenderer();
+                // Keep existing client configurations working after xterm.js removed the canvas addon.
+                console.warn('[ttyd] canvas renderer is no longer available, falling back to dom renderer');
+                disposeWebglRenderer();
                 break;
             case 'webgl':
-                enableWebglRenderer();
+                if (this.webglAddon) return;
+                try {
+                    this.webglAddon = new WebglAddon();
+                    this.webglAddon.onContextLoss(() => {
+                        console.warn('[ttyd] WebGL context lost, falling back to dom renderer');
+                        disposeWebglRenderer();
+                    });
+                    terminal.loadAddon(this.webglAddon);
+                    fitAddon.fit();
+                    console.log('[ttyd] WebGL renderer loaded');
+                } catch (e) {
+                    console.warn('[ttyd] WebGL renderer could not be loaded, falling back to dom renderer', e);
+                    disposeWebglRenderer();
+                }
                 break;
             case 'dom':
                 disposeWebglRenderer();
-                disposeCanvasRenderer();
                 console.log('[ttyd] dom renderer loaded');
                 break;
             default:

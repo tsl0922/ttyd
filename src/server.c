@@ -32,11 +32,24 @@ static const struct lws_protocols protocols[] = {{"http-only", callback_http, si
                                                  {NULL, NULL, 0, 0}};
 
 #ifndef LWS_WITHOUT_EXTENSIONS
+/*
+ * libwebsockets >= 4.4.0 (up to at least 5.0.0) drops the connection with
+ * "rx buffer underflow" when it receives a compressed message larger than its
+ * pmd rx buffer, which is what a large browser paste turns into.  It can also
+ * keep using the caller's rx buffer after it has been reused.
+ * Only offer the extensions when the linked libwebsockets is known to have
+ * the upstream fixes (commits 3e9d2ae5e1 and 2fa375756a, enabled by
+ * -DTTYD_LWS_PMD_FIXED=ON; the bundled cross-build patches libwebsockets and
+ * sets it).
+ */
+#if LWS_LIBRARY_VERSION_NUMBER < 4004000 || defined(TTYD_LWS_PMD_FIXED)
+#define TTYD_USE_EXTENSIONS
 // websocket extensions
 static const struct lws_extension extensions[] = {
     {"permessage-deflate", lws_extension_callback_pm_deflate, "permessage-deflate"},
     {"deflate-frame", lws_extension_callback_pm_deflate, "deflate_frame"},
     {NULL, NULL, NULL}};
+#endif
 #endif
 
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
@@ -158,6 +171,11 @@ static void print_config() {
   if (server->exit_no_conn) lwsl_notice("  exit_no_conn: true\n");
   if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
   if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
+#ifndef LWS_WITHOUT_EXTENSIONS
+#ifndef TTYD_USE_EXTENSIONS
+  lwsl_notice("  websocket compression: disabled (libwebsockets pmd rx bug)\n");
+#endif
+#endif
   if (!server->writable) lwsl_warn("The --writable option is not set, will start in readonly mode\n");
 }
 
@@ -326,7 +344,9 @@ int main(int argc, char **argv) {
   info.max_http_header_pool = 16;
   info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
 #ifndef LWS_WITHOUT_EXTENSIONS
+#ifdef TTYD_USE_EXTENSIONS
   info.extensions = extensions;
+#endif
 #endif
   info.max_http_header_data = 65535;
 

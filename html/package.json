@@ -15,10 +15,11 @@
     "build": "NODE_ENV=production webpack && gulp",
     "inline": "NODE_ENV=production webpack && gulp inline",
     "check": "gts check",
-    "fix": "gts fix"
+    "fix": "gts fix",
+    "test": "node --test test/*.test.js"
   },
   "engines": {
-    "node": ">=12"
+    "node": ">=18.20.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.1.1",
@@ -37,6 +38,7 @@
     "gulp-rename": "^2.0.0",
     "html-webpack-plugin": "^5.6.0",
     "mini-css-extract-plugin": "^2.8.1",
+    "playwright": "1.61.1",
     "sass": "^1.71.1",
     "sass-loader": "^14.1.1",
     "scssfmt": "^1.0.7",
@@ -49,17 +51,17 @@
     "webpack": "^5.90.3",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.2",
-    "webpack-merge": "^5.10.0"
+    "webpack-merge": "^5.10.0",
+    "ws": "^8.16.0"
   },
   "dependencies": {
-    "@xterm/addon-canvas": "^0.7.0",
-    "@xterm/addon-clipboard": "^0.1.0",
-    "@xterm/addon-fit": "^0.10.0",
-    "@xterm/addon-image": "^0.8.0",
-    "@xterm/addon-unicode11": "^0.8.0",
-    "@xterm/addon-web-links": "^0.11.0",
-    "@xterm/addon-webgl": "^0.18.0",
-    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-clipboard": "^0.2.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-image": "^0.9.0",
+    "@xterm/addon-unicode11": "^0.9.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
     "decko": "^1.2.0",
     "file-saver": "^2.0.5",
     "preact": "^10.19.6",

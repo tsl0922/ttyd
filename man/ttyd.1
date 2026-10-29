@@ -174,7 +174,7 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 .SH Basic usage
 .RS
 .IP \(bu 2
-\fB\fC-t rendererType=canvas\fR: use the \fB\fCcanvas\fR renderer for xterm.js (default: \fB\fCwebgl\fR)
+\fB\fC-t rendererType=dom\fR: use the DOM renderer for xterm.js (default: \fB\fCwebgl\fR, falling back to DOM if WebGL is unavailable). The old \fB\fCcanvas\fR value also falls back to DOM because xterm.js 6 no longer supports the canvas renderer.
 .IP \(bu 2
 \fB\fC-t disableLeaveAlert=true\fR: disable the leave page alert
 .IP \(bu 2
@@ -209,6 +209,10 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 .PP
 You can use the client option to change all the settings of xterm defined in ITerminalOptions
 \[la]https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/\[ra], examples:
+
+.PP
+When migrating from xterm.js 5, note that version 6 removed the public \fB\fCwindowsMode\fR and \fB\fCfastScrollModifier\fR options, moved \fB\fCoverviewRulerWidth\fR to \fB\fCoverviewRuler.width\fR, and changed Alt+arrow key handling. See the xterm.js 6 release notes
+\[la]https://github.com/xtermjs/xterm.js/releases/tag/6.0.0\[ra]\&.
 
 .RS
 .IP \(bu 2

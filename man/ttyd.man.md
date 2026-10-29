@@ -119,7 +119,7 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 
 ## Basic usage
 
-- `-t rendererType=canvas`: use the `canvas` renderer for xterm.js (default: `webgl`)
+- `-t rendererType=dom`: use the DOM renderer for xterm.js (default: `webgl`, falling back to DOM if WebGL is unavailable). The old `canvas` value also falls back to DOM because xterm.js 6 no longer supports the canvas renderer.
 - `-t disableLeaveAlert=true`: disable the leave page alert
 - `-t disableResizeOverlay=true`: disable the terminal resize overlay
 - `-t disableReconnect=true`: prevent the terminal from reconnecting on connection error/close
@@ -135,6 +135,8 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 ## Advanced usage
 
 You can use the client option to change all the settings of xterm defined in [ITerminalOptions](https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/), examples:
+
+When migrating from xterm.js 5, note that version 6 removed the public `windowsMode` and `fastScrollModifier` options, moved `overviewRulerWidth` to `overviewRuler.width`, and changed Alt+arrow key handling. See the [xterm.js 6 release notes](https://github.com/xtermjs/xterm.js/releases/tag/6.0.0).
 
 - `-t cursorStyle=bar`: set cursor style to `bar`
 - `-t lineHeight=1.5`: set line-height to `1.5`

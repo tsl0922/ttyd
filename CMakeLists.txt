@@ -1,8 +1,16 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.0.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-project(ttyd VERSION 1.7.7 LANGUAGES C)
+project(ttyd VERSION 1.7.9 LANGUAGES C)
+
+# libwebsockets >= 4.4.0 (up to at least 5.0.0) has permessage-deflate bugs
+# that make it drop the connection with "rx buffer underflow" on large
+# compressed messages such as a browser paste, and can leave the inflater
+# using an rx buffer after the caller reused it.  Set this option when linking
+# against a libwebsockets that contains the upstream fixes (commits
+# 3e9d2ae5e1 and 2fa375756a).
+option(TTYD_LWS_PMD_FIXED "libwebsockets has the pmd rx fixes" OFF)
 
 set(TTYD_VERSION "${PROJECT_VERSION}")
 
@@ -86,8 +94,8 @@ if(LWS_OPENSSL_ENABLED AND NOT LWS_MBEDTLS_ENABLED)
 endif()
 
 if(WIN32)
-    # libuv static requires dbghelp for MiniDumpWriteDump/Sym* APIs
-    list(APPEND LINK_LIBS shell32 ws2_32 dbghelp)
+    # Static libuv needs dbghelp and, since 1.53, synchronization for WaitOnAddress.
+    list(APPEND LINK_LIBS shell32 ws2_32 dbghelp synchronization)
     if(MSVC)
         find_package(getopt CONFIG)
         if(getopt_FOUND)
@@ -113,6 +121,7 @@ target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
+    $<$<BOOL:${TTYD_LWS_PMD_FIXED}>:TTYD_LWS_PMD_FIXED>
 )
 
 include(GNUInstallDirs)

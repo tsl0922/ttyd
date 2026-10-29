@@ -11,7 +11,7 @@
       }
     },
     {
-      "files": ["gulpfile.js", "webpack.config.js"],
+      "files": ["gulpfile.js", "webpack.config.js", "test/**/*.js"],
       "rules": {
         "node/no-unpublished-require": "off"
       }

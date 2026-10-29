@@ -1258,75 +1258,54 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xterm/addon-canvas@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "@xterm/addon-canvas@npm:0.7.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: 28b9965f34e01a9bbcc31651dee2d4a9380aad528039484cce372b856be820705b293c4b5091cee65208c3dfbf6f944f27ecc6c3b794df5a96036cbf6dba0d74
-  languageName: node
-  linkType: hard
-
-"@xterm/addon-clipboard@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@xterm/addon-clipboard@npm:0.1.0"
+"@xterm/addon-clipboard@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@xterm/addon-clipboard@npm:0.2.0"
   dependencies:
     js-base64: ^3.7.5
-  peerDependencies:
-    "@xterm/xterm": ^5.4.0
-  checksum: fe33d28223ae7f9965653c6c946a68e06f1d884fba1d11e8bcb52dcc608dbb2240caf48573d6297daefa56696e88f963148a1035ccf034cb6fb4f88f506a2ec7
+  checksum: f74213962ab4ed1debc53327bf4b25702bc78cdc19c5ea0bc0bc77ff6e8d6628b9b68697df052a34e6052c0d3e81f041285613a5bb4d998dadddcff64b283b53
   languageName: node
   linkType: hard
 
-"@xterm/addon-fit@npm:^0.10.0":
-  version: 0.10.0
-  resolution: "@xterm/addon-fit@npm:0.10.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: 8edfad561c0d0316c5883cbe2ce56109f105a2b2bf53b71d5f8c788e656a3205c1093a659dddcf4025a459e4b7ff8e07b6c6a19815c8711deeded560de5f1893
-  languageName: node
-  linkType: hard
-
-"@xterm/addon-image@npm:^0.8.0":
-  version: 0.8.0
-  resolution: "@xterm/addon-image@npm:0.8.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.2.0
-  checksum: 852ea4482e0272bf74a505a9b54429a7d60775f0ee0b86bf207b5ea52a8f2e83ce2870415129fca82710a63a7ca3e233564d5dd050ebc49512d1d0113e5b5b1b
-  languageName: node
-  linkType: hard
-
-"@xterm/addon-unicode11@npm:^0.8.0":
-  version: 0.8.0
-  resolution: "@xterm/addon-unicode11@npm:0.8.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: 187df1098b170af9c519fceb0681655e54e571d54538e5271b54b801dd30f8710b1c4a5ff9629f3d2a0ae9a59b4da563be99a4d2a0a163a1728cf245773c741c
-  languageName: node
-  linkType: hard
-
-"@xterm/addon-web-links@npm:^0.11.0":
+"@xterm/addon-fit@npm:^0.11.0":
   version: 0.11.0
-  resolution: "@xterm/addon-web-links@npm:0.11.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: c1b36b649b8cddc613213eb9e835daf3106a8be359a19ccacca1f1d9ff883b59d478f166109ee017fa3994d224dcdd82976ad5d5a1221271ab8d3d5684eb141d
+  resolution: "@xterm/addon-fit@npm:0.11.0"
+  checksum: 0a772c4fbeddd65f68c345c3d40ee7dae231784dd7095ccd3acba0832def24a5364c4705bf6f24c2f01016855f6bcf0ac4636267e50efa3a319474f80c8d3c7f
   languageName: node
   linkType: hard
 
-"@xterm/addon-webgl@npm:^0.18.0":
-  version: 0.18.0
-  resolution: "@xterm/addon-webgl@npm:0.18.0"
-  peerDependencies:
-    "@xterm/xterm": ^5.0.0
-  checksum: 942ecaa4e08423563a795a1a63fa79637e60d4e3aba1b5fa2f426e1d7b19c553e8c8f1cfad1258461f22e05362e791f642dc6aab7e8766e26d4d3876617d8320
+"@xterm/addon-image@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "@xterm/addon-image@npm:0.9.0"
+  checksum: da16e64a58547a194b941c1642995ab5f374ef19777aa523db9d1a21ce74cb75a5ec39900a266ac97a28e09d2ceee3abaf413c547a49f517f34f4f53523501e4
   languageName: node
   linkType: hard
 
-"@xterm/xterm@npm:^5.5.0":
-  version: 5.5.0
-  resolution: "@xterm/xterm@npm:5.5.0"
-  checksum: 393c1891b95fdd50d05e7a063abdc95a6643d2c45a4231637c23db90511426a95b1b56a5c4c91831121d2710aee9de97cf5e426016c589ca87dea8fff9a41b33
+"@xterm/addon-unicode11@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "@xterm/addon-unicode11@npm:0.9.0"
+  checksum: 1fe5f641dfab97dbb830ff6aa826350d6a876931b94d89e10a9e33448758d6fd5c8470f9e02348b7a0a58879cc009708a10d405492ca292e70b4c2b73ed0c8d7
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-web-links@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "@xterm/addon-web-links@npm:0.12.0"
+  checksum: 3626ede0b2a8b1d9dbdfc0438b976d6848f3c931a4c67feb1b956a0d53bb413366a2758cb2133cada7d5042f6d4543613d98519208235699b9ba1bed22abb51f
+  languageName: node
+  linkType: hard
+
+"@xterm/addon-webgl@npm:^0.19.0":
+  version: 0.19.0
+  resolution: "@xterm/addon-webgl@npm:0.19.0"
+  checksum: ed8d94831e05f6bc4a1d368a8b7c24b01de827840c693022f1a4a0ca40ded716c72b9b59beee4c2b19c4ea5af9db3f7d1c5e0d381c7cc3a752713b5efd2bff07
+  languageName: node
+  linkType: hard
+
+"@xterm/xterm@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@xterm/xterm@npm:6.0.0"
+  checksum: 913f6523fe6148d36ef6e7b6f25276faee7f48ec6a9eab48b887c77e8d0cbe8bd77d278f19db5981f45d71d5778619e0580f516cdeeae6cd7ea32341b962677f
   languageName: node
   linkType: hard
 
@@ -4829,6 +4808,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fsevents@npm:2.3.2, fsevents@npm:~2.3.2":
+  version: 2.3.2
+  resolution: "fsevents@npm:2.3.2"
+  dependencies:
+    node-gyp: latest
+  checksum: 97ade64e75091afee5265e6956cb72ba34db7819b4c3e94c431d4be2b19b8bb7a2d4116da417950c3425f17c8fe693d25e20212cac583ac1521ad066b77ae31f
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
 "fsevents@npm:^1.2.7":
   version: 1.2.13
   resolution: "fsevents@npm:1.2.13"
@@ -4840,12 +4829,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fsevents@npm:~2.3.2":
+"fsevents@patch:fsevents@2.3.2#~builtin<compat/fsevents>, fsevents@patch:fsevents@~2.3.2#~builtin<compat/fsevents>":
   version: 2.3.2
-  resolution: "fsevents@npm:2.3.2"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
   dependencies:
     node-gyp: latest
-  checksum: 97ade64e75091afee5265e6956cb72ba34db7819b4c3e94c431d4be2b19b8bb7a2d4116da417950c3425f17c8fe693d25e20212cac583ac1521ad066b77ae31f
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -4856,15 +4844,6 @@ __metadata:
   dependencies:
     bindings: ^1.5.0
     nan: ^2.12.1
-  conditions: os=darwin
-  languageName: node
-  linkType: hard
-
-"fsevents@patch:fsevents@~2.3.2#~builtin<compat/fsevents>":
-  version: 2.3.2
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
-  dependencies:
-    node-gyp: latest
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -8067,6 +8046,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright-core@npm:1.61.1":
+  version: 1.61.1
+  resolution: "playwright-core@npm:1.61.1"
+  bin:
+    playwright-core: cli.js
+  checksum: 69bd5c4eb1884a16e92674c0399ad25120ce91faecadd25227cb07eaa0892cce07f908c6bad51256363bf17634953759c30d42d7c253128c28bc8b86087a1f62
+  languageName: node
+  linkType: hard
+
+"playwright@npm:1.61.1":
+  version: 1.61.1
+  resolution: "playwright@npm:1.61.1"
+  dependencies:
+    fsevents: 2.3.2
+    playwright-core: 1.61.1
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    playwright: cli.js
+  checksum: 2d85be1b6a88dbeeb206c5800629182840f07bd0e5e74f154fa57de2f1df16631918df9139a1cb8ddde8f2f125c5c9e447686a0fdadb61552b668ba97ffcaaf1
+  languageName: node
+  linkType: hard
+
 "plugin-error@npm:^0.1.2":
   version: 0.1.2
   resolution: "plugin-error@npm:0.1.2"
@@ -10492,14 +10495,13 @@ __metadata:
   resolution: "ttyd@workspace:."
   dependencies:
     "@typescript-eslint/eslint-plugin": ^7.1.1
-    "@xterm/addon-canvas": ^0.7.0
-    "@xterm/addon-clipboard": ^0.1.0
-    "@xterm/addon-fit": ^0.10.0
-    "@xterm/addon-image": ^0.8.0
-    "@xterm/addon-unicode11": ^0.8.0
-    "@xterm/addon-web-links": ^0.11.0
-    "@xterm/addon-webgl": ^0.18.0
-    "@xterm/xterm": ^5.5.0
+    "@xterm/addon-clipboard": ^0.2.0
+    "@xterm/addon-fit": ^0.11.0
+    "@xterm/addon-image": ^0.9.0
+    "@xterm/addon-unicode11": ^0.9.0
+    "@xterm/addon-web-links": ^0.12.0
+    "@xterm/addon-webgl": ^0.19.0
+    "@xterm/xterm": ^6.0.0
     copy-webpack-plugin: ^12.0.2
     css-loader: ^6.10.0
     css-minimizer-webpack-plugin: ^6.0.0
@@ -10517,6 +10519,7 @@ __metadata:
     gulp-rename: ^2.0.0
     html-webpack-plugin: ^5.6.0
     mini-css-extract-plugin: ^2.8.1
+    playwright: 1.61.1
     preact: ^10.19.6
     sass: ^1.71.1
     sass-loader: ^14.1.1
@@ -10533,6 +10536,7 @@ __metadata:
     webpack-dev-server: ^5.0.2
     webpack-merge: ^5.10.0
     whatwg-fetch: ^3.6.20
+    ws: ^8.16.0
     zmodem.js: ^0.1.10
   languageName: unknown
   linkType: soft

@@ -1,0 +1,21 @@
+From: Alexander Hansen Færøy <ahf@torproject.org>
+Subject: [PATCH] Define SIO_UDP_NETRESET for older MinGW headers
+
+Backport of https://github.com/openssl/openssl/pull/29826 (including its
+follow-up style fix), for OpenSSL 3.5.5 and 3.6.1. Later patch releases
+already contain this workaround.
+
+diff --git a/ssl/quic/quic_reactor.c b/ssl/quic/quic_reactor.c
+--- a/ssl/quic/quic_reactor.c
++++ b/ssl/quic/quic_reactor.c
+@@ -78,4 +78,10 @@
+ #if defined(OPENSSL_SYS_WINDOWS)
++
++/* Work around for MinGW builds. */
++#if defined(__MINGW32__) && !defined(SIO_UDP_NETRESET)
++#define SIO_UDP_NETRESET _WSAIOW(IOC_VENDOR, 15)
++#endif
++
+ /*
+  * On Windows recvfrom() may return WSAECONNRESET when destination port
+  * used in preceding call to sendto() is no longer reachable. The reset

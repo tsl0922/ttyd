@@ -1,18 +1,7 @@
 name: backend
 
 on:
-  push:
-    paths:
-    - ".github/workflows/backend.yml"
-    - "CMakeLists.txt"
-    - "src/*"
-    - "scripts/*"
-  pull_request:
-    paths:
-    - ".github/workflows/backend.yml"
-    - "CMakeLists.txt"
-    - "src/*"
-    - "scripts/*"
+
   workflow_call:
 
 jobs:
@@ -40,9 +29,11 @@ jobs:
           ${{ env.VCPKG_EXE }} install --triplet ${{ env.VCPKG_TRIPLET }} libwebsockets libuv json-c zlib openssl getopt-win32
       - name: Build with MSVC
         shell: pwsh
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: "3.15"
         run: |
           $env:VCPKG_ROOT = "${{ env.VCPKG_ROOT }}"
-          cmake -S . -B build -G "Visual Studio 18 2026" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }}
+          cmake -S . -B build -G "Visual Studio 18 2026" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} -DCMAKE_POLICY_DEFAULT_CMP0091=NEW '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>'
           cmake --build build --config Release
       - uses: actions/upload-artifact@v7
         with:
