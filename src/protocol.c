@@ -14,6 +14,12 @@
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
+// VULN-1 (security audit): websocket messages are accumulated fragment by
+// fragment; without a cap a client can grow the buffer without bound and
+// exhaust server memory. 1 MiB comfortably covers legitimate INPUT messages
+// (large pastes) while bounding per-connection memory.
+#define MAX_WS_MESSAGE_LEN (1024 * 1024)
+
 static int send_initial_message(struct lws *wsi, int index) {
   unsigned char message[LWS_PRE + 1 + 4096];
   unsigned char *p = &message[LWS_PRE];
@@ -285,6 +291,23 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       break;
 
     case LWS_CALLBACK_RECEIVE:
+      // VULN-14 (security audit): a zero-length first fragment makes
+      // xmalloc(0) return NULL, and reading buffer[0] below would crash the
+      // whole process. An empty fragment contributes nothing: ignore it.
+      if (len == 0) return 0;
+
+      // VULN-1 (security audit): bound the accumulated message size; close
+      // with "message too big" instead of letting the buffer grow unbounded.
+      if (len > MAX_WS_MESSAGE_LEN || (pss->buffer != NULL && pss->len + len > MAX_WS_MESSAGE_LEN)) {
+        lwsl_warn("WS message too large (max %d bytes), closing connection\n", MAX_WS_MESSAGE_LEN);
+        if (pss->buffer != NULL) {
+          free(pss->buffer);
+          pss->buffer = NULL;
+          pss->len = 0;
+        }
+        lws_close_reason(wsi, LWS_CLOSE_STATUS_MESSAGE_TOO_LARGE, NULL, 0);
+        return -1;
+      }
       if (pss->buffer == NULL) {
         pss->buffer = xmalloc(len);
         pss->len = len;
