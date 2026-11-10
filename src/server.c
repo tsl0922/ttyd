@@ -620,7 +620,11 @@ int main(int argc, char **argv) {
     uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
   }
 
-  lws_service(context, 0);
+  /* lws >= 5 changed lws_service() to run exactly one event-loop turn per
+   * call (4.x blocked inside the call until uv_stop); loop explicitly. */
+  while (!force_exit) {
+    lws_service(context, 0);
+  }
 
   for (int i = 0; i < sig_count; i++) {
     uv_signal_stop(&signals[i]);

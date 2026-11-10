@@ -54,6 +54,21 @@ static bool check_host_origin(struct lws *wsi) {
   int len = lws_hdr_copy(wsi, buf, (int)sizeof(buf), WSI_TOKEN_ORIGIN);
   if (len <= 0) return false;
 
+  char host_buf[256];
+  memset(host_buf, 0, sizeof(host_buf));
+  len = lws_hdr_copy(wsi, host_buf, (int)sizeof(host_buf), WSI_TOKEN_HOST);
+
+#if defined(LWS_LIBRARY_VERSION_NUMBER) && LWS_LIBRARY_VERSION_NUMBER >= 5000000
+  /* lws >= 5: non-destructive parsing api, lws_parse_uri() is deprecated */
+  lws_parse_uri_t *uri = lws_parse_uri_create(buf);
+  if (uri == NULL) return false;
+  if (uri->port == 80 || uri->port == 443) {
+    snprintf(buf, sizeof(buf), "%s", uri->host);
+  } else {
+    snprintf(buf, sizeof(buf), "%s:%u", uri->host, (unsigned)uri->port);
+  }
+  lws_parse_uri_destroy(&uri);
+#else
   const char *prot, *address, *path;
   int port;
   if (lws_parse_uri(buf, &prot, &address, &port, &path)) return false;
@@ -62,10 +77,7 @@ static bool check_host_origin(struct lws *wsi) {
   } else {
     snprintf(buf, sizeof(buf), "%s:%d", address, port);
   }
-
-  char host_buf[256];
-  memset(host_buf, 0, sizeof(host_buf));
-  len = lws_hdr_copy(wsi, host_buf, (int)sizeof(host_buf), WSI_TOKEN_HOST);
+#endif
 
   return len > 0 && strcasecmp(buf, host_buf) == 0;
 }

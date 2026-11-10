@@ -107,7 +107,7 @@ export class ZmodemAddon implements ITerminalAddon {
                 if (event.ctrlKey && event.key === 'c') {
                     if (this.denier) this.denier();
                 }
-            })
+            }),
         );
     }
 

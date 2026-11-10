@@ -119,7 +119,7 @@ ttyd has a mechanism to pass server side command-line arguments to the browser p
 
 ## Basic usage
 
-- `-t rendererType=canvas`: use the `canvas` renderer for xterm.js (default: `webgl`)
+- `-t rendererType=dom`: use the `dom` renderer for xterm.js (default: `webgl`)
 - `-t disableLeaveAlert=true`: disable the leave page alert
 - `-t disableResizeOverlay=true`: disable the terminal resize overlay
 - `-t disableReconnect=true`: prevent the terminal from reconnecting on connection error/close

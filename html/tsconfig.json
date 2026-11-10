@@ -1,7 +1,10 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "composite": false,
+    "types": ["node"],
     "esModuleInterop": true,
     "jsx": "react",
     "jsxFactory": "h",
