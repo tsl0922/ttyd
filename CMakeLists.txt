@@ -87,7 +87,9 @@ endif()
 
 if(WIN32)
     # libuv static requires dbghelp for MiniDumpWriteDump/Sym* APIs
-    list(APPEND LINK_LIBS shell32 ws2_32 dbghelp)
+    # libuv >= 1.53 requires synchronization (WaitOnAddress/WakeByAddress*)
+    # OpenSSL >= 4 requires bcrypt (BCryptGenRandom)
+    list(APPEND LINK_LIBS shell32 ws2_32 dbghelp synchronization bcrypt)
     if(MSVC)
         find_package(getopt CONFIG)
         if(getopt_FOUND)

@@ -10,11 +10,11 @@ STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 BUILD_TARGET="${BUILD_TARGET:-x86_64}"
 
-ZLIB_VERSION="${ZLIB_VERSION:-1.3.2}"
-JSON_C_VERSION="${JSON_C_VERSION:-0.18}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-3.6.1}"
-LIBUV_VERSION="${LIBUV_VERSION:-1.52.1}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.5.7}"
+ZLIB_VERSION="${ZLIB_VERSION:-1.4}"
+JSON_C_VERSION="${JSON_C_VERSION:-0.19-20260627}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-4.1.0}"
+LIBUV_VERSION="${LIBUV_VERSION:-1.53.0}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-5.1.0}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -27,8 +27,10 @@ build_zlib() {
 
 build_json-c() {
     echo "=== Building json-c-${JSON_C_VERSION} (${TARGET})..."
-    curl -fSsLo- "https://s3.amazonaws.com/json-c_releases/releases/json-c-${JSON_C_VERSION}.tar.gz" | tar xz -C "${BUILD_DIR}"
-    pushd "${BUILD_DIR}/json-c-${JSON_C_VERSION}"
+    # Release tarballs are published on GitHub; the inner dir is the short
+    # version (e.g. json-c-0.19 for json-c-0.19-20260627).
+    curl -fSsLo- "https://github.com/json-c/json-c/releases/download/json-c-${JSON_C_VERSION}/json-c-${JSON_C_VERSION%%-*}.tar.gz" | tar xz -C "${BUILD_DIR}"
+    pushd "${BUILD_DIR}/json-c-${JSON_C_VERSION%%-*}"
         rm -rf build && mkdir -p build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
             -DCMAKE_BUILD_TYPE=RELEASE \
@@ -65,9 +67,6 @@ build_openssl() {
         openssl_cflags="-fPIC -latomic"
         case ${BUILD_TARGET} in
             s390x) openssl_cflags="${openssl_cflags} -march=z10" ;;
-            win32)
-                curl -sLo- https://github.com/openssl/openssl/pull/29826.patch | patch -p1
-                ;;
         esac
         env CC=gcc CROSS_COMPILE="${TARGET}-" CFLAGS="${openssl_cflags}" \
             ./Configure "${openssl_target}" no-ssl3 no-err -DOPENSSL_SMALL_FOOTPRINT --prefix="${STAGE_DIR}" \
@@ -107,6 +106,21 @@ build_libwebsockets() {
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         rm -rf build && mkdir -p build && cd build
+        # OpenSSL >= 1.1.0 always has these; CMake's link probes can falsely
+        # fail when cross-compiling (e.g. mingw + static libs), which would
+        # select APIs removed in OpenSSL 4.x.
+        # lws 5.x: LWS_WITH_STUB defaults to ON and its implied-options
+        # rule force-enables SPAWN, whose unix-spawn.c references the
+        # raw-file role ops unconditionally (breaks -DLWS_ROLE_RAW_FILE=OFF)
+        # lws 5.x also defaults the Windows TLS backend to schannel; keep
+        # the OpenSSL backend we build and link against.
+        # mingw toolchains without winpthreads ship a pthread.h stub that
+        # compiles but provides nothing; force lws's native win32 SRWLOCK path.
+        if [[ "${TARGET}" == *mingw* ]]; then
+            LWS_PLATFORM_FLAGS="-DLWS_WITH_SCHANNEL=0 -DLWS_HAVE_PTHREAD_H=0"
+        else
+            LWS_PLATFORM_FLAGS="-DLWS_WITH_SCHANNEL=0"
+        fi
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
             -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
@@ -136,7 +150,49 @@ build_libwebsockets() {
             -DLWS_WITH_SYS_STATE=OFF \
             -DLWS_WITH_SYS_SMD=OFF \
             -DLWS_WITH_SECURE_STREAMS=OFF \
+            -DLWS_WITH_STUB=0 \
+            ${LWS_PLATFORM_FLAGS} \
             -DLWS_CTEST_INTERNET_AVAILABLE=OFF \
+            -DLWS_HAVE_HMAC_CTX_new=1 \
+            -DLWS_HAVE_EVP_MD_CTX_free=1 \
+            -DLWS_HAVE_RSA_SET0_KEY=1 \
+            -DLWS_HAVE_ECDSA_SIG_set0=1 \
+            -DLWS_HAVE_BN_bn2binpad=1 \
+            -DLWS_HAVE_TLS_CLIENT_METHOD=1 \
+            -DLWS_HAVE_SSL_CTX_set1_param=1 \
+            -DLWS_HAVE_SSL_set_info_callback=1 \
+            -DLWS_HAVE_X509_VERIFY_PARAM_set1_host=1 \
+            -DLWS_HAVE_X509_get_key_usage=1 \
+            -DLWS_HAVE_SSL_CTX_get0_certificate=1 \
+            -DLWS_HAVE_SSL_get0_alpn_selected=1 \
+            -DLWS_HAVE_SSL_set_alpn_protos=1 \
+            -DLWS_HAVE_SSL_CTX_set_ciphersuites=1 \
+            -DLWS_HAVE_SSL_SESSION_set_time=1 \
+            -DLWS_HAVE_SSL_SESSION_up_ref=1 \
+            -DLWS_HAVE_SSL_CTX_set_keylog_callback=1 \
+            -DLWS_HAVE_SSL_CTX_load_verify_file=1 \
+            -DLWS_HAVE_SSL_CTX_load_verify_dir=1 \
+            -DLWS_HAVE_SSL_CTX_get_extra_chain_certs_only=1 \
+            -DLWS_HAVE_SSL_EXTRA_CHAIN_CERTS=1 \
+            -DLWS_HAVE_SSL_CTX_SET_ECDH_AUTO=1 \
+            -DLWS_HAVE_OPENSSL_STACK=1 \
+            -DLWS_HAVE_SSL_set_tlsext_host_name=1 \
+            -DLWS_HAVE_EC_KEY_new_by_curve_name=1 \
+            -DLWS_HAVE_EC_POINT_get_affine_coordinates=1 \
+            -DLWS_HAVE_EVP_aes_128_wrap=1 \
+            -DLWS_HAVE_EVP_aes_128_cfb1=1 \
+            -DLWS_HAVE_EVP_aes_128_cfb8=1 \
+            -DLWS_HAVE_EVP_aes_128_cfb128=1 \
+            -DLWS_HAVE_EVP_aes_192_cfb1=1 \
+            -DLWS_HAVE_EVP_aes_192_cfb8=1 \
+            -DLWS_HAVE_EVP_aes_192_cfb128=1 \
+            -DLWS_HAVE_EVP_aes_256_cfb1=1 \
+            -DLWS_HAVE_EVP_aes_256_cfb8=1 \
+            -DLWS_HAVE_EVP_aes_256_cfb128=1 \
+            -DLWS_HAVE_EVP_aes_128_xts=1 \
+            -DLWS_HAVE_EVP_aes_128_ofb=1 \
+            -DLWS_HAVE_EVP_aes_128_ecb=1 \
+            -DLWS_HAVE_EVP_aes_128_ctr=1 \
             ..
         make -j"$(nproc)" install
     popd
@@ -149,7 +205,7 @@ build_ttyd() {
         -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
         -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
         -DCMAKE_C_FLAGS="-Os -ffunction-sections -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -flto" \
-        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections -L${STAGE_DIR}/lib -L${STAGE_DIR}/lib64" \
         -DCMAKE_BUILD_TYPE=RELEASE \
         ..
     make install

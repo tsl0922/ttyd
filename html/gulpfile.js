@@ -52,7 +52,7 @@ task(
                 through2.obj((file, enc, cb) => {
                     fileSize = file.contents.length;
                     return cb(null, file);
-                })
+                }),
             )
             .pipe(gzip())
             .pipe(
@@ -60,9 +60,9 @@ task(
                     const buf = file.contents;
                     file.contents = Buffer.from(genHeader(fileSize, buf, buf.length));
                     return cb(null, file);
-                })
+                }),
             )
             .pipe(rename('html.h'))
             .pipe(dest('../src/'));
-    })
+    }),
 );

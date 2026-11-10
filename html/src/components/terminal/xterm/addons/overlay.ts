@@ -26,7 +26,7 @@ position: absolute;
                 e.preventDefault();
                 e.stopPropagation();
             },
-            true
+            true,
         );
     }
 

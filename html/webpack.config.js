@@ -75,15 +75,16 @@ const devConfig = {
         },
         proxy: [
             {
-                context: ['/token', '/ws'],
-                target: 'http://localhost:7681',
+                path: ['/token', '/ws'],
+                target: 'http://127.0.0.1:7681',
                 ws: true,
             },
         ],
         webSocketServer: {
-            type: 'sockjs',
+            type: 'ws',
             options: {
-                path: '/sockjs-node',
+                // must not collide with the ttyd /ws endpoint
+                path: '/hmr',
             },
         },
     },
