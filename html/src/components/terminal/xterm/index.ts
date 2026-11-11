@@ -531,5 +531,13 @@ export class Xterm {
             default:
                 break;
         }
+
+        // The new renderer may measure character cells differently from the one the
+        // terminal was fitted with, so fit again once it has drawn; otherwise the
+        // terminal keeps too few (or too many) columns until the window is resized.
+        const disposable = terminal.onRender(() => {
+            disposable.dispose();
+            this.fitAddon.fit();
+        });
     }
 }
