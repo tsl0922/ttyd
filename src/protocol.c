@@ -158,6 +158,7 @@ static bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
   if (rows > 0) process->rows = rows;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
     lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
+    pty_ctx_free((pty_ctx_t *)process->ctx);
     process_free(process);
     return false;
   }

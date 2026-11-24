@@ -109,8 +109,9 @@ void process_free(pty_process *process) {
   if (process->pty != NULL) pClosePseudoConsole(process->pty);
   if (process->handle != NULL) CloseHandle(process->handle);
 #else
-  close(process->pty);
-  uv_thread_join(&process->tid);
+  // A failed spawn leaves these zeroed; closing fd 0 would close stdin.
+  if (process->pty_valid) close(process->pty);
+  if (process->thread_started) uv_thread_join(&process->tid);
 #endif
   if (process->in != NULL) uv_close((uv_handle_t *) process->in, close_cb);
   if (process->out != NULL) uv_close((uv_handle_t *) process->out, close_cb);
@@ -388,7 +389,10 @@ static bool fd_duplicate(int fd, uv_pipe_t *pipe) {
   int fd_dup = dup(fd);
   if (fd_dup < 0) return false;
 
-  if (!fd_set_cloexec(fd_dup)) return false;
+  if (!fd_set_cloexec(fd_dup)) {
+    close(fd_dup);
+    return false;
+  }
 
   int status = uv_pipe_open(pipe, fd_dup);
   if (status) close(fd_dup);
@@ -474,13 +478,14 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   }
 
   process->pty = master;
+  process->pty_valid = true;
   process->pid = pid;
   process->paused = true;
   process->read_cb = read_cb;
   process->exit_cb = exit_cb;
   process->async.data = process;
   uv_async_init(process->loop, &process->async, async_cb);
-  uv_thread_create(&process->tid, wait_cb, process);
+  if (uv_thread_create(&process->tid, wait_cb, process) == 0) process->thread_started = true;
 
   return 0;
 

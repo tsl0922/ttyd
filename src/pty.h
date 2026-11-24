@@ -37,6 +37,8 @@ struct pty_process_ {
 #else
   pid_t pty;
   uv_thread_t tid;
+  bool pty_valid;
+  bool thread_started;
 #endif
   char **argv;
   char **envp;
