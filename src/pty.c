@@ -203,19 +203,31 @@ static WCHAR *to_utf16(char *str) {
 
 // convert argv to cmdline for CreateProcessW
 static WCHAR *join_args(char **argv) {
-  char args[256] = {0};
-  char **ptr = argv;
-  for (; *ptr; ptr++) {
-    char *quoted = (char *) quote_arg(*ptr);
-    size_t arg_len = strlen(args) + 1;
-    size_t quoted_len = strlen(quoted);
-    if (arg_len == 1) memset(args, 0, 2);
-    if (arg_len != 1) strcat(args, " ");
-    strncat(args, quoted, quoted_len);
-    if (quoted != *ptr) free(quoted);
+  int count = 0;
+  for (char **p = argv; *p; p++) count++;
+
+  char **quoted = xmalloc(sizeof(char *) * (count + 1));
+  size_t len = 1;  // NUL
+  for (int i = 0; i < count; i++) {
+    quoted[i] = (char *)quote_arg(argv[i]);
+    len += strlen(quoted[i]) + 1;  // separator
   }
-  if (args[255] != '\0') args[255] = '\0';  // truncate
-  return to_utf16(args);
+  quoted[count] = NULL;
+
+  // The Windows command line includes server argv plus any --url-arg values,
+  // so a fixed 256-byte buffer can overflow.
+  char *args = xmalloc(len);
+  args[0] = '\0';
+  for (int i = 0; i < count; i++) {
+    if (i) strcat(args, " ");
+    strcat(args, quoted[i]);
+    if (quoted[i] != argv[i]) free(quoted[i]);
+  }
+  free(quoted);
+
+  WCHAR *w = to_utf16(args);
+  free(args);
+  return w;
 }
 
 static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **in_name, char **out_name) {
