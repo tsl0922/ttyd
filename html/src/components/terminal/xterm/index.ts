@@ -76,6 +76,19 @@ function addEventListener(target: EventTarget, type: string, listener: EventList
     return toDisposable(() => target.removeEventListener(type, listener));
 }
 
+// A link must not be able to enable file transfer, suppress the leave-page
+// warning or spoof the title. These stay under the server operator's control
+// (client options from -t are still honoured).
+const URL_BLOCKED_OPTIONS = new Set([
+    'enableZmodem',
+    'enableTrzsz',
+    'enableSixel',
+    'disableLeaveAlert',
+    'disableReconnect',
+    'closeOnDisconnect',
+    'titleFixed',
+]);
+
 export class Xterm {
     private disposables: IDisposable[] = [];
     private textEncoder = new TextEncoder();
@@ -313,6 +326,10 @@ export class Xterm {
         const queryObj = Array.from(new URLSearchParams(query) as unknown as Iterable<[string, string]>);
 
         for (const [k, queryVal] of queryObj) {
+            if (URL_BLOCKED_OPTIONS.has(k)) {
+                console.warn(`[ttyd] ignoring client option from URL: ${k}`);
+                continue;
+            }
             let v = clientOptions[k];
             if (v === undefined) v = terminal.options[k];
             switch (typeof v) {
@@ -324,6 +341,12 @@ export class Xterm {
                     prefs[k] = Number.parseInt(queryVal, 10);
                     break;
                 case 'string':
+                    // The DOM renderer writes fontFamily into a <style>
+                    // block; keep CSS metacharacters out of URL values.
+                    if (k === 'fontFamily' && /[;{}<>\\]/.test(queryVal)) {
+                        console.warn('[ttyd] ignoring invalid fontFamily from URL');
+                        break;
+                    }
                     prefs[k] = queryVal;
                     break;
                 case 'object':
