@@ -327,7 +327,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           pty_pause(pss->process);
           break;
         case RESUME:
-          pty_resume(pss->process);
+          // Do not re-arm the PTY read while the previous chunk is still
+          // waiting for LWS_CALLBACK_SERVER_WRITEABLE: process_read_cb would
+          // overwrite pss->pty_buf, leaking (and losing) that chunk. A client
+          // that never reads its socket can otherwise grow server memory
+          // without bound by alternating RESUME frames with PTY output.
+          if (pss->pty_buf == NULL) pty_resume(pss->process);
           break;
         case JSON_DATA:
           if (pss->process != NULL) break;
