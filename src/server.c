@@ -323,7 +323,11 @@ int main(int argc, char **argv) {
   info.protocols = protocols;
   info.gid = -1;
   info.uid = -1;
-  info.max_http_header_pool = 16;
+  // A small pool lets a handful of half-sent request headers stall every new
+  // connection until lws times them out; keep headroom and shorten the idle
+  // timeout for an incomplete header.
+  info.max_http_header_pool = 128;
+  info.timeout_secs_ah_idle = 5;
   info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
 #ifndef LWS_WITHOUT_EXTENSIONS
   info.extensions = extensions;
