@@ -35,7 +35,7 @@ export class Terminal extends Component<Props, State> {
     render({ id }: Props, { modal }: State) {
         return (
             <div id={id} ref={c => (this.container = c as HTMLElement)}>
-                <Modal show={modal}>
+                <Modal show={modal} title="Remote requests a file" onClose={this.cancelModal}>
                     <label class="file-label">
                         <input onChange={this.sendFile} class="file-input" type="file" multiple />
                         <span class="file-cta">Choose files…</span>
@@ -48,6 +48,12 @@ export class Terminal extends Component<Props, State> {
     @bind
     showModal() {
         this.setState({ modal: true });
+    }
+
+    @bind
+    cancelModal() {
+        this.setState({ modal: false });
+        this.xterm.cancelZmodem();
     }
 
     @bind

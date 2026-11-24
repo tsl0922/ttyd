@@ -128,6 +128,11 @@ export class Xterm {
     }
 
     @bind
+    public cancelZmodem() {
+        this.zmodemAddon?.cancel();
+    }
+
+    @bind
     public async refreshToken() {
         try {
             const resp = await fetch(this.options.tokenUrl);
