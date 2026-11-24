@@ -184,16 +184,37 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   free(message);
 }
 
+// 1 = a valid Basic credential, 0 = header present but wrong, -1 = no header
+static int basic_credential_state(struct lws *wsi) {
+  if (server->credential == NULL) return -1;
+  int total = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
+  if (total < 7) return -1;
+  // Size the copy from the header: lws_hdr_copy returns -1 for a value that
+  // does not fit, and a long credential must not look like a missing header.
+  char *buf = xmalloc((size_t)total + 1);
+  int n = lws_hdr_copy(wsi, buf, total + 1, WSI_TOKEN_HTTP_AUTHORIZATION);
+  bool ok = n >= 7 && strncasecmp(buf, "Basic ", 6) == 0 && !strcmp(buf + 6, server->credential);
+  free(buf);
+  return ok ? 1 : 0;
+}
+
 static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   if (server->auth_header != NULL) {
-    return lws_hdr_custom_copy(wsi, pss->user, sizeof(pss->user), server->auth_header, strlen(server->auth_header)) > 0;
+    // Proxy headers can be long JWTs; size the copy dynamically and truncate
+    // only the TTYD_USER value.
+    size_t name_len = strlen(server->auth_header);
+    int value_len = lws_hdr_custom_length(wsi, server->auth_header, (int)name_len);
+    if (value_len <= 0) return false;
+    char *value = xmalloc((size_t)value_len + 1);
+    int n = lws_hdr_custom_copy(wsi, value, value_len + 1, server->auth_header, (int)name_len);
+    if (n > 0) snprintf(pss->user, sizeof(pss->user), "%s", value);
+    free(value);
+    return n > 0;
   }
 
-  if (server->credential != NULL) {
-    char buf[256];
-    size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
-  }
+  // A header that is absent or wrong is rejected here, as before; the
+  // AuthToken in JSON_DATA is still required when this returns true.
+  if (server->credential != NULL) return basic_credential_state(wsi) == 1;
 
   return true;
 }
@@ -237,6 +258,9 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       pss->authenticated = false;
       pss->wsi = wsi;
       pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
+      // A valid Basic credential at the handshake is enough for non-browser
+      // clients; the AuthToken flow is only needed when the header was absent.
+      if (server->credential != NULL && basic_credential_state(wsi) == 1) pss->authenticated = true;
 
       if (server->url_arg) {
         while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
@@ -255,6 +279,15 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
+      if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
+        lws_close_reason(wsi, pss->lws_close_status, NULL, 0);
+        return 1;
+      }
+
+      // The initial title/preferences messages contain the configured command
+      // line; never send them to an unauthenticated connection.
+      if (server->credential != NULL && !pss->authenticated) return 0;
+
       if (!pss->initialized) {
         if (pss->initial_cmd_index == sizeof(initial_cmds)) {
           pss->initialized = true;
@@ -269,11 +302,6 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         pss->initial_cmd_index++;
         lws_callback_on_writable(wsi);
         break;
-      }
-
-      if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
-        lws_close_reason(wsi, pss->lws_close_status, NULL, 0);
-        return 1;
       }
 
       if (pss->pty_buf != NULL) {
@@ -334,14 +362,14 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           uint16_t columns = 0;
           uint16_t rows = 0;
           json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
-          if (server->credential != NULL) {
+          if (server->credential != NULL && !pss->authenticated) {
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
               const char *token = json_object_get_string(o);
               if (token != NULL && !strcmp(token, server->credential))
                 pss->authenticated = true;
               else
-                lwsl_warn("WS authentication failed with token: %s\n", token);
+                lwsl_warn("WS authentication failed\n");
             }
             if (!pss->authenticated) {
               json_object_put(obj);
@@ -353,7 +381,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           if (!spawn_process(pss, columns, rows)) return 1;
           break;
         default:
-          lwsl_warn("ignored unknown message type: %c\n", command);
+          lwsl_warn("ignored unknown message type: %d\n", (int)(unsigned char)command);
           break;
       }
 
