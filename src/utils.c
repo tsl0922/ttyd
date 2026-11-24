@@ -67,16 +67,22 @@ bool endswith(const char *str, const char *suffix) {
 }
 
 int get_sig_name(int sig, char *buf, size_t len) {
-  int n = snprintf(buf, len, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
+  // sys_signame[] has holes on some platforms; %s with NULL is undefined.
+  const char *name = (sig > 0 && sig < NSIG && sys_signame[sig] != NULL) ? sys_signame[sig] : "unknown";
+  int n = snprintf(buf, len, "SIG%s", name);
   uppercase(buf);
   return n;
 }
 
 int get_sig(const char *sig_name) {
+  // Accept "TERM" and "SIGTERM". Only skip the prefix when it is present:
+  // sig_name + 3 on a shorter string read past its terminator.
+  bool has_sig_prefix = strlen(sig_name) > 3 && strncasecmp(sig_name, "SIG", 3) == 0;
   for (int sig = 1; sig < NSIG; sig++) {
     const char *name = sys_signame[sig];
-    if (name != NULL && (strcasecmp(name, sig_name) == 0 || strcasecmp(name, sig_name + 3) == 0))
-      return sig;
+    if (name == NULL) continue;
+    if (strcasecmp(name, sig_name) == 0) return sig;
+    if (has_sig_prefix && strcasecmp(name, sig_name + 3) == 0) return sig;
   }
   return atoi(sig_name);
 }

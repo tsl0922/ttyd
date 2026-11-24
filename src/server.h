@@ -30,7 +30,7 @@ extern struct server *server;
 extern struct endpoints endpoints;
 
 struct pss_http {
-  char path[128];
+  char path[256];
   char *buffer;
   char *ptr;
   size_t len;
@@ -42,7 +42,7 @@ struct pss_tty {
   bool authenticated;
   char user[30];
   char address[50];
-  char path[128];
+  char path[256];
   char **args;
   int argc;
 

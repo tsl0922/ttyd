@@ -5,6 +5,7 @@
 #include "html.h"
 #include "server.h"
 #include "utils.h"
+#include "compat.h"
 
 enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 
@@ -32,10 +33,15 @@ static int check_auth(struct lws *wsi, struct pss_http *pss) {
   }
 
   if(server->credential != NULL) {
-    char buf[256];
-    int len = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-    if (len >= 7 && strstr(buf, "Basic ")) {
-      if (!strcmp(buf + 6, server->credential)) return AUTH_OK;
+    // Size the copy from the header: a long credential must not look like a
+    // missing header (lws_hdr_copy() returns -1 when it does not fit).
+    int total = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
+    if (total >= 7) {
+      char *buf = xmalloc((size_t)total + 1);
+      int len = lws_hdr_copy(wsi, buf, total + 1, WSI_TOKEN_HTTP_AUTHORIZATION);
+      bool ok = len >= 7 && strncasecmp(buf, "Basic ", 6) == 0 && !strcmp(buf + 6, server->credential);
+      free(buf);
+      if (ok) return AUTH_OK;
     }
     return send_unauthorized(wsi, HTTP_STATUS_UNAUTHORIZED, WSI_TOKEN_HTTP_WWW_AUTHENTICATE);
   }
@@ -93,7 +99,6 @@ static void access_log(struct lws *wsi, const char *path) {
 int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
   struct pss_http *pss = (struct pss_http *)user;
   unsigned char buffer[4096 + LWS_PRE], *p, *end;
-  char buf[256];
   bool done = false;
 
   switch (reason) {
@@ -115,16 +120,21 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
       if (strcmp(pss->path, endpoints.token) == 0) {
         const char *credential = server->credential != NULL ? server->credential : "";
-        size_t n = snprintf(buf, sizeof(buf), "{\"token\": \"%s\"}", credential);
+        size_t body_size = strlen(credential) + sizeof("{\"token\": \"\"}");
+        char *body = xmalloc(body_size);
+        snprintf(body, body_size, "{\"token\": \"%s\"}", credential);
+        size_t n = strlen(body);
         if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
                                          (unsigned char *)"application/json;charset=utf-8", 30, &p, end) ||
             lws_add_http_header_content_length(wsi, (unsigned long)n, &p, end) ||
             lws_finalize_http_header(wsi, &p, end) ||
-            lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
+            lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0) {
+          free(body);
           return 1;
+        }
 
-        pss->buffer = pss->ptr = strdup(buf);
+        pss->buffer = pss->ptr = body;
         pss->len = n;
         lws_callback_on_writable(wsi);
         break;

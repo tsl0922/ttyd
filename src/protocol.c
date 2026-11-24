@@ -15,25 +15,33 @@
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
 static int send_initial_message(struct lws *wsi, int index) {
-  unsigned char message[LWS_PRE + 1 + 4096];
-  unsigned char *p = &message[LWS_PRE];
-  char buffer[128];
-  int n = 0;
-
   char cmd = initial_cmds[index];
+  char host[128] = "";
+  char *message = NULL;
+  size_t payload_size = 0;
+
   switch (cmd) {
     case SET_WINDOW_TITLE:
-      gethostname(buffer, sizeof(buffer) - 1);
-      n = snprintf((char *)p, 1 + 4096, "%c%s (%s)", cmd, server->command, buffer);
+      gethostname(host, sizeof(host) - 1);
+      payload_size = strlen(server->command) + strlen(host) + 8;
+      message = xmalloc(LWS_PRE + payload_size);
+      snprintf(message + LWS_PRE, payload_size, "%c%s (%s)", cmd, server->command, host);
       break;
     case SET_PREFERENCES:
-      n = snprintf((char *)p, 1 + 4096, "%c%s", cmd, server->prefs_json);
+      payload_size = strlen(server->prefs_json) + 2;
+      message = xmalloc(LWS_PRE + payload_size);
+      snprintf(message + LWS_PRE, payload_size, "%c%s", cmd, server->prefs_json);
       break;
     default:
-      break;
+      return 0;
   }
 
-  return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
+  // snprintf() returns the untruncated length; a long command or -t value
+  // used to make lws_write() over-read the 4 KB stack buffer.
+  size_t len = strlen(message + LWS_PRE);
+  int ret = lws_write(wsi, (unsigned char *)message + LWS_PRE, len, LWS_WRITE_BINARY);
+  free(message);
+  return ret;
 }
 
 static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
@@ -190,9 +198,15 @@ static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
   }
 
   if (server->credential != NULL) {
-    char buf[256];
-    size_t n = lws_hdr_copy(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_AUTHORIZATION);
-    return n >= 7 && strstr(buf, "Basic ") && !strcmp(buf + 6, server->credential);
+    // Size the copy from the header: a long credential must not look like a
+    // missing header (lws_hdr_copy() returns -1 when it does not fit).
+    int total = lws_hdr_total_length(wsi, WSI_TOKEN_HTTP_AUTHORIZATION);
+    if (total < 7) return false;
+    char *buf = xmalloc((size_t)total + 1);
+    int n = lws_hdr_copy(wsi, buf, total + 1, WSI_TOKEN_HTTP_AUTHORIZATION);
+    bool ok = n >= 7 && strncasecmp(buf, "Basic ", 6) == 0 && !strcmp(buf + 6, server->credential);
+    free(buf);
+    return ok;
   }
 
   return true;

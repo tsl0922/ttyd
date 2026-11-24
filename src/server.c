@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <json.h>
+#include <limits.h>
 #include <libwebsockets.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -394,15 +395,29 @@ int main(int argc, char **argv) {
         strncpy(socket_owner, optarg, sizeof(socket_owner) - 1);
         socket_owner[sizeof(socket_owner) - 1] = '\0';
         break;
-      case 'c':
+      case 'c': {
         if (strchr(optarg, ':') == NULL) {
           fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
           return -1;
         }
-        char b64_text[256];
-        lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
-        server->credential = strdup(b64_text);
+        size_t credential_len = strlen(optarg);
+        if (credential_len > (size_t)INT_MAX - 4) {
+          fprintf(stderr, "ttyd: credential is too long\n");
+          return -1;
+        }
+        // 4 output bytes per 3 input bytes, plus the NUL terminator and the
+        // extra byte lws_b64_encode_string() wants. A fixed buffer truncated
+        // long credentials and left it unterminated after the -1 return.
+        size_t b64_size = 4 * ((credential_len + 2) / 3) + 2;
+        char *b64_text = xmalloc(b64_size);
+        if (lws_b64_encode_string(optarg, (int)credential_len, b64_text, (int)b64_size) < 0) {
+          fprintf(stderr, "ttyd: failed to encode credential\n");
+          free(b64_text);
+          return -1;
+        }
+        server->credential = b64_text;
         break;
+      }
       case 'H':
         server->auth_header = strdup(optarg);
         break;
@@ -428,8 +443,12 @@ int main(int argc, char **argv) {
       case 'I':
         if (!strncmp(optarg, "~/", 2)) {
           const char *home = getenv("HOME");
+          if (home == NULL) {
+            fprintf(stderr, "ttyd: HOME is not set, cannot expand ~/ in index path\n");
+            return -1;
+          }
           size_t index_len = strlen(home) + strlen(optarg);
-          server->index = malloc(index_len);
+          server->index = xmalloc(index_len);
           snprintf(server->index, index_len, "%s%s", home, optarg + 1);
         } else {
           server->index = strdup(optarg);
@@ -446,15 +465,33 @@ int main(int argc, char **argv) {
         break;
       case 'b': {
         char path[128];
-        strncpy(path, optarg, 128);
+        // strncpy() does not terminate an optarg of 128+ bytes; the old
+        // per-endpoint copy could fill the buffer without a NUL as well.
+        if (strlen(optarg) >= sizeof(path)) {
+          fprintf(stderr, "ttyd: base path is too long (max %zu bytes)\n", sizeof(path) - 1);
+          return -1;
+        }
+        snprintf(path, sizeof(path), "%s", optarg);
+        if (path[0] != '/') {
+          fprintf(stderr, "ttyd: base path must start with '/'\n");
+          return -1;
+        }
         size_t len = strlen(path);
         while (len && path[len - 1] == '/') path[--len] = 0;  // trim trailing /
         if (!len) break;
-#define sc(f)                                  \
-  strncpy(path + len, endpoints.f, 128 - len); \
-  endpoints.f = strdup(path);
-        sc(ws) sc(index) sc(token) sc(parent)
-#undef sc
+#define set_endpoint(field, suffix)                    \
+  do {                                                 \
+    const char *s_ = suffix;                           \
+    size_t n_ = len + strlen(s_) + 1;                  \
+    char *p_ = xmalloc(n_);                            \
+    snprintf(p_, n_, "%s%s", path, s_);                \
+    endpoints.field = p_;                              \
+  } while (0)
+        set_endpoint(ws, "/ws");
+        set_endpoint(index, "/");
+        set_endpoint(token, "/token");
+        set_endpoint(parent, "");
+#undef set_endpoint
       } break;
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
       case 'P': {
