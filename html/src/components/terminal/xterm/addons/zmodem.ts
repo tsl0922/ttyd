@@ -19,7 +19,7 @@ export class ZmodemAddon implements ITerminalAddon {
     private terminal: Terminal;
     private sentry: Zmodem.Sentry;
     private session: Zmodem.Session;
-    private denier: () => void;
+    private denier?: () => void;
     private trzszFilter: TrzszFilter;
 
     constructor(private options: ZmodeOptions) {}
@@ -127,6 +127,24 @@ export class ZmodemAddon implements ITerminalAddon {
         }
     }
 
+    // Dismiss a pending ZMODEM send request: abort the transfer and give the
+    // keyboard back. The modal used to be undismissable without uploading.
+    @bind
+    public cancel() {
+        // The sentry's denier() is a no-op once the session is confirmed, so
+        // close the session itself and re-enable the keyboard.
+        this.denier = undefined;
+        if (this.session) {
+            try {
+                this.session.close();
+            } catch (e) {
+                console.warn('[ttyd] zmodem cancel failed:', e);
+            }
+            this.session = null;
+        }
+        this.reset();
+    }
+
     @bind
     public sendFile(files: FileList) {
         const { session, writeProgress } = this;
@@ -140,14 +158,32 @@ export class ZmodemAddon implements ITerminalAddon {
     @bind
     private receiveFile() {
         const { session, writeProgress } = this;
+        let totalAccepted = 0;
 
         session.on('offer', offer => {
             offer.on('input', () => writeProgress(offer));
+            const details = offer.get_details();
+            const size = Number(details.size) || 0;
+            // The offer is fully buffered in memory and saved without any
+            // earlier prompt; cap it and ask before accepting.
+            const maxSize = 256 * 1024 * 1024;
+            const maxTotal = 512 * 1024 * 1024;
+            if (!Number.isFinite(size) || size > maxSize || totalAccepted + size > maxTotal) {
+                console.warn(`[ttyd] refusing oversized ZMODEM offer: ${details.name} (${size} bytes)`);
+                offer.skip();
+                return;
+            }
+            totalAccepted += size;
+            const accepted = window.confirm(`Accept file "${details.name}" (${this.bytesHuman(size, 2)})?`);
+            if (!accepted) {
+                offer.skip();
+                return;
+            }
             offer
                 .accept()
                 .then(payloads => {
                     const blob = new Blob(payloads, { type: 'application/octet-stream' });
-                    saveAs(blob, offer.get_details().name);
+                    saveAs(blob, details.name);
                 })
                 .catch(() => this.reset());
         });
