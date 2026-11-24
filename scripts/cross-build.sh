@@ -10,11 +10,11 @@ STAGE_ROOT="${STAGE_ROOT:-/opt/stage}"
 BUILD_ROOT="${BUILD_ROOT:-/opt/build}"
 BUILD_TARGET="${BUILD_TARGET:-x86_64}"
 
-ZLIB_VERSION="${ZLIB_VERSION:-1.3.2}"
-JSON_C_VERSION="${JSON_C_VERSION:-0.18}"
-OPENSSL_VERSION="${OPENSSL_VERSION:-3.6.1}"
-LIBUV_VERSION="${LIBUV_VERSION:-1.52.1}"
-LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-4.5.7}"
+ZLIB_VERSION="${ZLIB_VERSION:-1.4}"
+JSON_C_VERSION="${JSON_C_VERSION:-0.19}"
+OPENSSL_VERSION="${OPENSSL_VERSION:-3.5.9}"
+LIBUV_VERSION="${LIBUV_VERSION:-1.53.0}"
+LIBWEBSOCKETS_VERSION="${LIBWEBSOCKETS_VERSION:-5.1.0}"
 
 build_zlib() {
     echo "=== Building zlib-${ZLIB_VERSION} (${TARGET})..."
@@ -65,9 +65,6 @@ build_openssl() {
         openssl_cflags="-fPIC -latomic"
         case ${BUILD_TARGET} in
             s390x) openssl_cflags="${openssl_cflags} -march=z10" ;;
-            win32)
-                curl -sLo- https://github.com/openssl/openssl/pull/29826.patch | patch -p1
-                ;;
         esac
         env CC=gcc CROSS_COMPILE="${TARGET}-" CFLAGS="${openssl_cflags}" \
             ./Configure "${openssl_target}" no-ssl3 no-err -DOPENSSL_SMALL_FOOTPRINT --prefix="${STAGE_DIR}" \
@@ -107,14 +104,27 @@ build_libwebsockets() {
     pushd "${BUILD_DIR}/libwebsockets-${LIBWEBSOCKETS_VERSION}"
         sed -i 's/ websockets_shared//g' cmake/libwebsockets-config.cmake.in
         rm -rf build && mkdir -p build && cd build
+        extra_cmake_flags="-DLWS_WITH_SCHANNEL=0"
+        case ${BUILD_TARGET} in
+            win32) extra_cmake_flags="${extra_cmake_flags} -DLWS_HAVE_PTHREAD_H=0" ;;
+        esac
         cmake -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/cross-${TARGET}.cmake" \
+            ${extra_cmake_flags} \
             -DCMAKE_BUILD_TYPE=RELEASE \
             -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
             -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
             -DCMAKE_EXE_LINKER_FLAGS="-static" \
+            -DDISABLE_WERROR=ON \
+            -DLWS_ROLE_QUIC=OFF \
+            -DLWS_WITH_HTTP3=OFF \
             -DLWS_WITHOUT_TESTAPPS=ON \
+            -DLWS_WITHOUT_TEST_SERVER=ON \
+            -DLWS_WITHOUT_TEST_CLIENT=ON \
+            -DLWS_WITHOUT_TEST_PING=ON \
+            -DLWS_WITHOUT_TEST_SERVER_EXTPOLL=ON \
             -DLWS_WITH_SSL=ON \
             -DLWS_WITH_LIBUV=ON \
+            -DLWS_WITH_STUB=0 \
             -DLWS_STATIC_PIC=ON \
             -DLWS_WITH_SHARED=OFF \
             -DLWS_UNIX_SOCK=ON \
@@ -149,7 +159,7 @@ build_ttyd() {
         -DCMAKE_INSTALL_PREFIX="${STAGE_DIR}" \
         -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
         -DCMAKE_C_FLAGS="-Os -ffunction-sections -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -flto" \
-        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections" \
+        -DCMAKE_EXE_LINKER_FLAGS="-static -no-pie -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections -L${STAGE_DIR}/lib -L${STAGE_DIR}/lib64" \
         -DCMAKE_BUILD_TYPE=RELEASE \
         ..
     make install
