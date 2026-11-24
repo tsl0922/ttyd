@@ -49,25 +49,31 @@ static json_object *parse_window_size(const char *buf, size_t len, uint16_t *col
 }
 
 static bool check_host_origin(struct lws *wsi) {
-  char buf[256];
-  memset(buf, 0, sizeof(buf));
-  int len = lws_hdr_copy(wsi, buf, (int)sizeof(buf), WSI_TOKEN_ORIGIN);
+  char origin[256];
+  memset(origin, 0, sizeof(origin));
+  int len = lws_hdr_copy(wsi, origin, (int)sizeof(origin), WSI_TOKEN_ORIGIN);
   if (len <= 0) return false;
 
-  const char *prot, *address, *path;
-  int port;
-  if (lws_parse_uri(buf, &prot, &address, &port, &path)) return false;
+  const char *prot = NULL, *address = NULL, *path = NULL;
+  int port = 0;
+  if (lws_parse_uri(origin, &prot, &address, &port, &path) || address == NULL) return false;
+
+  // Build the comparison value in a separate buffer: the old code wrote the
+  // result over the string lws_parse_uri() had returned pointers into.
+  char origin_host[256];
+  // IPv6 literals are bracketed in the Host header but not in the parsed URI.
+  bool v6 = address[0] != '[' && strchr(address, ':') != NULL;
   if (port == 80 || port == 443) {
-    snprintf(buf, sizeof(buf), "%s", address);
+    snprintf(origin_host, sizeof(origin_host), v6 ? "[%s]" : "%s", address);
   } else {
-    snprintf(buf, sizeof(buf), "%s:%d", address, port);
+    snprintf(origin_host, sizeof(origin_host), v6 ? "[%s]:%d" : "%s:%d", address, port);
   }
 
   char host_buf[256];
   memset(host_buf, 0, sizeof(host_buf));
   len = lws_hdr_copy(wsi, host_buf, (int)sizeof(host_buf), WSI_TOKEN_HOST);
 
-  return len > 0 && strcasecmp(buf, host_buf) == 0;
+  return len > 0 && strcasecmp(origin_host, host_buf) == 0;
 }
 
 static pty_ctx_t *pty_ctx_init(struct pss_tty *pss) {
