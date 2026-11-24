@@ -14,6 +14,10 @@
 #include "utils.h"
 #include "compat.h"
 
+#if !defined(_WIN32)
+#include <pwd.h>
+#endif
+
 #ifndef TTYD_VERSION
 #define TTYD_VERSION "unknown"
 #endif
@@ -531,6 +535,21 @@ int main(int argc, char **argv) {
     fprintf(stderr, "ttyd: missing start command\n");
     return -1;
   }
+
+#if !defined(_WIN32)
+  // libwebsockets calls initgroups(pw_name, gid) before setuid(). When only
+  // --uid is given, gid is still -1: on Linux initgroups(..., -1) fails with
+  // EINVAL, libwebsockets 4.5.7 ignores that error, never calls setuid() and
+  // ttyd keeps running as root. Derive the primary group so the drop works.
+  if (info.uid != -1 && info.gid == -1) {
+    struct passwd *pw = getpwuid((uid_t)info.uid);
+    if (pw == NULL) {
+      fprintf(stderr, "ttyd: unknown uid: %d\n", info.uid);
+      return -1;
+    }
+    info.gid = (int)pw->pw_gid;
+  }
+#endif
 
   lws_set_log_level(debug_level, NULL);
 
