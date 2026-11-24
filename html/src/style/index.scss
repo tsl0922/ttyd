@@ -13,6 +13,15 @@ body {
   padding: 0;
   .terminal {
     padding: 5px;
+    // keep the terminal content clear of the notch / home indicator when
+    // the page is rendered edge-to-edge (viewport-fit=cover)
+    padding: calc(5px + env(safe-area-inset-top)) calc(5px + env(safe-area-inset-right))
+      calc(5px + env(safe-area-inset-bottom)) calc(5px + env(safe-area-inset-left));
     height: calc(100% - 10px);
   }
+}
+
+.xterm .xterm-helper-textarea {
+  // iOS Safari zooms the page when a focused input has a font-size below 16px
+  font-size: 16px !important;
 }
