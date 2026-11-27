@@ -62,6 +62,9 @@ ttyd 1 "September 2016" ttyd "User Manual"
   -O, --check-origin
       Do not allow websocket connection from different origin
 
+  -F, --deny-framing
+      Do not allow the web page to be embedded in a frame on another page: send X-Frame-Options: DENY and Content-Security-Policy: frame-ancestors 'none' on every response
+
   -m, --max-clients
       Maximum clients to support (default: 0, no limit)
 

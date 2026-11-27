@@ -11,12 +11,25 @@ enum { AUTH_OK, AUTH_FAIL, AUTH_ERROR };
 static char *html_cache = NULL;
 static size_t html_cache_len = 0;
 
+// With --deny-framing, tell the browser not to render the response inside a
+// frame, so another page can't overlay the terminal and pass the user's
+// keystrokes through.
+static int add_frame_headers(struct lws *wsi, unsigned char **p, unsigned char *end) {
+  if (!server->deny_framing) return 0;
+  static const char xfo[] = "DENY";
+  static const char csp[] = "frame-ancestors 'none'";
+  return lws_add_http_header_by_name(wsi, (unsigned char *)"x-frame-options:", (unsigned char *)xfo, (int)strlen(xfo),
+                                     p, end) ||
+         lws_add_http_header_by_name(wsi, (unsigned char *)"content-security-policy:", (unsigned char *)csp,
+                                     (int)strlen(csp), p, end);
+}
+
 static int send_unauthorized(struct lws *wsi, unsigned int code, enum lws_token_indexes header) {
   unsigned char buffer[1024 + LWS_PRE], *p, *end;
   p = buffer + LWS_PRE;
   end = p + sizeof(buffer) - LWS_PRE;
 
-  if (lws_add_http_header_status(wsi, code, &p, end) ||
+  if (lws_add_http_header_status(wsi, code, &p, end) || add_frame_headers(wsi, &p, end) ||
       lws_add_http_header_by_token(wsi, header, (unsigned char *)"Basic realm=\"ttyd\"", 18, &p, end) ||
       lws_add_http_header_content_length(wsi, 0, &p, end) || lws_finalize_http_header(wsi, &p, end) ||
       lws_write(wsi, buffer + LWS_PRE, p - (buffer + LWS_PRE), LWS_WRITE_HTTP_HEADERS) < 0)
@@ -116,7 +129,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
       if (strcmp(pss->path, endpoints.token) == 0) {
         const char *credential = server->credential != NULL ? server->credential : "";
         size_t n = snprintf(buf, sizeof(buf), "{\"token\": \"%s\"}", credential);
-        if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
+        if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) || add_frame_headers(wsi, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
                                          (unsigned char *)"application/json;charset=utf-8", 30, &p, end) ||
             lws_add_http_header_content_length(wsi, (unsigned long)n, &p, end) ||
@@ -132,7 +145,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
       // redirects `/base-path` to `/base-path/`
       if (strcmp(pss->path, endpoints.parent) == 0) {
-        if (lws_add_http_header_status(wsi, HTTP_STATUS_FOUND, &p, end) ||
+        if (lws_add_http_header_status(wsi, HTTP_STATUS_FOUND, &p, end) || add_frame_headers(wsi, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_LOCATION, (unsigned char *)endpoints.index,
                                          (int)strlen(endpoints.index), &p, end) ||
             lws_add_http_header_content_length(wsi, 0, &p, end) || lws_finalize_http_header(wsi, &p, end) ||
@@ -148,12 +161,14 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 
       const char *content_type = "text/html";
       if (server->index != NULL) {
-        int n = lws_serve_http_file(wsi, server->index, content_type, NULL, 0);
+        if (add_frame_headers(wsi, &p, end)) return 1;
+        int n = lws_serve_http_file(wsi, server->index, content_type, (const char *)buffer + LWS_PRE,
+                                    (int)(p - (buffer + LWS_PRE)));
         if (n < 0 || (n > 0 && lws_http_transaction_completed(wsi))) return 1;
       } else {
         char *output = (char *)index_html;
         size_t output_len = index_html_len;
-        if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) ||
+        if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end) || add_frame_headers(wsi, &p, end) ||
             lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, (const unsigned char *)content_type, 9, &p,
                                          end))
           return 1;
