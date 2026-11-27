@@ -77,6 +77,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"terminal-type", required_argument, NULL, 'T'},
                                         {"client-option", required_argument, NULL, 't'},
                                         {"check-origin", no_argument, NULL, 'O'},
+                                        {"deny-framing", no_argument, NULL, 'F'},
                                         {"max-clients", required_argument, NULL, 'm'},
                                         {"once", no_argument, NULL, 'o'},
                                         {"exit-no-conn", no_argument, NULL, 'q'},
@@ -85,7 +86,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
+static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:OFm:oqBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -109,6 +110,7 @@ static void print_help() {
           "    -t, --client-option     Send option to client (format: key=value), repeat to add more options\n"
           "    -T, --terminal-type     Terminal type to report, default: xterm-256color\n"
           "    -O, --check-origin      Do not allow websocket connection from different origin\n"
+          "    -F, --deny-framing      Do not allow the web page to be embedded in a frame on another page\n"
           "    -m, --max-clients       Maximum clients to support (default: 0, no limit)\n"
           "    -o, --once              Accept only one client and exit on disconnection\n"
           "    -q, --exit-no-conn      Exit on all clients disconnection\n"
@@ -152,6 +154,7 @@ static void print_config() {
   }
   if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
   if (server->check_origin) lwsl_notice("  check origin: true\n");
+  if (server->deny_framing) lwsl_notice("  deny framing: true\n");
   if (server->url_arg) lwsl_notice("  allow url arg: true\n");
   if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
   if (server->once) lwsl_notice("  once: true\n");
@@ -366,6 +369,9 @@ int main(int argc, char **argv) {
         break;
       case 'O':
         server->check_origin = true;
+        break;
+      case 'F':
+        server->deny_framing = true;
         break;
       case 'm':
         server->max_clients = parse_int("max-clients", optarg);

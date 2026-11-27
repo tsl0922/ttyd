@@ -94,6 +94,10 @@ Cross platform: macOS, Linux, FreeBSD/OpenBSD, OpenWrt/LEDE, Windows
       Do not allow websocket connection from different origin
 
 .PP
+-F, --deny-framing
+      Do not allow the web page to be embedded in a frame on another page: send X-Frame-Options: DENY and Content-Security-Policy: frame-ancestors 'none' on every response
+
+.PP
 -m, --max-clients
       Maximum clients to support (default: 0, no limit)
 

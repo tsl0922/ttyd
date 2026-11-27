@@ -68,6 +68,7 @@ OPTIONS:
     -t, --client-option     Send option to client (format: key=value), repeat to add more options
     -T, --terminal-type     Terminal type to report, default: xterm-256color
     -O, --check-origin      Do not allow websocket connection from different origin
+    -F, --deny-framing      Do not allow the web page to be embedded in a frame on another page
     -m, --max-clients       Maximum clients to support (default: 0, no limit)
     -o, --once              Accept only one client and exit on disconnection
     -q, --exit-no-conn      Exit on all clients disconnection
